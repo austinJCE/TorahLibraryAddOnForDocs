@@ -158,11 +158,12 @@
           <p>
             <input type="checkbox" class="wants-pagerank">Use PageRank
             <input type="checkbox" class="wants-pesukim" checked>Pesukim/line markers
-            <input type="checkbox" class="language-preference">Insert source in 
-            <select class="language-selection">
-              <option value="he" class="heb" selected>Hebrew</option>
-              <option value="en" class="eng">English</option>
-            </select> only
+            Output mode:
+            <select class="output-mode-selection">
+              <option value="both" selected>Hebrew + Translation</option>
+              <option value="he" class="heb">Hebrew only</option>
+              <option value="en" class="eng">Translation only</option>
+            </select>
           </p>
         </nav>
         <section name="branding">
@@ -238,11 +239,8 @@
 
             $('.source').click((event) => {
                 let element = $(event.currentTarget);
-                let language;
-
-                if ($('.language-preference').is(':checked')) {
-                  language = $('.language-selection').val();
-                }
+                const outputMode = $('.output-mode-selection').val();
+                const language = outputMode === 'both' ? undefined : outputMode;
 
                 
 
