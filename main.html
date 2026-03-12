@@ -74,6 +74,19 @@
       width: 100px;
     }
 
+    .translation-combobox {
+      width: 140px;
+    }
+
+    .ui-autocomplete-category {
+      font-weight: bold;
+      font-size: 11px;
+      padding: 4px 8px;
+      color: #555;
+      border-top: 1px solid #eee;
+      background: #fafafa;
+    }
+
     </style>
 
     <!--SCRIPTS-->
@@ -93,7 +106,7 @@
         <button class="blue submit" id="run-sefaria">Insert Source
         </button>
         <p style="margin: 10px 10px 0 10px; font-size: 12px;">
-          <input type="checkbox" class="include-translation-source-info">Include English translation attribution (version/source)
+          <input type="checkbox" class="include-translation-source-info">Include Translation attribution (version/source)
         </p>
       </section>
       
@@ -107,11 +120,13 @@
         <nav name="options">
           <p>
             <input type="checkbox" class="wants-pesukim" checked>Pesukim/line markers
-            <input type="checkbox" class="language-preference">Insert source in 
-            <select class="language-selection">
-              <option value="he" class="heb" selected>Hebrew</option>
-              <option value="en" class="eng">English</option>
-            </select> only
+            <label style="display: inline-block; margin-left: 5px;">Output mode
+            <select class="output-mode-selection">
+              <option value="both" selected>Hebrew + Translation</option>
+              <option value="he">Hebrew only</option>
+              <option value="en">Translation only</option>
+            </select>
+            </label>
           </p>
         </nav>
         <section name="branding">
@@ -162,11 +177,8 @@
 
       $('.submit').click(() => {
 
-        let language;
-
-        if ($('.language-preference').is(':checked')) {
-          language = $('.language-selection').val();
-        }
+        let outputMode = $('.output-mode-selection').val();
+        let language = (outputMode === 'both') ? undefined : outputMode;
 
         let showPesukim = ($('.wants-pesukim').is(':checked')) ? true : false;
         let includeTranslationSourceInfo = $('.include-translation-source-info').is(':checked');
@@ -217,41 +229,167 @@
         }
       });
 
-      let selectVersionEnglish = "";
-      let selectVersionHebrew = "";
+      $.widget("custom.catcomplete", $.ui.autocomplete, {
+        _renderMenu: function(ul, items) {
+          let currentCategory = "";
+          $.each(items, function(index, item) {
+            if (item.category !== currentCategory) {
+              ul.append(`<li class='ui-autocomplete-category'>${item.category}</li>`);
+              currentCategory = item.category;
+            }
+            $('<li>').append(`<div>${item.label}</div>`).appendTo(ul).data('ui-autocomplete-item', item);
+          });
+        }
+      });
 
-      function updateSuggestion(dataIn, inputTitle) {
-        //collect the different versions
-        let versionList = {};
-        selectVersionEnglish = `<select class="versioning-select en-version-selection">`;
-        selectVersionHebrew = `<select class="versioning-select he-version-selection">`;
+      function escapeHTML(value) {
+        return String(value || "")
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
 
+      function normalizeLanguage(version) {
+        let lang = ((version.actualLanguage || version.language || "") + "").toLowerCase().trim();
+        if (["he", "heb", "hebrew"].indexOf(lang) >= 0) {
+          return { key: "he", label: "Hebrew" };
+        }
+        if (["en", "eng", "english"].indexOf(lang) >= 0 || !lang) {
+          return { key: "en", label: "Translation" };
+        }
 
-        let enSelectedVersionTitle = dataIn.versionTitle;
-        let heSelectedVersionTitle = dataIn.heVersionTitle;
+        let family = (version.languageFamilyName || "").toString().trim();
+        let label = family ? family.charAt(0).toUpperCase() + family.slice(1) : lang;
+        return { key: `other:${lang}`, label };
+      }
 
-        for (const version of dataIn.versions) {
-          versionList[version.language] = [];
-          versionList[version.language].push(version.versionTitle);
-          if (version.language == "en") {
-            let selected = (version.versionTitle == enSelectedVersionTitle) ? "selected" : "";
-            selectVersionEnglish += `<option value="${version.versionTitle}" class="version-title" ${selected}>${version.versionTitle}</option>`;
-          } else {
-            // for now this works, since all versions are categorized as Hebrew or English. According to the github discussions, this is soon to change.
-            let selected = (version.versionTitle == heSelectedVersionTitle) ? "selected" : "";
-            selectVersionHebrew += `<option value="${version.versionTitle}" class="version-title" ${selected}>${version.versionTitle}</option>`;
+      function extractYear(version) {
+        let currentYear = (new Date()).getFullYear() + 1;
+        let fields = [version.shortVersionTitle, version.versionTitle, version.versionNotes]
+          .filter((value) => value)
+          .map((value) => value.toString());
+
+        let candidates = [];
+        for (const field of fields) {
+          let matches = field.match(/\b(1\d{3}|20\d{2}|2100)\b/g);
+          if (!matches) continue;
+          for (const m of matches) {
+            let numeric = parseInt(m, 10);
+            if (numeric >= 1000 && numeric <= currentYear) {
+              candidates.push(numeric);
+            }
           }
         }
 
-        selectVersionEnglish += `</select>`;
+        if (candidates.length === 0) {
+          return null;
+        }
+        return Math.max.apply(null, candidates);
+      }
+
+      function buildVersionModel(dataIn) {
+        let versions = Array.isArray(dataIn.versions) ? dataIn.versions : [];
+        let seen = {};
+        let normalized = [];
+
+        versions.forEach((version, index) => {
+          let safeVersion = version || {};
+          let language = normalizeLanguage(safeVersion);
+          let versionTitle = safeVersion.versionTitle || safeVersion.shortVersionTitle || `Untitled version #${index + 1}`;
+          let dedupeKey = `${language.key}::${versionTitle}::${safeVersion.versionSource || ""}`;
+          if (seen[dedupeKey]) {
+            return;
+          }
+          seen[dedupeKey] = true;
+
+          normalized.push({
+            index,
+            versionTitle,
+            label: safeVersion.shortVersionTitle || safeVersion.versionTitle || versionTitle,
+            fullTitle: safeVersion.versionTitle || versionTitle,
+            languageKey: language.key,
+            languageLabel: language.label,
+            direction: safeVersion.direction,
+            priority: Number(safeVersion.priority) || 0,
+            isPrimary: !!safeVersion.isPrimary,
+            year: extractYear(safeVersion)
+          });
+        });
+
+        return normalized;
+      }
+
+      function sortVersionEntries(entries) {
+        return entries.slice().sort((a, b) => {
+          if (a.year !== null && b.year !== null && a.year !== b.year) {
+            return b.year - a.year;
+          }
+          if (a.year !== null && b.year === null) {
+            return -1;
+          }
+          if (a.year === null && b.year !== null) {
+            return 1;
+          }
+          if (a.priority !== b.priority) {
+            return b.priority - a.priority;
+          }
+          return a.index - b.index;
+        });
+      }
+
+      function updateSuggestion(dataIn, inputTitle) {
+        let versionEntries = buildVersionModel(dataIn);
+        let enSelectedVersionTitle = dataIn.versionTitle || "";
+        let heSelectedVersionTitle = dataIn.heVersionTitle || "";
+
+        let hebrewEntries = sortVersionEntries(versionEntries.filter((entry) => entry.languageKey === 'he'));
+        let translationEntries = sortVersionEntries(versionEntries.filter((entry) => entry.languageKey !== 'he'));
+
+        let selectVersionHebrew = `<select class="versioning-select he-version-selection">`;
+        hebrewEntries.forEach((entry) => {
+          let selected = (entry.versionTitle === heSelectedVersionTitle) ? "selected" : "";
+          selectVersionHebrew += `<option value="${escapeHTML(entry.versionTitle)}" ${selected}>${escapeHTML(entry.label)}</option>`;
+        });
         selectVersionHebrew += `</select>`;
+
+        let translationInput = `<input type="text" class="translation-combobox" placeholder="Search Translation version" value="${escapeHTML(enSelectedVersionTitle)}">`;
+
+        let languageGroups = {};
+        translationEntries.forEach((entry) => {
+          if (!languageGroups[entry.languageLabel]) {
+            languageGroups[entry.languageLabel] = [];
+          }
+          languageGroups[entry.languageLabel].push(entry);
+        });
+
+        let translationGroupLabels = Object.keys(languageGroups).sort((a, b) => {
+          if (a === 'Translation') return -1;
+          if (b === 'Translation') return 1;
+          return a.localeCompare(b);
+        });
+
+        let translationItems = [];
+        translationGroupLabels.forEach((groupLabel) => {
+          if (!languageGroups[groupLabel] || languageGroups[groupLabel].length === 0) {
+            return;
+          }
+          languageGroups[groupLabel].forEach((entry) => {
+            translationItems.push({
+              label: entry.label,
+              value: entry.versionTitle,
+              category: groupLabel
+            });
+          });
+        });
 
         let suggestion = `
         <table style='font-size: 3.5vw;'>
           <tr>
             <td class='paetaot'>
               ${inputTitle}
-              ${selectVersionEnglish}
+              ${translationInput}
             </td>
             <td style='direction:rtl;'>
               ${dataIn.heRef}
@@ -270,8 +408,10 @@
         `
         $('.suggestions').html(suggestion);
 
+        let suppressTranslationChange = false;
+
         let getVersions = (title) => {
-          let enVersion = $('.en-version-selection').val();
+          let enVersion = $('.translation-combobox').attr('data-selected-version') || enSelectedVersionTitle || $('.translation-combobox').val();
           let heVersion = $('.he-version-selection').val();
           let versions = {"en": enVersion, "he": heVersion};
           google.script.run.withSuccessHandler((response) => {
@@ -280,11 +420,49 @@
             console.log(`data changed to ${data.heVersionTitle} and ${data.versionTitle}`);
           }).findReference(title, versions);
         }
-        
-        $('.en-version-selection').on('change', () => {
+
+        $('.translation-combobox').attr('data-selected-version', enSelectedVersionTitle);
+        $('.translation-combobox').catcomplete({
+          delay: 50,
+          minLength: 0,
+          source: (request, response) => {
+            let searchTerm = (request.term || '').toLowerCase();
+            let filtered = translationItems.filter((item) => {
+              return item.label.toLowerCase().indexOf(searchTerm) >= 0 || item.value.toLowerCase().indexOf(searchTerm) >= 0;
+            });
+            response(filtered);
+          },
+          focus: (event) => event.preventDefault(),
+          select: (event, ui) => {
+            event.preventDefault();
+            suppressTranslationChange = true;
+            $('.translation-combobox').val(ui.item.label);
+            $('.translation-combobox').attr('data-selected-version', ui.item.value);
+            let title = $('input').val();
+            getVersions(title);
+          }
+        }).on('focus', function() {
+          $(this).catcomplete('search', $(this).val());
+        });
+
+        $('.translation-combobox').on('change', () => {
+          if (suppressTranslationChange) {
+            suppressTranslationChange = false;
+            return;
+          }
+
+          let typedValue = $('.translation-combobox').val();
+          let matched = translationItems.find((item) => item.label === typedValue || item.value === typedValue);
+          if (!matched) {
+            $('.translation-combobox').val(enSelectedVersionTitle);
+            $('.translation-combobox').attr('data-selected-version', enSelectedVersionTitle);
+            return;
+          }
+          $('.translation-combobox').attr('data-selected-version', matched.value);
           let title = $('input').val();
           getVersions(title);
         });
+        
         $('.he-version-selection').on('change', () => {
           let title = $('input').val();
           getVersions(title);
