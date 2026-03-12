@@ -11,10 +11,10 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
 
 
-const SETTINGS = ["meforash_replace", "meforash_replacement", "yaw_replace", "yaw_replacement", "elodim_replace", "elodim_replacement", "nekudot", "nekudot_filter", "teamim", "versioning", "extended_gemara"]
+const SETTINGS = ["meforash_replace", "meforash_replacement", "yaw_replace", "yaw_replacement", "elodim_replace", "elodim_replacement", "nekudot", "nekudot_filter", "teamim", "versioning", "extended_gemara", "include_translation_source_info"]
 
 function onInstall() {
-  const basicPrefs = {"meforash_replace": false, "yaw_replace": false, "elodim_replace": false, "nekudot": true, "teamim": true, "versioning": true, "nekudot_filter": false, "extended_gemara": false};
+  const basicPrefs = {"meforash_replace": false, "yaw_replace": false, "elodim_replace": false, "nekudot": true, "teamim": true, "versioning": true, "nekudot_filter": false, "extended_gemara": false, "include_translation_source_info": false};
   setPreferences(basicPrefs);
   //display release notes in popup
   

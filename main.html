@@ -93,7 +93,7 @@
         <button class="blue submit" id="run-sefaria">Insert Source
         </button>
         <p style="margin: 10px 10px 0 10px; font-size: 12px;">
-          <input type="checkbox" class="include-translation-source-info">Include translation/source info
+          <input type="checkbox" class="include-translation-source-info">Include English translation attribution (version/source)
         </p>
       </section>
       
@@ -128,6 +128,18 @@
     //no need for $(document).ready() since this script is loaded at the end of the page
     $(".input").attr("disabled",true);
     var data = {};
+
+    google.script.run.withSuccessHandler((preferences) => {
+      if (preferences.include_translation_source_info == "true") {
+        $('.include-translation-source-info').prop('checked', true);
+      }
+    }).getPreferences();
+
+    $('.include-translation-source-info').on('change', () => {
+      google.script.run.setPreferences({
+        include_translation_source_info: $('.include-translation-source-info').is(':checked')
+      });
+    });
     google.script.run.withSuccessHandler((titles) => {
     
       $(".input").removeAttr("disabled");
