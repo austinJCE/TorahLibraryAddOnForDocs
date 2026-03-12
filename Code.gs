@@ -188,27 +188,6 @@ function formatDataForPesukim(data, pesukim) {
   return data;
 };
 
-function getEnglishAttribution(data) {
-  if (!data || !data.versionTitle) {
-    return "";
-  }
-
-  let source = data.versionSource;
-
-  if (!source && data.versions && Array.isArray(data.versions)) {
-    let selectedVersion = data.versions.find((version) => version.language == "en" && version.versionTitle == data.versionTitle);
-    if (selectedVersion) {
-      source = selectedVersion.versionSource;
-    }
-  }
-
-  if (source) {
-    return `Translation: ${data.versionTitle} | Source: ${source}`;
-  }
-
-  return `Translation: ${data.versionTitle}`;
-}
-
 function insertAttributionParagraph(paragraph, attributionText) {
   if (!attributionText) {
     return;
