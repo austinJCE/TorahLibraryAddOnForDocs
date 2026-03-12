@@ -188,7 +188,43 @@ function formatDataForPesukim(data, pesukim) {
   return data;
 };
 
-function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null) {
+function getEnglishAttribution(data) {
+  if (!data || !data.versionTitle) {
+    return "";
+  }
+
+  let source = data.versionSource;
+
+  if (!source && data.versions && Array.isArray(data.versions)) {
+    let selectedVersion = data.versions.find((version) => version.language == "en" && version.versionTitle == data.versionTitle);
+    if (selectedVersion) {
+      source = selectedVersion.versionSource;
+    }
+  }
+
+  if (source) {
+    return `Translation: ${data.versionTitle} | Source: ${source}`;
+  }
+
+  return `Translation: ${data.versionTitle}`;
+}
+
+function insertAttributionParagraph(paragraph, attributionText) {
+  if (!attributionText) {
+    return;
+  }
+
+  paragraph.setText(attributionText);
+  let attributionStyle = {};
+      attributionStyle[DocumentApp.Attribute.ITALIC] = true;
+      attributionStyle[DocumentApp.Attribute.FONT_SIZE] = 8;
+      attributionStyle[DocumentApp.Attribute.BOLD] = false;
+      attributionStyle[DocumentApp.Attribute.UNDERLINE] = false;
+  paragraph.setAttributes(attributionStyle);
+  paragraph.setLeftToRight(true);
+}
+
+function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null, includeTranslationSourceInfo = false) {
   //set title as preferred title (e.g. Bereishit instead of Genesis) if exists
   let title = (preferredTitle) ? preferredTitle : data.ref;
 
@@ -215,6 +251,9 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
         nullStyle[DocumentApp.Attribute.UNDERLINE] = false;
   let noUnderline = {};
     noUnderline[DocumentApp.Attribute.UNDERLINE] = false;
+
+  let shouldIncludeEnglishAttribution = includeTranslationSourceInfo && singleLanguage != "he";
+  let attributionText = (shouldIncludeEnglishAttribution) ? getEnglishAttribution(data) : "";
   
   if (singleLanguage) {
 
@@ -234,6 +273,11 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       mainTextParagraph.setAttributes(nullStyle);
     }
     mainTextParagraph.setLeftToRight(ltr);
+
+    if (singleLanguage == "en" && attributionText) {
+      let attributionParagraph = doc.insertParagraph(index+2, "");
+      insertAttributionParagraph(attributionParagraph, attributionText);
+    }
 
   }
   else {
@@ -278,6 +322,20 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
     hebText.setAttributes(nullStyle);
     insertRichTextFromHTML(hebText, data.he);
     hebText.setAttributes(noUnderline);
+
+    if (shouldIncludeEnglishAttribution && attributionText) {
+      let attributionRow = table.appendTableRow();
+      let engAttributionCell = attributionRow.appendTableCell("");
+      let hebAttributionCell = attributionRow.appendTableCell("");
+
+      let engAttribution = engAttributionCell.insertParagraph(0, "");
+      insertAttributionParagraph(engAttribution, attributionText);
+
+      let hebAttribution = hebAttributionCell.insertParagraph(0, "");
+      hebAttribution.setText("");
+      hebAttribution.setLeftToRight(false);
+      hebAttribution.setAttributes(nullStyle);
+    }
 
     /* the constraints of insertParagraph mean that there will always be an extra line break in table cells to which we dynamically add text. See https://stackoverflow.com/questions/39506414/remove-newline-from-google-doc-table-content.
     This solution was contributed by an expert in Google Apps Script, @tanaike. Thanks @tanaike! [https://stackoverflow.com/questions/76647915/extra-spaces-when-inserting-text-in-google-docs-tables-rich-text-version?noredirect=1#comment135153775_76647915] */ 

@@ -92,6 +92,9 @@
         <input type="text" class="input disab" placeholder="Text Title:">
         <button class="blue submit" id="run-sefaria">Insert Source
         </button>
+        <p style="margin: 10px 10px 0 10px; font-size: 12px;">
+          <input type="checkbox" class="include-translation-source-info">Include translation/source info
+        </p>
       </section>
       
       <section class="suggestions">
@@ -154,11 +157,12 @@
         }
 
         let showPesukim = ($('.wants-pesukim').is(':checked')) ? true : false;
+        let includeTranslationSourceInfo = $('.include-translation-source-info').is(':checked');
         let input = $('.input').val();
         $('.hide').add($('.warning')).fadeIn('1000');
         google.script.run.withSuccessHandler(() => {
           $('.hide').add($('.warning')).fadeOut('1000');
-        }).insertReference(data, language, showPesukim, input);
+        }).insertReference(data, language, showPesukim, input, includeTranslationSourceInfo);
         
         
 
