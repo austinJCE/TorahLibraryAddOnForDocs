@@ -14,6 +14,34 @@
           padding: 5px;
         }
 
+        .ref {
+          margin: 0;
+          font-size: 4.6vw;
+          line-height: 1.25;
+          white-space: normal;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
+
+        .ref-breadcrumb {
+          display: block;
+          margin-bottom: 4px;
+          font-weight: 600;
+        }
+
+        .ref-fallback {
+          display: block;
+          color: #666;
+          font-size: 3.7vw;
+        }
+
+        .snippet {
+          margin: 4px 0 0;
+          white-space: normal;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
+
         .source-title {
           font-size: 6vw; 
           line-height: 6vw;
@@ -152,6 +180,24 @@
     <!--LOCAL SCRIPT-->
     
     <script>
+    const formatRefDisplay = (source) => {
+      const rawRef = source.ref || '';
+      const rawHeRef = source.heRef || rawRef;
+
+      const pieces = rawRef
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+      const breadcrumb = pieces.length > 1 ? pieces.join(' › ') : rawHeRef;
+      const hasDifferentFallback = rawHeRef && rawHeRef !== breadcrumb;
+
+      return {
+        breadcrumb,
+        fallback: hasDifferentFallback ? rawHeRef : ''
+      };
+    };
+
     $('.button').click(() => {
         let filterVal = $('.select-filters').val();
         console.log(filterVal);
@@ -172,12 +218,16 @@
             $('.suggestions').html('');
             for (let i = 0; i < response.length; i++) {
                 let rtl = response[i]["_source"]["lang"];
+                const source = response[i]["_source"];
+                const refDisplay = formatRefDisplay(source);
                 let text = `
                     <div class='source ${rtl}'>
-                      <h3 class='ref' number='${i}'>${response[i]["_source"]["heRef"]}
-                        <p class='hidden source-${i}' hidden>${response[i]["_source"]["ref"]}</p>
+                      <h3 class='ref' number='${i}'>
+                        <span class='ref-breadcrumb'>${refDisplay.breadcrumb}</span>
+                        ${refDisplay.fallback ? `<span class='ref-fallback'>${refDisplay.fallback}</span>` : ''}
                       </h3>
-                        <p>
+                        <p class='hidden source-${i}' hidden>${source["ref"]}</p>
+                        <p class='snippet'>
                           ${response[i]["highlight"]["naive_lemmatizer"][0]}
                         </p>
                     </div>
