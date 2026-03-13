@@ -1,3 +1,7 @@
+## Archived planning note
+
+This document captures a pre-implementation audit/plan and is kept for historical context. Current behavior should be read from `main.html` + `Code.gs`; this plan is not a roadmap commitment.
+
 # Version Selection Flow Audit + UI/UX Upgrade Plan (No Implementation)
 
 ## Current flow audit
@@ -11,7 +15,7 @@ Current assumptions in the client logic:
 - `dataIn.versionTitle` is the selected translation version title.
 - `dataIn.heVersionTitle` is the selected Hebrew version title.
 - `dataIn.versions` is iterable and each item has at least `language` + `versionTitle`.
-- Any non-`en` language is currently treated as Hebrew (legacy assumption in a TODO comment).
+- Earlier builds treated non-`en` languages as Hebrew; current code now normalizes Hebrew/Translation/Other groups.
 
 ## Observed metadata shape in `dataIn.versions`
 

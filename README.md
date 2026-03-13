@@ -23,7 +23,7 @@ The codebase is intentionally lightweight and Apps Script-native (no heavy local
 - **Orthography controls** (nekudot, ta'amim, Sheimot replacement options).
 - **Version-aware insertion** for Hebrew/English text versions.
 - **Optional English translation attribution** checkbox:
-  - Adds attribution block below English-only insertions.
+  - Adds attribution block below Translation-only insertions.
   - Adds attribution block below bilingual table insertions.
   - Attribution format:
     - first line: `<versionTitle>`
@@ -38,7 +38,7 @@ In the **Insert Source** sidebar, the checkbox:
 controls whether attribution is appended to English output.
 
 Behavior details:
-1. Attribution is only relevant when English text is inserted (English-only or bilingual output).
+1. Attribution is only relevant when Translation text is inserted (Translation-only or bilingual output).
 2. The formatter first uses `data.versionSource` when present.
 3. If missing, it falls back to searching `data.versions` for a matching English version title.
 4. If no source is found, it still emits a version-title-only attribution block.
@@ -85,7 +85,7 @@ Before opening a PR against the real add-on app repo, validate in a **separate t
 4. Open a non-production Google Doc dedicated for testing.
 5. Run the add-on in test mode and verify:
    - source insertion still works,
-   - English-only insertion with checkbox ON includes attribution block below translation,
+   - Translation-only insertion with checkbox ON includes attribution block below translation,
    - bilingual insertion with checkbox ON includes attribution block below the table,
    - checkbox OFF omits attribution,
    - missing metadata still produces version-title-only fallback,
