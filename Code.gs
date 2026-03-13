@@ -128,6 +128,16 @@ function testRef() {
 }
 
 function formatDataForPesukim(data, pesukim) {
+  const hasLineMarkerableContent = (value) => {
+    if (!Array.isArray(value)) {
+      return false;
+    }
+    return value.some((item) => Array.isArray(item) || typeof item === 'string');
+  };
+
+  const lineMarkersAvailable = hasLineMarkerableContent(data.he) || hasLineMarkerableContent(data.text);
+  data.lineMarkersAvailable = lineMarkersAvailable;
+  data.lineMarkersApplied = !!(lineMarkersAvailable && pesukim);
 
   let heTextWrapper = "", enTextWrapper = "", fromVerse = (data["sections"][1]) ? data["sections"][1] : 1;
   
@@ -135,6 +145,8 @@ function formatDataForPesukim(data, pesukim) {
     let editedText = text;
     if(pesukim) {
         editedText = "("+gematriya(number, {punctuate: false})+") "+text+"\n";
+    } else {
+        editedText = text + "\n";
     }
     wrapper+=editedText;
     return wrapper;
@@ -143,6 +155,8 @@ function formatDataForPesukim(data, pesukim) {
     let editedText = text;
       if(pesukim) {
         editedText = "("+number+") "+text+"\n";
+      } else {
+        editedText = text + "\n";
       };
       wrapper+=editedText;
       return wrapper;
@@ -216,7 +230,8 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
   let title = (preferredTitle) ? preferredTitle : data.ref;
 
   //add pesukim if user wants
-  data = formatDataForPesukim(data, pasukPreference);
+  const includeLineMarkers = pasukPreference === true || pasukPreference === 'true';
+  data = formatDataForPesukim(data, includeLineMarkers);
 
   let doc = DocumentApp.getActiveDocument().getBody();
   let docWrapper = DocumentApp.getActiveDocument();
