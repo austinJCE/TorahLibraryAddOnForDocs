@@ -120,6 +120,7 @@
         <nav name="options">
           <p>
             <input type="checkbox" class="wants-pesukim" checked>Pesukim/line markers
+            <span class="pesukim-help" style="display:block; margin-left: 20px; font-size: 11px; color: #666;">Applies to segmented refs (e.g., verse/line ranges).</span>
             <label style="display: inline-block; margin-left: 5px;">Output mode
             <select class="output-mode-selection">
               <option value="both" selected>Hebrew + Translation</option>
@@ -175,6 +176,24 @@
                         }  
                   });
 
+      const updatePesukimAvailability = (response) => {
+        const supportsLineMarkers = !!(
+          response && (
+            Array.isArray(response.he) ||
+            Array.isArray(response.text) ||
+            response.lineMarkersAvailable === true
+          )
+        );
+
+        $('.wants-pesukim').prop('disabled', !supportsLineMarkers);
+        if (!supportsLineMarkers) {
+          $('.wants-pesukim').prop('checked', false);
+          $('.pesukim-help').text('Line markers are unavailable for this selection (single-block text).');
+        } else {
+          $('.pesukim-help').text('Applies to segmented refs (e.g., verse/line ranges).');
+        }
+      };
+
       const setInsertButtonState = (enabled) => {
         $('.submit').prop('disabled', !enabled);
       };
@@ -207,7 +226,7 @@
         let outputMode = $('.output-mode-selection').val();
         let language = (outputMode === 'both') ? undefined : outputMode;
 
-        let showPesukim = ($('.wants-pesukim').is(':checked')) ? true : false;
+        let showPesukim = Boolean($('.wants-pesukim').prop('checked'));
         let includeTranslationSourceInfo = $('.include-translation-source-info').is(':checked');
         let input = $('.input').val();
         $('.hide').add($('.warning')).fadeIn('1000');
@@ -239,6 +258,7 @@
 
           if (isResolvedReference(response)) {
             updateSuggestion(response, input);
+            updatePesukimAvailability(response);
             data = response;
             hasResolvedReference = true;
             setInsertButtonState(true);
@@ -247,6 +267,7 @@
 
           hasResolvedReference = false;
           setInsertButtonState(false);
+          updatePesukimAvailability(null);
           let prompt = buildDepthPrompt(response);
           $('.suggestions').html(`<br><b>${escapeHTML(prompt)}</b>`);
         }).withFailureHandler(() => {
@@ -255,6 +276,7 @@
           }
           hasResolvedReference = false;
           setInsertButtonState(false);
+          updatePesukimAvailability(null);
           $('.suggestions').html("<br><b>Enter a valid reference to insert.</b>");
         }).findReference(input);
       });
@@ -452,9 +474,11 @@
             if (!isResolvedReference(response)) {
               hasResolvedReference = false;
               setInsertButtonState(false);
+              updatePesukimAvailability(null);
               return;
             }
             updateSuggestion(response, title);
+            updatePesukimAvailability(response);
             data = response;
             hasResolvedReference = true;
             setInsertButtonState(true);
@@ -465,6 +489,7 @@
             }
             hasResolvedReference = false;
             setInsertButtonState(false);
+            updatePesukimAvailability(null);
           }).findReference(title, versions);
         }
 

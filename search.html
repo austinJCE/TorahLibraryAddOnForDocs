@@ -168,6 +168,7 @@
           <p>
             <input type="checkbox" class="wants-pagerank">Use PageRank
             <input type="checkbox" class="wants-pesukim" checked>Pesukim/line markers
+            <span style="display:block; margin-left: 20px; font-size: 11px; color: #666;">Shown when the selected result resolves to segmented lines/verses.</span>
             Output mode:
             <select class="output-mode-selection">
               <option value="both" selected>Hebrew + Translation</option>
@@ -226,7 +227,7 @@
 
       const outputMode = $('.output-mode-selection').val();
       const language = outputMode === 'both' ? undefined : outputMode;
-      const wantsPesukim = $('.wants-pesukim').is(':checked');
+      const wantsPesukim = Boolean($('.wants-pesukim').prop('checked'));
 
       $('.hide').add($('.warning')).fadeIn('1000');
       google.script.run.withSuccessHandler((payload) => {
