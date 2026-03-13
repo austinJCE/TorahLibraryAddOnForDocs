@@ -69,7 +69,8 @@ function getVersioningPreference() {
 }
 
 function findReference(reference, versions=undefined) {
-  //TODO - yes, this all works. But it would be nicer wrap all of this in a try-catch, or perhaps deal with it in another way, so it doesn't result in a runtime exception while the reference is incomplete (e.g. searching for "Shemo" yields no results until we get to "Shemot")
+  // Technical debt: this resolver still fails hard on incomplete/partial refs (e.g. "Shemo" before "Shemot").
+  // We should return structured "incomplete reference" states instead of relying on exception flow.
   //reference = "Shemot 12:1"; /* this is a test harness */
   Logger.log(`Reference: ${reference}`);
   let url = 'https://www.sefaria.org/api/texts/'
@@ -97,7 +98,8 @@ function findReference(reference, versions=undefined) {
   all representations of this data need to have these applied to them such that the preview is נאמן to what the actual
   ref will look like when inserted*/
 
-  // also not such good form to put so much into a try block, but not something which is hard to understand / breaks the code so fine for now (TODO)
+  // Technical debt: this try/catch currently wraps both fetch + text normalization + parsing.
+  // Narrowing the protected region would make failures easier to reason about.
 
     const userProperties = PropertiesService.getUserProperties();
     // see https://unicode.org/charts/PDF/U0590.pdf for Hebrew unicode values
@@ -106,7 +108,8 @@ function findReference(reference, versions=undefined) {
       json = json.replace(/[\u05BF-\u05C7]/g, ""); //in order to keep the makafs in
     }
     json = (userProperties.getProperty("teamim") == "false") ? json.replace(/[\u0591-\u05AF]/g, "") : json;
-    // the following regexs are awful, but this seems to be the best way to match without regard for vocalizations/trope currently (TODO)
+    // Technical debt: these Hebrew normalization regexes are broad and hard to maintain.
+    // Consolidate and document this logic so replacements remain predictable across niqqud/ta'amim variants.
     let meforashReplacement = userProperties.getProperty("meforash_replacement");
     json = (userProperties.getProperty("meforash_replace") == "true") ? json.replace(/י[\u0591-\u05C7]*ה[\u0591-\u05C7]*ו[\u0591-\u05C7]*ה[\u0591-\u05C7]*/g, meforashReplacement) : json;  
     json = (userProperties.getProperty("yaw_replace") == "true") ? json.replace(/\bי[\u0591-\u05C7]*ה[\u0591-\u05C7]*\b/g, userProperties.getProperty("yaw_replacement")) : json;
@@ -401,7 +404,8 @@ converts an html string (returned from the Sefaria API) to rich-text (using the 
 violates encapsulation principles because Google Apps Script for some reason doesn't allow for headless rich text (e.g. new Text()...)
 */
 function insertRichTextFromHTML(element, htmlString) {
-  // for economy's sake, the stripping of Davidson talmud (if preference is for translation without explanation) is done here, since we are already going through the tags. But this isn't the best design choice מבחינת the architectonics of the code. TODO
+  // Technical debt: text preprocessing concerns (e.g. translation cleanup) still live in the HTML parser path.
+  // Long-term, preprocessing should be separated from tag-to-rich-text rendering.
 
   element = element.editAsText();
   let buf = [];
