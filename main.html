@@ -179,6 +179,23 @@
         $('.submit').prop('disabled', !enabled);
       };
 
+      const isResolvedReference = (response) => {
+        return !!(response && response.ref && response.indexTitle && !response.error);
+      };
+
+      const buildDepthPrompt = (response) => {
+        let sectionNames = (response && Array.isArray(response.sectionNames)) ? response.sectionNames.filter(Boolean) : [];
+        if (sectionNames.length >= 2) {
+          return `Enter ${sectionNames[0]} and optionally a ${sectionNames[1]}. Specify a range with '-'.`;
+        }
+        if (sectionNames.length === 1) {
+          return `Enter ${sectionNames[0]}. Specify a range with '-'.`;
+        }
+        return `Enter a valid reference to insert.`;
+      };
+
+      let latestResolveRequestId = 0;
+
       let hasResolvedReference = false;
       setInsertButtonState(false);
 
@@ -207,54 +224,39 @@
       $('.input').keyup((e) => {
         let input = $('.input').val();
 
-
-        let onReturn = (response) => {
-
-                if (!response || !response.ref || !response.indexTitle) {
-                  hasResolvedReference = false;
-                  setInsertButtonState(false);
-                  return;
-                }
-
-                // get the chapter and verse references from the input string + title from API
-                let normalizedTitle = `${response.indexTitle} ${input.split(" ").pop()}`;
-
-                // check it against the reference from the API response to ensure that the suggestion is the most recent
-                if ( normalizedTitle == response.ref ) {
-                  console.log(`${normalizedTitle} and ${response.ref}`);
-                  updateSuggestion(response, input);
-                  data = response;
-                  hasResolvedReference = true;
-                  setInsertButtonState(true);
-                } else {
-                  hasResolvedReference = false;
-                  setInsertButtonState(false);
-                }
-
-              }
-        // check that pasuk, or at the very least perek, has been inputted
-        if(/\d/.test(input)) {
-
-          google.script.run.withSuccessHandler(onReturn).withFailureHandler(() => {
-            hasResolvedReference = false;
-            setInsertButtonState(false);
-          }).findReference(input);
-        }
-        else {
+        if (!input || !input.trim()) {
           hasResolvedReference = false;
           setInsertButtonState(false);
-
-          google.script.run.withSuccessHandler((txt) => {
-                let suggestion = `
-                <br>
-                  <b>Enter ${txt["sectionNames"][0]} and optionally a ${txt["sectionNames"][1]}. 
-                  Specify a range with '-'.
-                  </b>
-                `;
-                $('.suggestions').html(suggestion);
-          }).findReference(input);
-          
+          $('.suggestions').html("<b>Please enter the title of a text or a source to insert.</b>");
+          return;
         }
+
+        let requestId = ++latestResolveRequestId;
+        google.script.run.withSuccessHandler((response) => {
+          if (requestId !== latestResolveRequestId) {
+            return;
+          }
+
+          if (isResolvedReference(response)) {
+            updateSuggestion(response, input);
+            data = response;
+            hasResolvedReference = true;
+            setInsertButtonState(true);
+            return;
+          }
+
+          hasResolvedReference = false;
+          setInsertButtonState(false);
+          let prompt = buildDepthPrompt(response);
+          $('.suggestions').html(`<br><b>${escapeHTML(prompt)}</b>`);
+        }).withFailureHandler(() => {
+          if (requestId !== latestResolveRequestId) {
+            return;
+          }
+          hasResolvedReference = false;
+          setInsertButtonState(false);
+          $('.suggestions').html("<br><b>Enter a valid reference to insert.</b>");
+        }).findReference(input);
       });
 
       $.widget("custom.catcomplete", $.ui.autocomplete, {
@@ -442,10 +444,27 @@
           let enVersion = $('.translation-combobox').attr('data-selected-version') || enSelectedVersionTitle || $('.translation-combobox').val();
           let heVersion = $('.he-version-selection').val();
           let versions = {"en": enVersion, "he": heVersion};
+          let requestId = ++latestResolveRequestId;
           google.script.run.withSuccessHandler((response) => {
+            if (requestId !== latestResolveRequestId) {
+              return;
+            }
+            if (!isResolvedReference(response)) {
+              hasResolvedReference = false;
+              setInsertButtonState(false);
+              return;
+            }
             updateSuggestion(response, title);
             data = response;
+            hasResolvedReference = true;
+            setInsertButtonState(true);
             console.log(`data changed to ${data.heVersionTitle} and ${data.versionTitle}`);
+          }).withFailureHandler(() => {
+            if (requestId !== latestResolveRequestId) {
+              return;
+            }
+            hasResolvedReference = false;
+            setInsertButtonState(false);
           }).findReference(title, versions);
         }
 
