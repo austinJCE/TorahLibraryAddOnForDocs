@@ -74,12 +74,16 @@ function findReference(reference, versions=undefined) {
   Logger.log(`Reference: ${reference}`);
   let url = 'https://www.sefaria.org/api/texts/'
   
+  let encodedReference = encodeURIComponent(reference);
+
   if (versions) {
-    let versionedAdditions = `${reference}?ven=${versions.en}&vhe=${versions.he}&commentary=0&context=0`;
+    let encodedEnVersion = encodeURIComponent(versions.en || "");
+    let encodedHeVersion = encodeURIComponent(versions.he || "");
+    let versionedAdditions = `${encodedReference}?ven=${encodedEnVersion}&vhe=${encodedHeVersion}&commentary=0&context=0`;
     url = url + versionedAdditions;
   }
   else {
-    let nonVersionedAdditions = `${reference}?commentary=0&context=0`;
+    let nonVersionedAdditions = `${encodedReference}?commentary=0&context=0`;
     url = url + nonVersionedAdditions;
   }
 
@@ -204,6 +208,10 @@ function insertAttributionParagraph(paragraph, attributionText) {
 }
 
 function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null, includeTranslationSourceInfo = false) {
+  if (!data || !data.ref) {
+    throw new Error("Unable to insert source: no resolved reference.");
+  }
+
   //set title as preferred title (e.g. Bereishit instead of Genesis) if exists
   let title = (preferredTitle) ? preferredTitle : data.ref;
 
@@ -213,11 +221,18 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
   let doc = DocumentApp.getActiveDocument().getBody();
   let docWrapper = DocumentApp.getActiveDocument();
   let cursor = docWrapper.getCursor();
-  let currentElement = cursor.getElement();
-  let paragraphParent = currentElement.getParent();
+  let index = doc.getNumChildren();
 
-  //convert 0-index to 1-index
-  let index = paragraphParent.getChildIndex(currentElement) + 1;
+  if (cursor) {
+    let currentElement = cursor.getElement();
+    if (currentElement) {
+      let paragraphParent = currentElement.getParent();
+      if (paragraphParent) {
+        //convert 0-index to 1-index
+        index = paragraphParent.getChildIndex(currentElement) + 1;
+      }
+    }
+  }
   /* ---- test harness --- 
   let index = doc.getNumChildren()-1;
   */

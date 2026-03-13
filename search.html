@@ -244,7 +244,7 @@
 
                 
 
-                let wantsPesukim = $('.wants-pesukim').val();
+                let wantsPesukim = $('.wants-pesukim').is(':checked');
                 let number = element.children('.ref').first().attr('number');
                 let classname = `.source-${number}`;
                 let reference = $(classname).text();
@@ -255,8 +255,12 @@
                 google.script.run.withSuccessHandler((payload) => {
 
                       $('.hide').add($('.warning')).fadeOut('1000');
-                      google.script.run.insertReference(payload, language, wantsPesukim);
+                      google.script.run.withFailureHandler(() => {
+                        $('.hide').add($('.warning')).fadeOut('1000');
+                      }).insertReference(payload, language, wantsPesukim);
 
+                }).withFailureHandler(() => {
+                  $('.hide').add($('.warning')).fadeOut('1000');
                 }).findReference(reference);
             });
 

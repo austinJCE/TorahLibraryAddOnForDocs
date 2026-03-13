@@ -175,7 +175,17 @@
                         }  
                   });
 
+      const setInsertButtonState = (enabled) => {
+        $('.submit').prop('disabled', !enabled);
+      };
+
+      let hasResolvedReference = false;
+      setInsertButtonState(false);
+
       $('.submit').click(() => {
+        if (!hasResolvedReference || !data || !data.ref) {
+          return;
+        }
 
         let outputMode = $('.output-mode-selection').val();
         let language = (outputMode === 'both') ? undefined : outputMode;
@@ -185,6 +195,8 @@
         let input = $('.input').val();
         $('.hide').add($('.warning')).fadeIn('1000');
         google.script.run.withSuccessHandler(() => {
+          $('.hide').add($('.warning')).fadeOut('1000');
+        }).withFailureHandler(() => {
           $('.hide').add($('.warning')).fadeOut('1000');
         }).insertReference(data, language, showPesukim, input, includeTranslationSourceInfo);
         
@@ -198,6 +210,12 @@
 
         let onReturn = (response) => {
 
+                if (!response || !response.ref || !response.indexTitle) {
+                  hasResolvedReference = false;
+                  setInsertButtonState(false);
+                  return;
+                }
+
                 // get the chapter and verse references from the input string + title from API
                 let normalizedTitle = `${response.indexTitle} ${input.split(" ").pop()}`;
 
@@ -206,15 +224,25 @@
                   console.log(`${normalizedTitle} and ${response.ref}`);
                   updateSuggestion(response, input);
                   data = response;
+                  hasResolvedReference = true;
+                  setInsertButtonState(true);
+                } else {
+                  hasResolvedReference = false;
+                  setInsertButtonState(false);
                 }
 
               }
         // check that pasuk, or at the very least perek, has been inputted
         if(/\d/.test(input)) {
 
-          google.script.run.withSuccessHandler(onReturn).findReference(input);
+          google.script.run.withSuccessHandler(onReturn).withFailureHandler(() => {
+            hasResolvedReference = false;
+            setInsertButtonState(false);
+          }).findReference(input);
         }
         else {
+          hasResolvedReference = false;
+          setInsertButtonState(false);
 
           google.script.run.withSuccessHandler((txt) => {
                 let suggestion = `
@@ -423,6 +451,7 @@
 
         $('.translation-combobox').attr('data-selected-version', enSelectedVersionTitle);
         $('.translation-combobox').catcomplete({
+          appendTo: '.suggestions',
           delay: 50,
           minLength: 0,
           source: (request, response) => {
@@ -438,7 +467,7 @@
             suppressTranslationChange = true;
             $('.translation-combobox').val(ui.item.label);
             $('.translation-combobox').attr('data-selected-version', ui.item.value);
-            let title = $('input').val();
+            let title = $('.input').val();
             getVersions(title);
           }
         }).on('focus', function() {
@@ -459,12 +488,12 @@
             return;
           }
           $('.translation-combobox').attr('data-selected-version', matched.value);
-          let title = $('input').val();
+          let title = $('.input').val();
           getVersions(title);
         });
         
         $('.he-version-selection').on('change', () => {
-          let title = $('input').val();
+          let title = $('.input').val();
           getVersions(title);
         });
       }
