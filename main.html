@@ -381,6 +381,8 @@
       width: 100%;
       text-align: left;
       margin-bottom: 6px;
+      display: block;
+      box-sizing: border-box;
     }
 
     .result-item.selected {
@@ -394,6 +396,7 @@
       font-weight: 600;
       color: var(--text);
       margin-bottom: 2px;
+      overflow-wrap: anywhere;
     }
 
     .result-type {
@@ -410,6 +413,7 @@
     .result-snippet {
       font-size: 12px;
       color: var(--muted);
+      overflow-wrap: anywhere;
     }
 
     .preview-table {
@@ -427,6 +431,7 @@
       font-size: 12px;
       color: var(--muted);
       margin-bottom: 6px;
+      overflow-wrap: anywhere;
     }
 
     .preview-he {
@@ -720,6 +725,7 @@
           $('.hide').add($('.warning')).fadeOut('1000');
         }).withFailureHandler(() => {
           $('.hide').add($('.warning')).fadeOut('1000');
+          $('.suggestions').prepend("<div class='result-subtitle'><b>Could not insert at the current selection. Place the cursor where you want the source inserted, then try again.</b></div>");
         }).insertReference(data, language, showPesukim, input, includeTranslationSourceInfo, bilingualLayout);
         
         
@@ -750,7 +756,7 @@
           const typeBadge = item.typeLabel ? `<div class='result-type'>${escapeHTML(item.typeLabel)}</div>` : '';
           const subtitle = item.subtitle ? `<div class='result-subtitle'>${escapeHTML(item.subtitle)}</div>` : '';
           const snippet = item.snippet ? `<div class='result-snippet'>${item.snippet}</div>` : '';
-          $list.append(`<li><button class='result-item ${selectedClass}' data-key='${escapeHTML(item.key)}' data-ref='${escapeHTML(item.ref)}' aria-pressed='${item.key === selectedResultKey ? 'true' : 'false'}'>${typeBadge}<div class='result-title'>${escapeHTML(item.label)}</div>${subtitle}${snippet}</button></li>`);
+          $list.append(`<li class='result-item ${selectedClass}' data-key='${escapeHTML(item.key)}' data-ref='${escapeHTML(item.ref)}' role='button' tabindex='0' aria-pressed='${item.key === selectedResultKey ? 'true' : 'false'}'>${typeBadge}<div class='result-title'>${escapeHTML(item.label)}</div>${subtitle}${snippet}</li>`);
         });
       };
 
@@ -771,13 +777,13 @@
         const display = formatRefForResult(ref);
         const sourcePath = Array.isArray(source.path) ? source.path.filter(Boolean) : [];
         const breadcrumb = sourcePath.length > 1
-          ? sourcePath.slice(1).join(' › ')
+          ? sourcePath.slice(0, -1).join(' › ')
           : (display.subtitle || source.heRef || '');
 
         return {
           key: `${keyPrefix}-${index}-${ref || index}`,
           ref,
-          label: sourcePath[0] || display.label || ref || 'Result',
+          label: sourcePath[sourcePath.length - 1] || display.label || ref || 'Result',
           subtitle: breadcrumb,
           snippet,
           typeLabel
@@ -918,7 +924,9 @@
               ul.append(`<li class='ui-autocomplete-category'>${item.category}</li>`);
               currentCategory = item.category;
             }
-            $('<li>').append(`<div>${item.label}</div>`).appendTo(ul).data('ui-autocomplete-item', item);
+            $('<li>').append(`<div>${item.label}</div>`).appendTo(ul)
+              .data('item.autocomplete', item)
+              .data('ui-autocomplete-item', item);
           });
         }
       });
