@@ -466,14 +466,38 @@
       margin-top: 10px;
       border-top: 1px solid var(--border);
       padding-top: 8px;
+      opacity: 0.9;
     }
 
     .advanced-version-details summary {
       font-size: 12px;
       font-weight: 600;
-      color: #444;
+      color: #555;
       cursor: pointer;
       list-style: none;
+    }
+
+    .advanced-version-note {
+      margin: 6px 0 0;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .section-muted {
+      opacity: 0.55;
+    }
+
+    .noninsertable-warning {
+      border: 1px solid #e7c97a;
+      background: #fff7e0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 4px;
+    }
+
+    .noninsertable-warning .preview-state-title {
+      color: #6a4d00;
+      margin-bottom: 4px;
     }
 
     .advanced-version-details summary::-webkit-details-marker {
@@ -654,7 +678,8 @@
         <div class="versions-panel">
           <div class="version-control translation-version-control"></div>
           <details class="advanced-version-details">
-            <summary>Advanced source options</summary>
+            <summary>Source edition (advanced)</summary>
+            <p class="advanced-version-note">Optional: choose a specific Hebrew/source edition only when needed.</p>
             <div class="version-control hebrew-version-control"></div>
           </details>
         </div>
@@ -764,6 +789,20 @@
         $('.advanced-version-details').toggle(outputMode !== 'en');
       };
 
+      const normalizeOptionText = (value) => {
+        return String(value || '')
+          .replace(/&nbsp;/gi, ' ')
+          .replace(/<[^>]*>/g, '')
+          .replace(/^[\s\-–—:•·]+/, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
+
+      const updateActionabilityUI = (state) => {
+        const isActionable = !!(state && state.isInsertable);
+        $('.display-section, .layout-section, .options-section, .versions-section').toggleClass('section-muted', !isActionable);
+      };
+
       const syncDisplayModeCards = () => {
         let outputMode = $('.output-mode-selection').val();
         $('.mode-card').each(function() {
@@ -818,7 +857,7 @@
 
       const buildNonInsertableMessage = (response) => {
         const state = getResolvedNodeState(response);
-        return `${buildPreviewMeta(response && (response.ref || response.heRef), response || '')}<h4 class='preview-state-title'>This is a structural node</h4><p class='preview-state-message'>${escapeHTML(state.prompt)} Insert will be enabled once you select a text-bearing ref.</p>`;
+        return `${buildPreviewMeta(response && (response.ref || response.heRef), response || '')}<div class='noninsertable-warning'><h4 class='preview-state-title'>This is a section, not a directly insertable text.</h4><p class='preview-state-message'>Choose a subsection or more specific reference to preview and insert.</p><p class='preview-state-message'>${escapeHTML(state.prompt)}</p></div>`;
       };
 
       const buildDepthPrompt = (response) => {
@@ -919,6 +958,7 @@
         updatePesukimAvailability(null);
         $('.result-item').removeClass('selected').attr('aria-pressed', 'false');
         $('.suggestions').html("<b>Select a result to preview it.</b>");
+        updateActionabilityUI({ isInsertable: false });
         updateResultsVisibility();
       };
 
@@ -977,6 +1017,7 @@
         if (!input) {
           queryState = { libraryMatches: [], searchResults: [] };
           renderResults();
+          updateActionabilityUI({ isInsertable: false });
           $('.suggestions').html("<b>Please enter a reference, title, or phrase.</b>");
           return;
         }
@@ -1049,6 +1090,7 @@
             }
             updateSuggestion(response, inputLabel);
             updatePesukimAvailability(response);
+            updateActionabilityUI(nodeState);
             data = response;
             hasResolvedReference = true;
             setInsertButtonState(true);
@@ -1058,11 +1100,12 @@
           hasResolvedReference = false;
           setInsertButtonState(false);
           if (selectedResultSummary) {
-            selectedResultSummary.status = 'Needs a more specific ref';
+            selectedResultSummary.status = 'Choose a more specific ref';
             updateResultsVisibility();
           }
           clearVersionSelectors();
           updatePesukimAvailability(null);
+          updateActionabilityUI(nodeState);
           $('.suggestions').html(`<br>${buildNonInsertableMessage(response)}`);
         }).withFailureHandler(() => {
           if (requestId !== latestResolveRequestId) {
@@ -1072,6 +1115,7 @@
           setInsertButtonState(false);
           clearVersionSelectors();
           updatePesukimAvailability(null);
+          updateActionabilityUI({ isInsertable: false });
           $('.suggestions').html("<br><b>Enter a valid reference to insert.</b>");
         }).findReference(selectedRef);
       };
@@ -1167,16 +1211,23 @@
 
       function normalizeLanguage(version) {
         let lang = ((version.actualLanguage || version.language || "") + "").toLowerCase().trim();
-        if (["he", "heb", "hebrew"].indexOf(lang) >= 0) {
+        let family = (version.languageFamilyName || "").toString().trim();
+        let normalizedFamily = family ? family.charAt(0).toUpperCase() + family.slice(1) : "";
+
+        if (["he", "heb", "hebrew"].indexOf(lang) >= 0 || /hebrew/i.test(family)) {
           return { key: "he", label: "Hebrew" };
         }
-        if (["en", "eng", "english"].indexOf(lang) >= 0 || !lang) {
+        if (["en", "eng", "english"].indexOf(lang) >= 0 || /english/i.test(family)) {
+          return { key: "en", label: "English" };
+        }
+        if (!lang && normalizedFamily) {
+          return { key: `other:${normalizedFamily.toLowerCase()}`, label: normalizedFamily };
+        }
+        if (!lang) {
           return { key: "en", label: "English" };
         }
 
-        let family = (version.languageFamilyName || "").toString().trim();
-        let label = family ? family.charAt(0).toUpperCase() + family.slice(1) : lang;
-        return { key: `other:${lang}`, label };
+        return { key: `other:${lang}`, label: normalizedFamily || lang };
       }
 
       function extractYear(version) {
@@ -1328,15 +1379,18 @@
 
         let translationItems = [];
         translationGroupLabels.forEach((groupLabel) => {
-          let cleanGroupLabel = String(groupLabel || '').replace(/\s+/g, ' ').trim() || 'Other';
+          let cleanGroupLabel = normalizeOptionText(groupLabel) || 'Other';
           if (!languageGroups[groupLabel] || languageGroups[groupLabel].length === 0) {
             return;
           }
           languageGroups[groupLabel].forEach((entry) => {
-            let cleanLabel = String(entry.label || entry.versionTitle || '').replace(/\s+/g, ' ').trim();
-            let normalizedLabel = cleanLabel.replace(/^[-–—:•\s]+/, '');
+            let cleanLabel = normalizeOptionText(entry.fullTitle || entry.label || entry.versionTitle);
+            let fallbackLabel = normalizeOptionText(entry.versionTitle);
+            let normalizedLabel = cleanLabel || fallbackLabel || `Translation ${entry.index + 1}`;
+            let optionLabel = `${cleanGroupLabel} — ${normalizedLabel}`;
             translationItems.push({
               label: normalizedLabel,
+              optionLabel,
               value: entry.versionTitle,
               category: cleanGroupLabel,
               searchable: `${normalizedLabel} ${entry.versionTitle} ${cleanGroupLabel}`.toLowerCase()
@@ -1361,7 +1415,7 @@
           } else {
             filtered.forEach((item) => {
               let selected = item.value === currentEnVersion ? 'selected' : '';
-              optionsHTML += `<option value="${escapeHTML(item.value)}" ${selected}>${escapeHTML(item.category)} - ${escapeHTML(item.label)}</option>`;
+              optionsHTML += `<option value="${escapeHTML(item.value)}" ${selected}>${escapeHTML(item.optionLabel)}</option>`;
             });
           }
 
@@ -1382,16 +1436,19 @@
             if (requestId !== latestResolveRequestId) {
               return;
             }
-            if (!getResolvedNodeState(response).isInsertable) {
+            const nodeState = getResolvedNodeState(response);
+            if (!nodeState.isInsertable) {
               hasResolvedReference = false;
               setInsertButtonState(false);
               clearVersionSelectors();
               updatePesukimAvailability(null);
+              updateActionabilityUI(nodeState);
               $('.suggestions').html(`<br>${buildNonInsertableMessage(response)}`);
               return;
             }
             updateSuggestion(response, inputTitle);
             updatePesukimAvailability(response);
+            updateActionabilityUI(nodeState);
             data = response;
             hasResolvedReference = true;
             setInsertButtonState(true);
@@ -1404,6 +1461,7 @@
             setInsertButtonState(false);
             clearVersionSelectors();
             updatePesukimAvailability(null);
+            updateActionabilityUI({ isInsertable: false });
           }).findReference(resolvedRef, versions);
         };
 
