@@ -247,7 +247,12 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
   let doc = DocumentApp.getActiveDocument().getBody();
   let docWrapper = DocumentApp.getActiveDocument();
   let cursor = docWrapper.getCursor();
+  let selection = docWrapper.getSelection();
   let index = doc.getNumChildren();
+
+  if (!cursor && selection) {
+    throw new Error("Please place the cursor where you want to insert the source. Inserting over selected text is not yet supported.");
+  }
 
   if (cursor) {
     let currentElement = cursor.getElement();
