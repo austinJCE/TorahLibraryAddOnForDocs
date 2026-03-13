@@ -23,11 +23,11 @@ The codebase is intentionally lightweight and Apps Script-native (no heavy local
 - **Orthography controls** (nekudot, ta'amim, Sheimot replacement options).
 - **Version-aware insertion** for Hebrew/English text versions.
 - **Optional English translation attribution** checkbox:
-  - Adds attribution line in English-only insertions.
-  - Adds an attribution row in bilingual table insertions.
+  - Adds attribution block below English-only insertions.
+  - Adds attribution block below bilingual table insertions.
   - Attribution format:
-    - `Translation: <versionTitle> | Source: <versionSource>` when source exists.
-    - `Translation: <versionTitle>` when only version title is available.
+    - first line: `<versionTitle>`
+    - optional metadata lines when available (`Source: <domain/url>`, `Digitization: ...`, `License: ...`)
 
 ## New optional translation/source attribution setting
 
@@ -41,7 +41,7 @@ Behavior details:
 1. Attribution is only relevant when English text is inserted (English-only or bilingual output).
 2. The formatter first uses `data.versionSource` when present.
 3. If missing, it falls back to searching `data.versions` for a matching English version title.
-4. If no source is found, it still emits translation-only attribution.
+4. If no source is found, it still emits a version-title-only attribution block.
 5. If no `versionTitle` is available, no attribution is inserted.
 
 ## Repository structure
@@ -85,10 +85,10 @@ Before opening a PR against the real add-on app repo, validate in a **separate t
 4. Open a non-production Google Doc dedicated for testing.
 5. Run the add-on in test mode and verify:
    - source insertion still works,
-   - English-only insertion with checkbox ON includes attribution,
-   - bilingual insertion with checkbox ON includes attribution row in English column,
+   - English-only insertion with checkbox ON includes attribution block below translation,
+   - bilingual insertion with checkbox ON includes attribution block below the table,
    - checkbox OFF omits attribution,
-   - missing `versionSource` still produces translation-only fallback,
+   - missing metadata still produces version-title-only fallback,
    - existing preferences behavior is unchanged.
 6. Only after successful test validation, prepare your PR to the real app repository.
 

@@ -1,6 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { getEnglishAttribution } = require('../attribution.js');
+const {
+  getEnglishAttributionDetails,
+  getEnglishAttributionLines,
+  getEnglishAttribution,
+} = require('../attribution.js');
 
 test('returns empty string when version title is missing', () => {
   assert.equal(getEnglishAttribution({}), '');
@@ -15,7 +19,7 @@ test('formats attribution with version and direct source', () => {
 
   assert.equal(
     getEnglishAttribution(data),
-    'Translation: JPS 1917 | Source: https://example.com/jps-1917'
+    'JPS 1917\nSource: example.com'
   );
 });
 
@@ -30,7 +34,7 @@ test('falls back to matching source from versions list', () => {
 
   assert.equal(
     getEnglishAttribution(data),
-    'Translation: Steinsaltz | Source: https://example.com/stein'
+    'Steinsaltz\nSource: example.com'
   );
 });
 
@@ -40,5 +44,36 @@ test('uses translation-only fallback when no source is available', () => {
     versions: [{ language: 'en', versionTitle: 'No Source Translation' }],
   };
 
-  assert.equal(getEnglishAttribution(data), 'Translation: No Source Translation');
+  assert.equal(getEnglishAttribution(data), 'No Source Translation');
+});
+
+test('includes digitization and license metadata when present', () => {
+  const data = {
+    versionTitle: 'JPS 1917',
+    versionSource: 'https://example.com/jps-1917',
+    versionDigitizedBy: 'Sefaria',
+    versionLicense: 'CC-BY-NC',
+  };
+
+  assert.deepEqual(getEnglishAttributionLines(data), [
+    'JPS 1917',
+    'Source: example.com',
+    'Digitization: Sefaria',
+    'License: CC-BY-NC',
+  ]);
+});
+
+test('returns structured attribution details', () => {
+  const data = {
+    versionTitle: 'JPS 1917',
+    versionSource: 'https://example.com/jps-1917',
+  };
+
+  assert.deepEqual(getEnglishAttributionDetails(data), {
+    versionTitle: 'JPS 1917',
+    source: 'https://example.com/jps-1917',
+    sourceDisplay: 'example.com',
+    digitization: '',
+    license: '',
+  });
 });

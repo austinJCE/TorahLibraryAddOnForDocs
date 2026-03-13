@@ -206,7 +206,15 @@ function formatDataForPesukim(data, pesukim) {
   return data;
 };
 
-function insertAttributionParagraph(paragraph, attributionText) {
+function getAttributionParagraphText(attributionLines) {
+  if (!attributionLines || !Array.isArray(attributionLines) || attributionLines.length === 0) {
+    return "";
+  }
+  return attributionLines.join("\n");
+}
+
+function insertAttributionParagraph(paragraph, attributionLines) {
+  const attributionText = getAttributionParagraphText(attributionLines);
   if (!attributionText) {
     return;
   }
@@ -262,7 +270,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
     noUnderline[DocumentApp.Attribute.UNDERLINE] = false;
 
   let shouldIncludeEnglishAttribution = includeTranslationSourceInfo && singleLanguage != "he";
-  let attributionText = (shouldIncludeEnglishAttribution) ? getEnglishAttribution(data) : "";
+  let attributionLines = (shouldIncludeEnglishAttribution) ? getEnglishAttributionLines(data) : [];
   
   if (singleLanguage) {
 
@@ -283,9 +291,9 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
     }
     mainTextParagraph.setLeftToRight(ltr);
 
-    if (singleLanguage == "en" && attributionText) {
+    if (singleLanguage == "en" && attributionLines.length > 0) {
       let attributionParagraph = doc.insertParagraph(index+2, "");
-      insertAttributionParagraph(attributionParagraph, attributionText);
+      insertAttributionParagraph(attributionParagraph, attributionLines);
     }
 
   }
@@ -332,18 +340,9 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
     insertRichTextFromHTML(hebText, data.he);
     hebText.setAttributes(noUnderline);
 
-    if (shouldIncludeEnglishAttribution && attributionText) {
-      let attributionRow = table.appendTableRow();
-      let engAttributionCell = attributionRow.appendTableCell("");
-      let hebAttributionCell = attributionRow.appendTableCell("");
-
-      let engAttribution = engAttributionCell.insertParagraph(0, "");
-      insertAttributionParagraph(engAttribution, attributionText);
-
-      let hebAttribution = hebAttributionCell.insertParagraph(0, "");
-      hebAttribution.setText("");
-      hebAttribution.setLeftToRight(false);
-      hebAttribution.setAttributes(nullStyle);
+    if (shouldIncludeEnglishAttribution && attributionLines.length > 0) {
+      let attributionParagraph = doc.insertParagraph(index + 1, "");
+      insertAttributionParagraph(attributionParagraph, attributionLines);
     }
 
     /* the constraints of insertParagraph mean that there will always be an extra line break in table cells to which we dynamically add text. See https://stackoverflow.com/questions/39506414/remove-newline-from-google-doc-table-content.
