@@ -70,10 +70,15 @@
       background: var(--selected);
       color: #fff;
       padding: 10px 12px;
+      min-height: 42px;
       font-size: 13px;
       font-weight: 600;
       width: auto !important;
       margin: 0;
+      align-self: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     #run-sefaria:disabled {
@@ -128,6 +133,13 @@
       justify-content: space-between;
       width: 100%;
       cursor: pointer;
+      font-size: 14px;
+    }
+
+    .mode-card > span:first-child {
+      flex: 1;
+      text-align: left;
+      margin-right: 10px;
     }
 
     .mode-card:hover {
@@ -283,7 +295,10 @@
       background: #fff;
       padding: 8px 10px;
       font-size: 14px;
+      min-height: 38px;
+      line-height: 1.3;
     }
+
 
     .suggestions {
       margin: 0;
@@ -637,6 +652,34 @@
           .replace(/'/g, '&#39;');
       }
 
+      function formatBreadcrumb(refValue) {
+        let ref = String(refValue || '').trim();
+        if (!ref) {
+          return '';
+        }
+
+        let commaParts = ref.split(',').map((part) => part.trim()).filter(Boolean);
+        if (commaParts.length <= 1) {
+          return ref;
+        }
+
+        let title = commaParts[0];
+        let pathPart = commaParts.slice(1).join(', ');
+        let pathPieces = pathPart.split(':').map((part) => part.trim()).filter(Boolean);
+        if (!pathPieces.length) {
+          return ref;
+        }
+
+        return [title].concat(pathPieces).join(' › ');
+      }
+
+      function buildPreviewMeta(primaryRef, fallbackRef) {
+        let breadcrumb = formatBreadcrumb(primaryRef);
+        let fallback = String(fallbackRef || primaryRef || '').trim();
+        let display = breadcrumb || fallback;
+        return `<div class='preview-meta'>${escapeHTML(display)}</div>`;
+      }
+
       function normalizeLanguage(version) {
         let lang = ((version.actualLanguage || version.language || "") + "").toLowerCase().trim();
         if (["he", "heb", "hebrew"].indexOf(lang) >= 0) {
@@ -800,11 +843,11 @@
         <table class='preview-table'>
           <tr>
             <td>
-              <div class='preview-meta'>${inputTitle}</div>
+              ${buildPreviewMeta(dataIn.ref, inputTitle)}
               ${dataIn.text}
             </td>
             <td class='preview-he'>
-              <div class='preview-meta'>${dataIn.heRef}</div>
+              ${buildPreviewMeta(dataIn.heRef, dataIn.ref)}
               ${dataIn.he}
             </td>
           </tr>
@@ -814,7 +857,40 @@
         $('.hebrew-version-control').html(selectVersionHebrew);
         $('.suggestions').html(suggestion);
 
-        let suppressTranslationChange = false;
+        const applyTranslationSelection = (item) => {
+          if (!item) {
+            return false;
+          }
+          $('.translation-combobox').val(item.label);
+          $('.translation-combobox').attr('data-selected-version', item.value);
+          getVersions();
+          return true;
+        };
+
+        const resolveTranslationInput = () => {
+          let typedValue = ($('.translation-combobox').val() || '').trim();
+          if (!typedValue) {
+            $('.translation-combobox').val(enSelectedVersionTitle);
+            $('.translation-combobox').attr('data-selected-version', enSelectedVersionTitle);
+            return;
+          }
+
+          let lower = typedValue.toLowerCase();
+          let matched = translationItems.find((item) => item.label === typedValue || item.value === typedValue);
+          if (!matched) {
+            let containsMatches = translationItems.filter((item) => {
+              return item.label.toLowerCase().indexOf(lower) >= 0 || item.value.toLowerCase().indexOf(lower) >= 0;
+            });
+            if (containsMatches.length === 1) {
+              matched = containsMatches[0];
+            }
+          }
+
+          if (!applyTranslationSelection(matched)) {
+            $('.translation-combobox').val(enSelectedVersionTitle);
+            $('.translation-combobox').attr('data-selected-version', enSelectedVersionTitle);
+          }
+        };
 
         let getVersions = () => {
           let enVersion = $('.translation-combobox').attr('data-selected-version') || enSelectedVersionTitle || $('.translation-combobox').val();
@@ -870,37 +946,27 @@
           focus: (event) => event.preventDefault(),
           select: (event, ui) => {
             event.preventDefault();
-            suppressTranslationChange = true;
-            $('.translation-combobox').val(ui.item.label);
-            $('.translation-combobox').attr('data-selected-version', ui.item.value);
-            getVersions();
+            applyTranslationSelection(ui.item);
+          },
+          change: (event, ui) => {
+            if (ui && ui.item) {
+              applyTranslationSelection(ui.item);
+              return;
+            }
+            resolveTranslationInput();
           }
         }).on('focus', function() {
           $(this).catcomplete('search', $(this).val());
-        });
-
-        $('.translation-combobox').on('change', () => {
-          if (suppressTranslationChange) {
-            suppressTranslationChange = false;
-            return;
+        }).on('keydown', function(event) {
+          if (event.key === 'ArrowDown' && !$(this).catcomplete('widget').is(':visible')) {
+            $(this).catcomplete('search', $(this).val());
           }
-
-          let typedValue = $('.translation-combobox').val();
-          let matched = translationItems.find((item) => item.label === typedValue || item.value === typedValue);
-          if (!matched) {
-            let containsMatches = translationItems.filter((item) => item.label.toLowerCase().indexOf((typedValue || '').toLowerCase()) >= 0);
-            if (containsMatches.length === 1) {
-              matched = containsMatches[0];
-            }
+          if (event.key === 'Enter' && !$(this).catcomplete('widget').is(':visible')) {
+            event.preventDefault();
+            resolveTranslationInput();
           }
-          if (!matched) {
-            $('.translation-combobox').val(enSelectedVersionTitle);
-            $('.translation-combobox').attr('data-selected-version', enSelectedVersionTitle);
-            return;
-          }
-          $('.translation-combobox').val(matched.label);
-          $('.translation-combobox').attr('data-selected-version', matched.value);
-          getVersions();
+        }).on('blur', function() {
+          setTimeout(resolveTranslationInput, 0);
         });
         
         $('.he-version-selection').on('change', () => {
