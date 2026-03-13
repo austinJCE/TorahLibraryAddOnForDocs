@@ -686,16 +686,22 @@ function transformDivineNames() {
   const docText = DocumentApp.getActiveDocument().getBody().editAsText();
   const text = docText.getText();
   const prefs = getPreferences();
+  const hebrewMarks = "\\u0591-\\u05C7";
+  const hebrewChars = "\\u0590-\\u05FF";
+  const replaceHebrewWord = (input, tokenPattern, replacement) => {
+    const wrappedPattern = new RegExp(`(^|[^${hebrewChars}])(${tokenPattern})(?=$|[^${hebrewChars}])`, 'g');
+    return input.replace(wrappedPattern, (match, prefix) => `${prefix}${replacement}`);
+  };
   let transformed = text;
 
   if (prefs.meforash_replace == "true") {
-    transformed = transformed.replace(/י[\u0591-\u05C7]*ה[\u0591-\u05C7]*ו[\u0591-\u05C7]*ה[\u0591-\u05C7]*/g, prefs.meforash_replacement || "ה'");
+    transformed = replaceHebrewWord(transformed, `י[${hebrewMarks}]*ה[${hebrewMarks}]*ו[${hebrewMarks}]*ה[${hebrewMarks}]*`, prefs.meforash_replacement || "ה'");
   }
   if (prefs.yaw_replace == "true") {
-    transformed = transformed.replace(/\bי[\u0591-\u05C7]*ה[\u0591-\u05C7]*\b/g, prefs.yaw_replacement || "קה");
+    transformed = replaceHebrewWord(transformed, `י[${hebrewMarks}]*ה[${hebrewMarks}]*`, prefs.yaw_replacement || "קה");
   }
   if (prefs.elodim_replace == "true") {
-    transformed = transformed.replace(/א[\u0591-\u05C7]*ל[\u0591-\u05C7]*ו[\u0591-\u05C7]*ה[\u0591-\u05C7]*י[\u0591-\u05C7]*ם[\u0591-\u05C7]*/g, prefs.elodim_replacement || "אלוקים");
+    transformed = replaceHebrewWord(transformed, `א[${hebrewMarks}]*ל[${hebrewMarks}]*(?:ו[${hebrewMarks}]*)?ה[${hebrewMarks}]*י[${hebrewMarks}]*ם[${hebrewMarks}]*`, prefs.elodim_replacement || "אלוקים");
   }
   if (prefs.god_replace == "true") {
     transformed = transformed.replace(/\bGod\b/g, prefs.god_replacement || "G-d");
@@ -707,20 +713,38 @@ function transformDivineNames() {
 function linkTextsWithSefaria() {
   const bodyText = DocumentApp.getActiveDocument().getBody().editAsText();
   const docText = bodyText.getText();
-  const candidateRegex = /\b(?:[1-3]\s)?[A-Za-z][A-Za-z.'’\-]*(?:\s+[A-Za-z][A-Za-z.'’\-]*){0,4}\s+\d+(?::\d+(?:-\d+)?)?\b/g;
+  const candidatePatterns = [
+    // e.g. Genesis 1:1, Genesis 1:1-2, I Kings 3
+    /\b(?:[1-3]|I{1,3})\s+[A-Za-z][A-Za-z.'’\-]*(?:\s+[A-Za-z][A-Za-z.'’\-]*){0,4}\s+\d+(?::\d+(?:-\d+)?)?\b/g,
+    /\b[A-Za-z][A-Za-z.'’\-]*(?:\s+[A-Za-z][A-Za-z.'’\-]*){0,4}\s+\d+(?::\d+(?:-\d+)?)?\b/g,
+    // e.g. Berakhot 2a
+    /\b[A-Za-z][A-Za-z.'’\-]*(?:\s+[A-Za-z][A-Za-z.'’\-]*){0,3}\s+\d+[ab]\b/gi
+  ];
   let match;
   let candidates = [];
+  const seen = {};
 
-  while ((match = candidateRegex.exec(docText)) !== null) {
-    candidates.push(match[0]);
-    if (candidates.length >= 80) {
-      break;
+  const normalizeCandidate = (candidate) => {
+    return String(candidate || '').trim().replace(/[.,;:!?]+$/g, '');
+  };
+
+  candidatePatterns.forEach((candidateRegex) => {
+    candidateRegex.lastIndex = 0;
+    while ((match = candidateRegex.exec(docText)) !== null) {
+      let normalized = normalizeCandidate(match[0]);
+      if (!normalized || seen[normalized]) {
+        continue;
+      }
+      seen[normalized] = true;
+      candidates.push(normalized);
+      if (candidates.length >= 120) {
+        break;
+      }
     }
-  }
+  });
 
   const resolvedMap = {};
-  const uniqueCandidates = [...new Set(candidates)];
-  uniqueCandidates.forEach((candidate) => {
+  candidates.forEach((candidate) => {
     const resolved = findReference(candidate);
     if (resolved && resolved.ref && !resolved.error) {
       resolvedMap[candidate] = `https://www.sefaria.org/${encodeURIComponent(resolved.ref).replace(/%20/g, '_')}`;
@@ -728,20 +752,23 @@ function linkTextsWithSefaria() {
   });
 
   let linkedCount = 0;
-  candidateRegex.lastIndex = 0;
-  while ((match = candidateRegex.exec(docText)) !== null) {
-    const url = resolvedMap[match[0]];
-    if (!url) {
-      continue;
+  candidatePatterns.forEach((candidateRegex) => {
+    candidateRegex.lastIndex = 0;
+    while ((match = candidateRegex.exec(docText)) !== null) {
+      let normalized = normalizeCandidate(match[0]);
+      const url = resolvedMap[normalized];
+      if (!url) {
+        continue;
+      }
+      const start = match.index;
+      const end = match.index + normalized.length - 1;
+      if (bodyText.getLinkUrl(start) || bodyText.getLinkUrl(end)) {
+        continue;
+      }
+      bodyText.setLinkUrl(start, end, url);
+      linkedCount++;
     }
-    const start = match.index;
-    const end = match.index + match[0].length - 1;
-    if (bodyText.getLinkUrl(start) || bodyText.getLinkUrl(end)) {
-      continue;
-    }
-    bodyText.setLinkUrl(start, end, url);
-    linkedCount++;
-  }
+  });
 
   DocumentApp.getUi().alert(`Linked ${linkedCount} recognizable reference${linkedCount === 1 ? '' : 's'} to Sefaria.`);
 }
@@ -761,12 +788,13 @@ function findSearch(input, filters, pageRank) {
 
    //h/t to Russell Neiss for the filters demo code
 
-   let filter_fields = Array(filters.length).fill("path");
+   let safeFilters = Array.isArray(filters) ? filters : [];
+   let filter_fields = Array(safeFilters.length).fill("path");
 
    let searchOptions = {
     'aggs': [],
     'field': 'naive_lemmatizer',
-    'filters': filters,
+    'filters': safeFilters,
     'filter_fields': filter_fields,
     'query': input,
     'size': 50,
@@ -790,8 +818,10 @@ function findSearch(input, filters, pageRank) {
   }
 
   let dataToSend = JSON.stringify(searchOptions);
-  let postOptions = { "method":"post",
-    "payload" : dataToSend  
+  let postOptions = {
+    "method":"post",
+    "payload" : dataToSend,
+    "contentType": "application/json"
   };
   let response = UrlFetchApp.fetch(url, postOptions).getContentText();
 

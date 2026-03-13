@@ -1003,7 +1003,9 @@
       const buildResultFromSource = (source, fallbackRef, keyPrefix, index, snippet, typeLabel) => {
         const ref = source.ref || fallbackRef || '';
         const display = formatRefForResult(ref);
-        const sourcePath = Array.isArray(source.path) ? source.path.filter(Boolean) : [];
+        const sourcePath = Array.isArray(source.path)
+          ? source.path.filter(Boolean)
+          : (typeof source.path === 'string' ? source.path.split('/').map((part) => part.trim()).filter(Boolean) : []);
         const breadcrumb = sourcePath.length > 1
           ? sourcePath.slice(0, -1).join(' › ')
           : (display.subtitle || source.heRef || '');
@@ -1055,13 +1057,17 @@
         const searchParameters = getSearchParameters();
         google.script.run.withSuccessHandler((response) => {
           if (requestId !== latestQueryRequestId) return;
-          const hits = (response || []).slice(0, 12);
+          const hits = (Array.isArray(response)
+            ? response
+            : (((response || {}).hits || {}).hits || [])).slice(0, 12);
           const libraryPathHits = [];
           const contentHits = [];
           hits.forEach((hit, index) => {
             const source = (hit && hit._source) ? hit._source : {};
             const snippet = hit && hit.highlight && hit.highlight.naive_lemmatizer && hit.highlight.naive_lemmatizer[0] ? hit.highlight.naive_lemmatizer[0] : '';
-            const pathDepth = Array.isArray(source.path) ? source.path.filter(Boolean).length : 0;
+            const pathDepth = Array.isArray(source.path)
+              ? source.path.filter(Boolean).length
+              : (typeof source.path === 'string' ? source.path.split('/').filter(Boolean).length : 0);
             if (pathDepth > 1) {
               libraryPathHits.push(buildResultFromSource(source, source.ref, 'library-search', index, snippet, 'Library path'));
               return;
