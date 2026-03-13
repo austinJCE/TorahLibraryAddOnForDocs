@@ -28,8 +28,8 @@ let extendedGemaraPreference = false;
 
 function onOpen() {
   DocumentApp.getUi().createAddonMenu()
-      .addItem('Insert Source', 'sefariaHTML')
-      .addItem('Search Texts', 'sefariaSearch')
+      .addItem('Find & Insert Source', 'sefariaHTML')
+      .addItem('Search Texts (legacy entry)', 'sefariaSearch')
       .addItem('Preferences', 'preferencesPopup')
       .addItem('Support', 'supportAndFeatureRequestPopup')
       .addItem('Popcorn (beta)', 'popcornHTML')
@@ -38,7 +38,7 @@ function onOpen() {
 
 function sefariaHTML() {
   onOpen();
-  let mainHTMLOutput = HtmlService.createHtmlOutputFromFile('main').setTitle('Insert Source').setWidth(300);
+  let mainHTMLOutput = HtmlService.createHtmlOutputFromFile('main').setTitle('Find & Insert Source').setWidth(300);
   DocumentApp.getUi().showSidebar(mainHTMLOutput);
   extendedGemaraPreference = PropertiesService.getUserProperties().getProperty("extended_gemara");
 }
@@ -546,12 +546,8 @@ function setPreferences(preferenceObject) {
 }
 
 function sefariaSearch() {
-  extendedGemaraPreference = PropertiesService.getUserProperties().getProperty("extended_gemara");
-  let searchGetHtml = HtmlService.createHtmlOutputFromFile('search')
-      .setTitle('Search All Texts')
-      .setWidth(300);
-  DocumentApp.getUi() 
-      .showSidebar(searchGetHtml);
+  // Legacy menu item now routes to the unified sidebar.
+  sefariaHTML();
 } 
 
 function returnTitles() {
