@@ -315,6 +315,19 @@
       margin-top: 10px;
     }
 
+    .version-control-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .version-count {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
     .version-label {
       display: block;
       margin-bottom: 4px;
@@ -449,6 +462,34 @@
       padding: 4px;
     }
 
+    .advanced-version-details {
+      margin-top: 10px;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+    }
+
+    .advanced-version-details summary {
+      font-size: 12px;
+      font-weight: 600;
+      color: #444;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .advanced-version-details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .advanced-version-details summary::before {
+      content: '▸';
+      margin-right: 6px;
+      color: #666;
+    }
+
+    .advanced-version-details[open] summary::before {
+      content: '▾';
+    }
+
     .results-header {
       display: flex;
       justify-content: space-between;
@@ -483,6 +524,19 @@
       color: var(--text);
       margin-bottom: 2px;
       overflow-wrap: anywhere;
+    }
+
+    .preview-state-title {
+      margin: 0 0 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .preview-state-message {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
     }
 
     .visually-hidden {
@@ -574,6 +628,14 @@
       <section class="options-section">
         <div class="section-label">Options</div>
         <div class="options-panel">
+          <div class="toggle-row">
+            <label for="wants-vowels">Vowels</label>
+            <input id="wants-vowels" type="checkbox" class="wants-vowels" checked>
+          </div>
+          <div class="toggle-row">
+            <label for="wants-cantillation">Cantillation</label>
+            <input id="wants-cantillation" type="checkbox" class="wants-cantillation" checked>
+          </div>
           <div class="toggle-row pesukim-wrapper">
             <label for="wants-pesukim">Line markers</label>
             <input id="wants-pesukim" type="checkbox" class="wants-pesukim" checked>
@@ -591,7 +653,10 @@
         <div class="section-label">Versions</div>
         <div class="versions-panel">
           <div class="version-control translation-version-control"></div>
-          <div class="version-control hebrew-version-control"></div>
+          <details class="advanced-version-details">
+            <summary>Advanced source options</summary>
+            <div class="version-control hebrew-version-control"></div>
+          </details>
         </div>
       </section>
 
@@ -628,6 +693,8 @@
       if (preferences.include_translation_source_info == "true") {
         $('.include-translation-source-info').prop('checked', true);
       }
+      $('.wants-vowels').prop('checked', preferences.nekudot !== "false");
+      $('.wants-cantillation').prop('checked', preferences.teamim !== "false");
     }).getPreferences();
 
     $('.include-translation-source-info').on('change', () => {
@@ -691,6 +758,12 @@
         $('.translation-details-row, .translation-details-help').toggle(outputMode === 'both' || outputMode === 'en');
       };
 
+      const updateVersionControlsVisibility = () => {
+        let outputMode = $('.output-mode-selection').val();
+        $('.translation-version-control').toggle(outputMode !== 'he');
+        $('.advanced-version-details').toggle(outputMode !== 'en');
+      };
+
       const syncDisplayModeCards = () => {
         let outputMode = $('.output-mode-selection').val();
         $('.mode-card').each(function() {
@@ -727,16 +800,25 @@
         return stripped.length > 0;
       };
 
-      const isInsertableReference = (response) => {
-        if (!isResolvedReference(response)) {
-          return false;
-        }
-        return hasRenderableText(response.text) || hasRenderableText(response.he);
+      const getResolvedNodeState = (response) => {
+        const resolved = isResolvedReference(response);
+        const hasText = hasRenderableText(response && response.text);
+        const hasHebrew = hasRenderableText(response && response.he);
+        const isInsertable = resolved && (hasText || hasHebrew);
+        const isStructural = resolved && !isInsertable;
+        return {
+          resolved,
+          hasText,
+          hasHebrew,
+          isInsertable,
+          isStructural,
+          prompt: buildDepthPrompt(response)
+        };
       };
 
       const buildNonInsertableMessage = (response) => {
-        const prompt = buildDepthPrompt(response);
-        return `<b>This result is not directly insertable yet.</b><br><span class='result-subtitle'>${escapeHTML(prompt)}</span>`;
+        const state = getResolvedNodeState(response);
+        return `${buildPreviewMeta(response && (response.ref || response.heRef), response || '')}<h4 class='preview-state-title'>This is a structural node</h4><p class='preview-state-message'>${escapeHTML(state.prompt)} Insert will be enabled once you select a text-bearing ref.</p>`;
       };
 
       const buildDepthPrompt = (response) => {
@@ -754,11 +836,20 @@
       let latestQueryRequestId = 0;
       let selectedResultKey = null;
       let selectedResultSummary = null;
+      let selectedRefValue = null;
       let queryState = { libraryMatches: [], searchResults: [] };
       let resultsCollapsed = false;
 
       let hasResolvedReference = false;
       setInsertButtonState(false);
+
+      const refreshSelectedResult = () => {
+        if (!selectedRefValue) {
+          return;
+        }
+        const fallbackLabel = selectedResultSummary && selectedResultSummary.label ? selectedResultSummary.label : selectedRefValue;
+        resolveSelectedResult(selectedRefValue, fallbackLabel);
+      };
 
       const clearVersionSelectors = () => {
         $('.translation-version-control').empty();
@@ -772,6 +863,14 @@
           relevanceSort: $('.wants-relevance').is(':checked')
         };
       };
+
+      $('.wants-vowels, .wants-cantillation').on('change', () => {
+        google.script.run.setPreferences({
+          nekudot: $('.wants-vowels').is(':checked'),
+          teamim: $('.wants-cantillation').is(':checked')
+        });
+        refreshSelectedResult();
+      });
 
       $('#insert-source').click(() => {
         if (!hasResolvedReference || !data || !data.ref) {
@@ -802,7 +901,7 @@
         $('.results-lists').toggle(!shouldCollapse);
         $('.results-toggle-button').toggle(!!selectedResultSummary).text(shouldCollapse ? 'Show results' : 'Hide results');
         if (shouldCollapse) {
-          $('.selected-result-summary').html(`<strong>${escapeHTML(selectedResultSummary.label)}</strong>${selectedResultSummary.subtitle ? `<div>${escapeHTML(selectedResultSummary.subtitle)}</div>` : ''}`).show();
+          $('.selected-result-summary').html(`<strong>${escapeHTML(selectedResultSummary.label)}</strong>${selectedResultSummary.subtitle ? `<div>${escapeHTML(selectedResultSummary.subtitle)}</div>` : ''}${selectedResultSummary.status ? `<div class='helper-text'>${escapeHTML(selectedResultSummary.status)}</div>` : ''}`).show();
         } else {
           $('.selected-result-summary').hide().empty();
         }
@@ -811,6 +910,7 @@
       const clearSelectedResult = () => {
         selectedResultKey = null;
         selectedResultSummary = null;
+        selectedRefValue = null;
         resultsCollapsed = false;
         hasResolvedReference = false;
         setInsertButtonState(false);
@@ -930,6 +1030,7 @@
       };
 
       const resolveSelectedResult = (selectedRef, inputLabel) => {
+        selectedRefValue = selectedRef;
         let requestId = ++latestResolveRequestId;
         hasResolvedReference = false;
         setInsertButtonState(false);
@@ -940,7 +1041,12 @@
             return;
           }
 
-          if (isInsertableReference(response)) {
+          const nodeState = getResolvedNodeState(response);
+          if (nodeState.isInsertable) {
+            if (selectedResultSummary) {
+              selectedResultSummary.status = 'Ready to insert';
+              updateResultsVisibility();
+            }
             updateSuggestion(response, inputLabel);
             updatePesukimAvailability(response);
             data = response;
@@ -951,6 +1057,10 @@
 
           hasResolvedReference = false;
           setInsertButtonState(false);
+          if (selectedResultSummary) {
+            selectedResultSummary.status = 'Needs a more specific ref';
+            updateResultsVisibility();
+          }
           clearVersionSelectors();
           updatePesukimAvailability(null);
           $('.suggestions').html(`<br>${buildNonInsertableMessage(response)}`);
@@ -995,7 +1105,7 @@
         $('.result-item').removeClass('selected').attr('aria-pressed', 'false');
         $(this).addClass('selected').attr('aria-pressed', 'true');
         updateResultsVisibility();
-        resolveSelectedResult(ref, ref);
+        resolveSelectedResult(ref, label);
       });
 
       $('.results-toggle-button').on('click', () => {
@@ -1096,7 +1206,11 @@
       $('.output-mode-selection').on('change', () => {
         updateBilingualLayoutVisibility();
         updateTranslationDetailsVisibility();
+        updateVersionControlsVisibility();
         syncDisplayModeCards();
+        if (hasResolvedReference && data && data.ref) {
+          updateSuggestion(data, selectedResultSummary ? selectedResultSummary.label : data.ref);
+        }
       });
       $('.mode-card').on('click keydown', function(event) {
         if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') {
@@ -1115,6 +1229,7 @@
       });
       updateBilingualLayoutVisibility();
       updateTranslationDetailsVisibility();
+      updateVersionControlsVisibility();
       syncDisplayModeCards();
       syncLayoutCards();
 
@@ -1168,6 +1283,17 @@
         });
       }
 
+      function renderPreviewHTML(dataIn, inputTitle) {
+        let mode = $('.output-mode-selection').val();
+        if (mode === 'he') {
+          return `${buildPreviewMeta(dataIn.heRef, dataIn)}<div class='preview-he'>${dataIn.he || '<p class="preview-state-message">No source text available.</p>'}</div>`;
+        }
+        if (mode === 'en') {
+          return `${buildPreviewMeta(dataIn.ref, inputTitle)}<div>${dataIn.text || '<p class="preview-state-message">No translation text available.</p>'}</div>`;
+        }
+        return `<table class='preview-table'><tr><td>${buildPreviewMeta(dataIn.ref, inputTitle)}${dataIn.text || '<p class="preview-state-message">No translation text available.</p>'}</td><td class='preview-he'>${buildPreviewMeta(dataIn.heRef, dataIn)}${dataIn.he || '<p class="preview-state-message">No source text available.</p>'}</td></tr></table>`;
+      }
+
       function updateSuggestion(dataIn, inputTitle) {
         const resolvedRef = dataIn && dataIn.ref ? dataIn.ref : inputTitle;
         let versionEntries = buildVersionModel(dataIn);
@@ -1177,14 +1303,14 @@
         let hebrewEntries = sortVersionEntries(versionEntries.filter((entry) => entry.languageKey === 'he'));
         let translationEntries = sortVersionEntries(versionEntries.filter((entry) => entry.languageKey !== 'he'));
 
-        let selectVersionHebrew = `<label class="version-label" for="he-version-selection">Source</label><select id="he-version-selection" class="versioning-select he-version-selection">`;
+        let selectVersionHebrew = `<div class="version-control-header"><label class="version-label" for="he-version-selection">Source version</label><span class="version-count">${hebrewEntries.length} available</span></div><select id="he-version-selection" class="versioning-select he-version-selection">`;
         hebrewEntries.forEach((entry) => {
           let selected = (entry.versionTitle === heSelectedVersionTitle) ? "selected" : "";
           selectVersionHebrew += `<option value="${escapeHTML(entry.versionTitle)}" ${selected}>${escapeHTML(entry.label)}</option>`;
         });
         selectVersionHebrew += `</select>`;
 
-        let translationInput = `<label class="version-label" for="translation-version-filter">Translation</label><input type="text" id="translation-version-filter" class="translation-filter-input" placeholder="Filter translation versions" aria-label="Filter translation versions"><select id="translation-version-selection" class="translation-version-select" size="6" aria-label="Translation versions"></select>`;
+        let translationInput = `<div class="version-control-header"><label class="version-label" for="translation-version-filter">Translation versions</label><span class="version-count">${translationEntries.length} available</span></div><input type="text" id="translation-version-filter" class="translation-filter-input" placeholder="Filter by language or version name" aria-label="Filter translation versions"><select id="translation-version-selection" class="translation-version-select" size="6" aria-label="Translation versions"></select>`;
 
         let languageGroups = {};
         translationEntries.forEach((entry) => {
@@ -1218,20 +1344,7 @@
           });
         });
 
-        let suggestion = `
-        <table class='preview-table'>
-          <tr>
-            <td>
-              ${buildPreviewMeta(dataIn.ref, inputTitle)}
-              ${dataIn.text}
-            </td>
-            <td class='preview-he'>
-              ${buildPreviewMeta(dataIn.heRef, dataIn)}
-              ${dataIn.he}
-            </td>
-          </tr>
-        </table>
-        `
+        let suggestion = renderPreviewHTML(dataIn, inputTitle);
         $('.translation-version-control').html(translationInput);
         $('.hebrew-version-control').html(selectVersionHebrew);
         $('.suggestions').html(suggestion);
@@ -1269,7 +1382,7 @@
             if (requestId !== latestResolveRequestId) {
               return;
             }
-            if (!isInsertableReference(response)) {
+            if (!getResolvedNodeState(response).isInsertable) {
               hasResolvedReference = false;
               setInsertButtonState(false);
               clearVersionSelectors();
