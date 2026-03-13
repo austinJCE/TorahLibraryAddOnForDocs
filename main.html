@@ -670,6 +670,10 @@
             <input id="include-translation-source-info" type="checkbox" class="include-translation-source-info">
           </div>
           <p class="helper-text translation-details-help">Adds version/source details below inserted text.</p>
+          <div class="toggle-row">
+            <label for="insert-sefaria-link">Insert Sefaria link</label>
+            <input id="insert-sefaria-link" type="checkbox" class="insert-sefaria-link">
+          </div>
         </div>
       </section>
 
@@ -681,6 +685,7 @@
             <summary>Source edition (advanced)</summary>
             <p class="advanced-version-note">Optional: choose a specific Hebrew/source edition only when needed.</p>
             <div class="version-control hebrew-version-control"></div>
+            <p class="advanced-version-note"><a href="#" class="open-divine-name-preferences">Open divine name preferences</a></p>
           </details>
         </div>
       </section>
@@ -695,6 +700,7 @@
       </section>
 
       <button class="submit" id="insert-source" disabled>Insert</button>
+      <button class="submit" id="open-on-sefaria" disabled style="margin-top:8px;">Open on Sefaria</button>
 
       <select class="output-mode-selection visually-hidden" aria-hidden="true">
         <option value="both" selected>Source with Translation</option>
@@ -922,6 +928,7 @@
 
         let showPesukim = Boolean($('.wants-pesukim').prop('checked'));
         let includeTranslationSourceInfo = $('.include-translation-source-info').is(':checked');
+        let insertSefariaLink = $('.insert-sefaria-link').is(':checked');
         let input = $('.input').val();
         $('.hide').add($('.warning')).fadeIn('1000');
         google.script.run.withSuccessHandler(() => {
@@ -929,7 +936,7 @@
         }).withFailureHandler(() => {
           $('.hide').add($('.warning')).fadeOut('1000');
           $('.suggestions').prepend("<div class='result-subtitle'><b>Could not insert at the current selection. Place the cursor where you want the source inserted, then try again.</b></div>");
-        }).insertReference(data, language, showPesukim, input, includeTranslationSourceInfo, bilingualLayout);
+        }).insertReference(data, language, showPesukim, input, includeTranslationSourceInfo, bilingualLayout, insertSefariaLink);
         
         
 
@@ -953,6 +960,7 @@
         resultsCollapsed = false;
         hasResolvedReference = false;
         setInsertButtonState(false);
+        $('#open-on-sefaria').prop('disabled', true);
         data = {};
         clearVersionSelectors();
         updatePesukimAvailability(null);
@@ -1075,6 +1083,7 @@
         let requestId = ++latestResolveRequestId;
         hasResolvedReference = false;
         setInsertButtonState(false);
+        $('#open-on-sefaria').prop('disabled', true);
         updatePesukimAvailability(null);
         $('.suggestions').html("<br><b>Loading preview…</b>");
         google.script.run.withSuccessHandler((response) => {
@@ -1094,11 +1103,13 @@
             data = response;
             hasResolvedReference = true;
             setInsertButtonState(true);
+            $('#open-on-sefaria').prop('disabled', false);
             return;
           }
 
           hasResolvedReference = false;
           setInsertButtonState(false);
+          $('#open-on-sefaria').prop('disabled', true);
           if (selectedResultSummary) {
             selectedResultSummary.status = 'Choose a more specific ref';
             updateResultsVisibility();
@@ -1113,6 +1124,7 @@
           }
           hasResolvedReference = false;
           setInsertButtonState(false);
+          $('#open-on-sefaria').prop('disabled', true);
           clearVersionSelectors();
           updatePesukimAvailability(null);
           updateActionabilityUI({ isInsertable: false });
@@ -1159,6 +1171,23 @@
         resultsCollapsed = !resultsCollapsed;
         updateResultsVisibility();
       });
+
+      $('#open-on-sefaria').on('click', () => {
+        if (!data || !data.ref) {
+          return;
+        }
+        const refSlug = encodeURIComponent(data.ref).replace(/%20/g, '_');
+        const win = window.open('', '_blank');
+        if (win) {
+          win.location.href = `https://www.sefaria.org/${refSlug}`;
+        }
+      });
+
+      $('.open-divine-name-preferences').on('click', (event) => {
+        event.preventDefault();
+        google.script.run.preferencesPopup();
+      });
+
 
       renderResults();
 
@@ -1210,24 +1239,49 @@
       }
 
       function normalizeLanguage(version) {
+        const suffixLanguageLUT = {
+          en: 'English',
+          he: 'Hebrew',
+          yi: 'Yiddish',
+          fr: 'French',
+          de: 'German',
+          es: 'Spanish',
+          pt: 'Portuguese',
+          ru: 'Russian',
+          it: 'Italian',
+          ar: 'Arabic',
+          lad: 'Ladino',
+          su: 'Sundanese'
+        };
+
         let lang = ((version.actualLanguage || version.language || "") + "").toLowerCase().trim();
         let family = (version.languageFamilyName || "").toString().trim();
         let normalizedFamily = family ? family.charAt(0).toUpperCase() + family.slice(1) : "";
+        let title = (version.versionTitle || version.shortVersionTitle || '').toString().trim();
+        let suffixMatch = title.match(/\[([a-z]{2,3})\]\s*$/i);
+        let suffix = suffixMatch ? suffixMatch[1].toLowerCase() : '';
+        let suffixLabel = suffixLanguageLUT[suffix] || '';
 
         if (["he", "heb", "hebrew"].indexOf(lang) >= 0 || /hebrew/i.test(family)) {
           return { key: "he", label: "Hebrew" };
         }
         if (["en", "eng", "english"].indexOf(lang) >= 0 || /english/i.test(family)) {
+          if (suffix && suffix !== 'en' && suffixLabel) {
+            return { key: `other:${suffix}`, label: suffixLabel };
+          }
           return { key: "en", label: "English" };
         }
         if (!lang && normalizedFamily) {
           return { key: `other:${normalizedFamily.toLowerCase()}`, label: normalizedFamily };
         }
+        if (!lang && suffixLabel) {
+          return { key: `other:${suffix}`, label: suffixLabel };
+        }
         if (!lang) {
           return { key: "en", label: "English" };
         }
 
-        return { key: `other:${lang}`, label: normalizedFamily || lang };
+        return { key: `other:${lang}`, label: normalizedFamily || suffixLabel || lang };
       }
 
       function extractYear(version) {
