@@ -119,8 +119,10 @@
       <footer class="sidebar bottom" style="position: fixed; background: white;">
         <nav name="options">
           <p>
-            <input type="checkbox" class="wants-pesukim" checked>Pesukim/line markers
-            <span class="pesukim-help" style="display:block; margin-left: 20px; font-size: 11px; color: #666;">Applies to segmented refs (e.g., verse/line ranges).</span>
+            <span class="pesukim-wrapper">
+              <input type="checkbox" class="wants-pesukim" checked>Pesukim/line markers
+              <span class="pesukim-help" style="display:block; margin-left: 20px; font-size: 11px; color: #666;">Applies to segmented refs (e.g., verse/line ranges).</span>
+            </span>
             <label style="display: inline-block; margin-left: 5px;">Output mode
             <select class="output-mode-selection">
               <option value="both" selected>Hebrew + Translation</option>
@@ -192,11 +194,15 @@
           )
         );
 
+        $('.pesukim-wrapper').toggle(supportsLineMarkers);
         $('.wants-pesukim').prop('disabled', !supportsLineMarkers);
         if (!supportsLineMarkers) {
           $('.wants-pesukim').prop('checked', false);
           $('.pesukim-help').text('Line markers are unavailable for this selection (single-block text).');
         } else {
+          if (!$('.wants-pesukim').prop('checked')) {
+            $('.wants-pesukim').prop('checked', true);
+          }
           $('.pesukim-help').text('Applies to segmented refs (e.g., verse/line ranges).');
         }
       };
@@ -264,6 +270,10 @@
         }
 
         let requestId = ++latestResolveRequestId;
+        hasResolvedReference = false;
+        setInsertButtonState(false);
+        updatePesukimAvailability(null);
+        $('.suggestions').html("<br><b>Resolving reference…</b>");
         google.script.run.withSuccessHandler((response) => {
           if (requestId !== latestResolveRequestId) {
             return;
@@ -322,7 +332,7 @@
           return { key: "he", label: "Hebrew" };
         }
         if (["en", "eng", "english"].indexOf(lang) >= 0 || !lang) {
-          return { key: "en", label: "Translation" };
+          return { key: "en", label: "English" };
         }
 
         let family = (version.languageFamilyName || "").toString().trim();
@@ -408,6 +418,7 @@
       }
 
       function updateSuggestion(dataIn, inputTitle) {
+        const resolvedRef = dataIn && dataIn.ref ? dataIn.ref : inputTitle;
         let versionEntries = buildVersionModel(dataIn);
         let enSelectedVersionTitle = dataIn.versionTitle || "";
         let heSelectedVersionTitle = dataIn.heVersionTitle || "";
@@ -433,8 +444,8 @@
         });
 
         let translationGroupLabels = Object.keys(languageGroups).sort((a, b) => {
-          if (a === 'Translation') return -1;
-          if (b === 'Translation') return 1;
+          if (a === 'English') return -1;
+          if (b === 'English') return 1;
           return a.localeCompare(b);
         });
 
@@ -478,11 +489,15 @@
 
         let suppressTranslationChange = false;
 
-        let getVersions = (title) => {
+        let getVersions = () => {
           let enVersion = $('.translation-combobox').attr('data-selected-version') || enSelectedVersionTitle || $('.translation-combobox').val();
           let heVersion = $('.he-version-selection').val();
           let versions = {"en": enVersion, "he": heVersion};
           let requestId = ++latestResolveRequestId;
+          hasResolvedReference = false;
+          setInsertButtonState(false);
+          $('.suggestions .snippet-loading').remove();
+          $('.suggestions table').append("<tr class='snippet-loading'><td colspan='2'><i>Refreshing preview…</i></td></tr>");
           google.script.run.withSuccessHandler((response) => {
             if (requestId !== latestResolveRequestId) {
               return;
@@ -493,7 +508,7 @@
               updatePesukimAvailability(null);
               return;
             }
-            updateSuggestion(response, title);
+            updateSuggestion(response, inputTitle);
             updatePesukimAvailability(response);
             data = response;
             hasResolvedReference = true;
@@ -506,7 +521,7 @@
             hasResolvedReference = false;
             setInsertButtonState(false);
             updatePesukimAvailability(null);
-          }).findReference(title, versions);
+          }).findReference(resolvedRef, versions);
         }
 
         $('.translation-combobox').attr('data-selected-version', enSelectedVersionTitle);
@@ -517,7 +532,9 @@
           source: (request, response) => {
             let searchTerm = (request.term || '').toLowerCase();
             let filtered = translationItems.filter((item) => {
-              return item.label.toLowerCase().indexOf(searchTerm) >= 0 || item.value.toLowerCase().indexOf(searchTerm) >= 0;
+              return item.label.toLowerCase().indexOf(searchTerm) >= 0 ||
+                item.value.toLowerCase().indexOf(searchTerm) >= 0 ||
+                item.category.toLowerCase().indexOf(searchTerm) >= 0;
             });
             response(filtered);
           },
@@ -527,8 +544,7 @@
             suppressTranslationChange = true;
             $('.translation-combobox').val(ui.item.label);
             $('.translation-combobox').attr('data-selected-version', ui.item.value);
-            let title = $('.input').val();
-            getVersions(title);
+            getVersions();
           }
         }).on('focus', function() {
           $(this).catcomplete('search', $(this).val());
@@ -543,18 +559,23 @@
           let typedValue = $('.translation-combobox').val();
           let matched = translationItems.find((item) => item.label === typedValue || item.value === typedValue);
           if (!matched) {
+            let containsMatches = translationItems.filter((item) => item.label.toLowerCase().indexOf((typedValue || '').toLowerCase()) >= 0);
+            if (containsMatches.length === 1) {
+              matched = containsMatches[0];
+            }
+          }
+          if (!matched) {
             $('.translation-combobox').val(enSelectedVersionTitle);
             $('.translation-combobox').attr('data-selected-version', enSelectedVersionTitle);
             return;
           }
+          $('.translation-combobox').val(matched.label);
           $('.translation-combobox').attr('data-selected-version', matched.value);
-          let title = $('.input').val();
-          getVersions(title);
+          getVersions();
         });
         
         $('.he-version-selection').on('change', () => {
-          let title = $('.input').val();
-          getVersions(title);
+          getVersions();
         });
       }
 

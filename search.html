@@ -82,9 +82,16 @@
         }
 
         .select-filters {
-          width: 265px !important; 
+          width: 180px !important; 
           margin-left: 10px !important; 
           margin-top:10px !important;
+        }
+
+        .search-controls {
+          margin-left: 10px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
         .suggestions {
@@ -138,6 +145,7 @@
         <input type="button" value="Search" class="button blue search-button">
       </header>
       <section>
+        <div class="search-controls">
         <select class="select-filters">
           <option value="" selected>in: All</option>
           <option value="Tanakh">in: Tanach</option>
@@ -156,6 +164,8 @@
           <option value="Reference">in: Reference</option>
           <option value="Other">in: Other</option>
         </select>
+        <label style="font-size: 12px; white-space: nowrap;"><input type="checkbox" class="wants-pagerank">Use PageRank</label>
+        </div>
       </section>
       <br>
 
@@ -166,7 +176,6 @@
       <footer class="sidebar bottom">
         <nav name="options">
           <p>
-            <input type="checkbox" class="wants-pagerank">Use PageRank
             <input type="checkbox" class="wants-pesukim" checked>Pesukim/line markers
             <span style="display:block; margin-left: 20px; font-size: 11px; color: #666;">Shown when the selected result resolves to segmented lines/verses.</span>
             Output mode:
@@ -205,12 +214,15 @@
       const rawRef = source.ref || '';
       const rawHeRef = source.heRef || rawRef;
 
-      const pieces = rawRef
-        .split(',')
+      const pathParts = Array.isArray(source.path)
+        ? source.path.filter(Boolean)
+        : [];
+
+      const pieces = (pathParts.length > 0 ? pathParts : rawRef.split(','))
         .map((part) => part.trim())
         .filter(Boolean);
 
-      const breadcrumb = pieces.length > 1 ? pieces.join(' › ') : rawHeRef;
+      const breadcrumb = pieces.length > 0 ? pieces.join(' › ') : rawHeRef;
       const hasDifferentFallback = rawHeRef && rawHeRef !== breadcrumb;
 
       return {
@@ -261,9 +273,8 @@
       }
     });
 
-    $('.search-button').click(() => {
+    const runSearch = () => {
         let filterVal = $('.select-filters').val();
-        console.log(filterVal);
         let filters = [];
 
         if (filterVal != "") {
@@ -272,7 +283,9 @@
         
         
         let input = $('.input').val();
-        console.log(`${filters} and ${input}`);
+        if (!input || !input.trim()) {
+          return;
+        }
         let pageRank = $('.wants-pagerank').is(':checked');
         clearSelectedSource();
 
@@ -306,7 +319,21 @@
             }
 
           }).findSearch(input, filters, pageRank);
-    });  
+    };
+
+    $('.search-button').click(() => {
+      runSearch();
+    });
+
+    $('.select-filters, .wants-pagerank').on('change', () => {
+      runSearch();
+    });
+
+    $('.input').on('keyup', (event) => {
+      if (event.key === 'Enter') {
+        runSearch();
+      }
+    });
     </script>
   </body>
 </html>
