@@ -804,6 +804,79 @@
           .trim();
       };
 
+
+      const mapSefariaRefSlugToLookupRef = (slug) => {
+        let decoded = String(slug || '').trim();
+        if (!decoded) {
+          return '';
+        }
+        try {
+          decoded = decodeURIComponent(decoded);
+        } catch (error) {
+          // Keep original slug if decode fails.
+        }
+        decoded = decoded.replace(/^\/+/g, '').replace(/\/+/g, '/').replace(/_/g, ' ');
+        let parts = decoded.split('/').filter(Boolean);
+        if (!parts.length) {
+          return '';
+        }
+        let titlePart = parts[0];
+        let sectionPart = parts.slice(1).join(':');
+        return sectionPart ? `${titlePart} ${sectionPart}` : titlePart;
+      };
+
+      const parseSefariaUrlInput = (inputValue) => {
+        let raw = String(inputValue || '').trim();
+        if (!raw) {
+          return null;
+        }
+
+        let parsedUrl;
+        try {
+          parsedUrl = new URL(raw);
+        } catch (error) {
+          return null;
+        }
+
+        let host = (parsedUrl.hostname || '').toLowerCase();
+        if (host.indexOf('sefaria.org') < 0) {
+          return null;
+        }
+
+        let path = (parsedUrl.pathname || '').replace(/^\/+/, '');
+        if (!path) {
+          return null;
+        }
+
+        let blockedRoots = { api: true, texts: true, sheets: true, topics: true, collections: true, account: true, profile: true, help: true };
+        let slug = path.split('/')[0] || '';
+        if (!slug || blockedRoots[slug.toLowerCase()]) {
+          return null;
+        }
+
+        let ref = mapSefariaRefSlugToLookupRef(path);
+        if (!ref) {
+          return null;
+        }
+
+        let lang = (parsedUrl.searchParams.get('lang') || '').toLowerCase().trim();
+        let outputMode = 'both';
+        if (lang === 'en') {
+          outputMode = 'en';
+        } else if (lang === 'he') {
+          outputMode = 'he';
+        }
+
+        return {
+          ref,
+          outputMode,
+          preferredVersions: {
+            en: parsedUrl.searchParams.get('ven') || '',
+            he: parsedUrl.searchParams.get('vhe') || ''
+          }
+        };
+      };
+
       const updateActionabilityUI = (state) => {
         const isActionable = !!(state && state.isInsertable);
         $('.display-section, .layout-section, .options-section, .versions-section').toggleClass('section-muted', !isActionable);
@@ -884,6 +957,7 @@
       let selectedRefValue = null;
       let queryState = { libraryMatches: [], searchResults: [] };
       let resultsCollapsed = false;
+      let pendingPreferredVersions = null;
 
       let hasResolvedReference = false;
       setInsertButtonState(false);
@@ -1023,12 +1097,40 @@
       const runUnifiedQuery = () => {
         const input = ($('.input').val() || '').trim();
         clearSelectedResult();
+        pendingPreferredVersions = null;
 
         if (!input) {
           queryState = { libraryMatches: [], searchResults: [] };
           renderResults();
           updateActionabilityUI({ isInsertable: false });
           $('.suggestions').html("<b>Please enter a reference, title, or phrase.</b>");
+          return;
+        }
+
+        const sefariaUrlInput = parseSefariaUrlInput(input);
+        if (sefariaUrlInput) {
+          $('.output-mode-selection').val(sefariaUrlInput.outputMode);
+          syncDisplayModeCards();
+          updateBilingualLayoutVisibility();
+          updateTranslationDetailsVisibility();
+          updateVersionControlsVisibility();
+
+          pendingPreferredVersions = sefariaUrlInput.preferredVersions;
+          queryState.libraryMatches = [{
+            key: `library-ref-${sefariaUrlInput.ref}`,
+            ref: sefariaUrlInput.ref,
+            label: sefariaUrlInput.ref,
+            subtitle: 'Parsed from Sefaria URL',
+            typeLabel: 'Library'
+          }];
+          queryState.searchResults = [];
+          renderResults();
+
+          selectedResultKey = queryState.libraryMatches[0].key;
+          selectedResultSummary = { label: sefariaUrlInput.ref, subtitle: 'Parsed from Sefaria URL' };
+          resultsCollapsed = true;
+          updateResultsVisibility();
+          resolveSelectedResult(sefariaUrlInput.ref, sefariaUrlInput.ref);
           return;
         }
 
@@ -1463,6 +1565,17 @@
         $('.hebrew-version-control').html(selectVersionHebrew);
         $('.suggestions').html(suggestion);
 
+        if (pendingPreferredVersions) {
+          const preferredEn = pendingPreferredVersions.en || '';
+          const preferredHe = pendingPreferredVersions.he || '';
+          if (preferredEn && translationEntries.some((entry) => entry.versionTitle === preferredEn)) {
+            enSelectedVersionTitle = preferredEn;
+          }
+          if (preferredHe && hebrewEntries.some((entry) => entry.versionTitle === preferredHe)) {
+            heSelectedVersionTitle = preferredHe;
+          }
+        }
+
         let currentEnVersion = enSelectedVersionTitle;
 
         const renderTranslationOptions = (filterTerm) => {
@@ -1548,6 +1661,19 @@
         $('.he-version-selection').on('change', () => {
           getVersions();
         });
+
+        if (pendingPreferredVersions) {
+          const preferredEn = pendingPreferredVersions.en || '';
+          const preferredHe = pendingPreferredVersions.he || '';
+          pendingPreferredVersions = null;
+          if (preferredEn || preferredHe) {
+            const currentEn = $('.translation-version-select').val() || currentEnVersion || enSelectedVersionTitle;
+            const currentHe = $('.he-version-selection').val() || heSelectedVersionTitle;
+            if (currentEn !== (dataIn.versionTitle || '') || currentHe !== (dataIn.heVersionTitle || '')) {
+              getVersions();
+            }
+          }
+        }
       }
 
       $('.close').click(() => {
