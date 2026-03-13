@@ -8,9 +8,27 @@
 
     <style>
     /* note: no need to really make the layout responsive any more than vw and vh usage, due to the constraints of Google Add-ons.*/
+    :root {
+      --bg: #f5f5f3;
+      --panel: #ffffff;
+      --card: #e9e7e3;
+      --border: #d4d0ca;
+      --text: #222222;
+      --muted: #6b6b6b;
+      --selected: #1f3b68;
+      --selected-hover: #29497d;
+      --selected-soft: #c9d5e8;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    }
+
     .ui-autocomplete {
-      /* height: 33vh; */
-      width: 175px !important;
+      width: 240px !important;
       overflow-y: scroll;
     }
 
@@ -21,9 +39,11 @@
     }
 
     main {
-      margin-top: 0; 
-      margin-bottom: 0;
+      margin: 0;
+      min-height: 100vh;
       overflow:auto;
+      padding: 12px;
+      box-sizing: border-box;
     }
 
     aside {
@@ -38,44 +58,281 @@
       z-index: 5;
     }
 
+    .reference-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
     #run-sefaria {
-      font-size: 3.8vw; 
-      margin-right: 10px; 
-      display: inline; 
-      float: right; 
-      margin-top: 10px; 
-      width: 95px !important;
+      border: 0;
+      border-radius: 10px;
+      background: var(--selected);
+      color: #fff;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      width: auto !important;
+      margin: 0;
+    }
+
+    #run-sefaria:disabled {
+      opacity: 0.5;
+    }
+
+    #run-sefaria:not(:disabled):hover {
+      background: var(--selected-hover);
     }
 
     /* extremely ungainly usage of !important, need to fix at some point */
     .input {
-      margin-top: 10px !important; 
-      margin-left: 10px !important; 
-      display: inline !important; 
-      float: left !important; 
-      width: 155px !important; 
-      height: 9.8vw !important;
+      margin: 0 !important;
+      display: block !important;
+      width: 100% !important;
+      height: auto !important;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px 12px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    .reference-input-shell {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .section-label {
+      margin: 14px 0 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+    }
+
+    .mode-card-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .mode-card {
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--text);
+      padding: 12px 14px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .mode-card:hover {
+      border-color: var(--border);
+    }
+
+    .mode-card.selected {
+      background: var(--selected);
+      color: #fff;
+    }
+
+    .mode-card:focus-visible,
+    .layout-option:focus-visible {
+      outline: 2px solid var(--selected);
+      outline-offset: 2px;
+    }
+
+    .mode-card-indicator {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      border: 2px solid currentColor;
+      box-sizing: border-box;
+    }
+
+    .mode-card.selected .mode-card-indicator {
+      background: currentColor;
+      box-shadow: inset 0 0 0 3px var(--selected);
+    }
+
+    .layout-option-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .layout-option {
+      width: 50px;
+      height: 48px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .layout-option.selected {
+      border-color: var(--selected);
+      box-shadow: inset 0 0 0 1px var(--selected);
+      background: var(--selected-soft);
+    }
+
+    .layout-icon {
+      position: relative;
+      width: 26px;
+      height: 20px;
+      border: 1px solid #bcb8b1;
+      border-radius: 4px;
+      background: #f7f7f5;
+    }
+
+    .layout-icon::before,
+    .layout-icon::after {
+      content: '';
+      position: absolute;
+      background: #b3b0aa;
+    }
+
+    .layout-icon-top::before {
+      height: 7px;
+      width: 100%;
+      top: 1px;
+      left: 0;
+      background: #7f97bb;
+    }
+
+    .layout-icon-top::after {
+      height: 7px;
+      width: 100%;
+      left: 0;
+      bottom: 1px;
+    }
+
+    .layout-icon-left::before,
+    .layout-icon-right::before {
+      top: 0;
+      width: 11px;
+      height: 100%;
+      left: 0;
+    }
+
+    .layout-icon-left::after,
+    .layout-icon-right::after {
+      top: 0;
+      width: 11px;
+      height: 100%;
+      right: 0;
+    }
+
+    .layout-icon-left::before {
+      background: #7f97bb;
+    }
+
+    .layout-icon-right::after {
+      background: #7f97bb;
+    }
+
+    .options-panel,
+    .versions-panel,
+    .preview-panel {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 10px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .toggle-row + .toggle-row {
+      margin-top: 10px;
+    }
+
+    .helper-text {
+      margin: 4px 0 0;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .version-control + .version-control {
+      margin-top: 10px;
+    }
+
+    .version-label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .versioning-select,
+    .translation-combobox {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      padding: 8px 10px;
+      font-size: 14px;
     }
 
     .suggestions {
-      margin-left: 10px; 
-      margin-right: 10px; 
-      margin-top: 50px; 
-      min-height: 0px; 
-      height: 73vh !important; 
-      overflow-x: auto;
+      margin: 0;
+      min-height: 150px;
+      max-height: 46vh;
+      overflow: auto;
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--text);
+    }
+
+    .preview-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .preview-table td {
+      vertical-align: top;
+      width: 50%;
+      padding: 0 6px 8px;
+    }
+
+    .preview-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .preview-he {
+      direction: rtl;
     }
 
     .branding-text {
       padding-top: 0.5em;
     }
 
-    .versioning-select {
-      width: 100px;
+    .translation-combobox {
+      width: 100%;
     }
 
-    .translation-combobox {
-      width: 140px;
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
     }
 
     .ui-autocomplete-category {
@@ -101,51 +358,74 @@
         <img src="https://www.sefaria.org/static/img/ajax-loader.gif">
       </aside>
 
-      <section>
-        <input type="text" class="input disab" placeholder="Text Title:">
-        <button class="blue submit" id="run-sefaria">Insert Source
-        </button>
-        <p style="margin: 10px 10px 0 10px; font-size: 12px;">
-          <input type="checkbox" class="include-translation-source-info">Include Translation attribution (version/source)
-        </p>
-      </section>
-      
-      <section class="suggestions">
-        <b>
-          <img src="https://www.sefaria.org/static/img/ajax-loader.gif">
-        </b>
+      <section class="reference-row">
+        <div class="reference-input-shell">
+          <input type="text" class="input disab" placeholder="Text Title or Reference" aria-label="Text title or reference">
+        </div>
+        <button class="submit" id="run-sefaria">Insert</button>
       </section>
 
-      <footer class="sidebar bottom" style="position: fixed; background: white;">
-        <nav name="options">
-          <p>
-            <span class="pesukim-wrapper">
-              <input type="checkbox" class="wants-pesukim" checked>Pesukim/line markers
-              <span class="pesukim-help" style="display:block; margin-left: 20px; font-size: 11px; color: #666;">Applies to segmented refs (e.g., verse/line ranges).</span>
-            </span>
-            <label style="display: inline-block; margin-left: 5px;">Output mode
-            <select class="output-mode-selection">
-              <option value="both" selected>Hebrew + Translation</option>
-              <option value="he">Hebrew only</option>
-              <option value="en">Translation only</option>
-            </select>
-            </label>
-            <label class="bilingual-layout-wrapper" style="display: inline-block; margin-left: 5px;">Layout
-              <select class="bilingual-layout-selection">
-                <option value="he-right" selected>Hebrew right</option>
-                <option value="he-left">Hebrew left</option>
-                <option value="he-top">Hebrew on top</option>
-              </select>
-            </label>
-          </p>
-        </nav>
-        <section name="branding">
-          <span class="watermark" style="display: flex">
-            <span class="gray branding-text">Add-on by <a  target="_blank" href="https://www.github.com/shelfgot/">Shlomi Helfgot</a> &nbsp; </span>
-            <a  target="_blank" href="https://www.buymeacoffee.com/shlomihelfr"><img height="27em" src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=shlomihelfr&button_colour=ffa82e&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00" /></a>
-          </span>
-        </section>
-      </footer>
+      <section class="display-section">
+        <div class="section-label">Display</div>
+        <div class="mode-card-group" role="radiogroup" aria-label="Display mode">
+          <button class="mode-card" data-mode="he" role="radio" aria-checked="false"><span>Source</span><span class="mode-card-indicator"></span></button>
+          <button class="mode-card" data-mode="en" role="radio" aria-checked="false"><span>Translation</span><span class="mode-card-indicator"></span></button>
+          <button class="mode-card" data-mode="both" role="radio" aria-checked="false"><span>Source with Translation</span><span class="mode-card-indicator"></span></button>
+        </div>
+      </section>
+
+      <section class="layout-section bilingual-layout-wrapper">
+        <div class="section-label">Layout</div>
+        <div class="layout-option-group" role="radiogroup" aria-label="Bilingual layout">
+          <button class="layout-option" data-layout="he-top" aria-label="Hebrew on top"><span class="layout-icon layout-icon-top" aria-hidden="true"></span></button>
+          <button class="layout-option" data-layout="he-left" aria-label="Hebrew left"><span class="layout-icon layout-icon-left" aria-hidden="true"></span></button>
+          <button class="layout-option" data-layout="he-right" aria-label="Hebrew right"><span class="layout-icon layout-icon-right" aria-hidden="true"></span></button>
+        </div>
+      </section>
+
+      <section class="options-section">
+        <div class="section-label">Options</div>
+        <div class="options-panel">
+          <div class="toggle-row pesukim-wrapper">
+            <label for="wants-pesukim">Line markers</label>
+            <input id="wants-pesukim" type="checkbox" class="wants-pesukim" checked>
+          </div>
+          <p class="helper-text pesukim-help">Applies to segmented refs (e.g., verse/line ranges).</p>
+          <div class="toggle-row translation-details-row">
+            <label for="include-translation-source-info">Translation details</label>
+            <input id="include-translation-source-info" type="checkbox" class="include-translation-source-info">
+          </div>
+          <p class="helper-text translation-details-help">Adds version/source details below inserted text.</p>
+        </div>
+      </section>
+
+      <section class="versions-section">
+        <div class="section-label">Versions</div>
+        <div class="versions-panel">
+          <div class="version-control translation-version-control"></div>
+          <div class="version-control hebrew-version-control"></div>
+        </div>
+      </section>
+
+      <section class="preview-section">
+        <div class="section-label">Preview</div>
+        <div class="preview-panel">
+          <section class="suggestions">
+            <b>Please enter the title of a text or a source to insert.</b>
+          </section>
+        </div>
+      </section>
+
+      <select class="output-mode-selection visually-hidden" aria-hidden="true">
+        <option value="both" selected>Source with Translation</option>
+        <option value="he">Source</option>
+        <option value="en">Translation</option>
+      </select>
+      <select class="bilingual-layout-selection visually-hidden" aria-hidden="true">
+        <option value="he-right" selected>Hebrew right</option>
+        <option value="he-left">Hebrew left</option>
+        <option value="he-top">Hebrew on top</option>
+      </select>
     </main>
 
     <!--MAIN UX SCRIPT-->
@@ -216,6 +496,29 @@
         $('.bilingual-layout-wrapper').toggle(outputMode === 'both');
       };
 
+      const updateTranslationDetailsVisibility = () => {
+        let outputMode = $('.output-mode-selection').val();
+        $('.translation-details-row, .translation-details-help').toggle(outputMode === 'both' || outputMode === 'en');
+      };
+
+      const syncDisplayModeCards = () => {
+        let outputMode = $('.output-mode-selection').val();
+        $('.mode-card').each(function() {
+          let isSelected = $(this).attr('data-mode') === outputMode;
+          $(this).toggleClass('selected', isSelected);
+          $(this).attr('aria-checked', isSelected ? 'true' : 'false');
+        });
+      };
+
+      const syncLayoutCards = () => {
+        let selectedLayout = $('.bilingual-layout-selection').val();
+        $('.layout-option').each(function() {
+          let isSelected = $(this).attr('data-layout') === selectedLayout;
+          $(this).toggleClass('selected', isSelected);
+          $(this).attr('aria-pressed', isSelected ? 'true' : 'false');
+        });
+      };
+
       const isResolvedReference = (response) => {
         return !!(response && response.ref && response.indexTitle && !response.error);
       };
@@ -235,6 +538,11 @@
 
       let hasResolvedReference = false;
       setInsertButtonState(false);
+
+      const clearVersionSelectors = () => {
+        $('.translation-version-control').empty();
+        $('.hebrew-version-control').empty();
+      };
 
       $('.submit').click(() => {
         if (!hasResolvedReference || !data || !data.ref) {
@@ -265,6 +573,7 @@
         if (!input || !input.trim()) {
           hasResolvedReference = false;
           setInsertButtonState(false);
+          clearVersionSelectors();
           $('.suggestions').html("<b>Please enter the title of a text or a source to insert.</b>");
           return;
         }
@@ -290,6 +599,7 @@
 
           hasResolvedReference = false;
           setInsertButtonState(false);
+          clearVersionSelectors();
           updatePesukimAvailability(null);
           let prompt = buildDepthPrompt(response);
           $('.suggestions').html(`<br><b>${escapeHTML(prompt)}</b>`);
@@ -299,6 +609,7 @@
           }
           hasResolvedReference = false;
           setInsertButtonState(false);
+          clearVersionSelectors();
           updatePesukimAvailability(null);
           $('.suggestions').html("<br><b>Enter a valid reference to insert.</b>");
         }).findReference(input);
@@ -364,8 +675,30 @@
         return Math.max.apply(null, candidates);
       }
 
-      $('.output-mode-selection').on('change', updateBilingualLayoutVisibility);
+      $('.output-mode-selection').on('change', () => {
+        updateBilingualLayoutVisibility();
+        updateTranslationDetailsVisibility();
+        syncDisplayModeCards();
+      });
+      $('.mode-card').on('click keydown', function(event) {
+        if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') {
+          return;
+        }
+        event.preventDefault();
+        $('.output-mode-selection').val($(this).attr('data-mode')).trigger('change');
+      });
+      $('.layout-option').on('click keydown', function(event) {
+        if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') {
+          return;
+        }
+        event.preventDefault();
+        $('.bilingual-layout-selection').val($(this).attr('data-layout'));
+        syncLayoutCards();
+      });
       updateBilingualLayoutVisibility();
+      updateTranslationDetailsVisibility();
+      syncDisplayModeCards();
+      syncLayoutCards();
 
       function buildVersionModel(dataIn) {
         let versions = Array.isArray(dataIn.versions) ? dataIn.versions : [];
@@ -426,14 +759,14 @@
         let hebrewEntries = sortVersionEntries(versionEntries.filter((entry) => entry.languageKey === 'he'));
         let translationEntries = sortVersionEntries(versionEntries.filter((entry) => entry.languageKey !== 'he'));
 
-        let selectVersionHebrew = `<select class="versioning-select he-version-selection">`;
+        let selectVersionHebrew = `<label class="version-label" for="he-version-selection">Source</label><select id="he-version-selection" class="versioning-select he-version-selection">`;
         hebrewEntries.forEach((entry) => {
           let selected = (entry.versionTitle === heSelectedVersionTitle) ? "selected" : "";
           selectVersionHebrew += `<option value="${escapeHTML(entry.versionTitle)}" ${selected}>${escapeHTML(entry.label)}</option>`;
         });
         selectVersionHebrew += `</select>`;
 
-        let translationInput = `<input type="text" class="translation-combobox" placeholder="Search Translation version" value="${escapeHTML(enSelectedVersionTitle)}">`;
+        let translationInput = `<label class="version-label" for="translation-version-input">Translation</label><input type="text" id="translation-version-input" class="translation-combobox" placeholder="Search translation version" value="${escapeHTML(enSelectedVersionTitle)}">`;
 
         let languageGroups = {};
         translationEntries.forEach((entry) => {
@@ -464,27 +797,21 @@
         });
 
         let suggestion = `
-        <table style='font-size: 3.5vw;'>
+        <table class='preview-table'>
           <tr>
-            <td class='paetaot'>
-              ${inputTitle}
-              ${translationInput}
-            </td>
-            <td style='direction:rtl;'>
-              ${dataIn.heRef}
-              ${selectVersionHebrew}
-            </td>
-          </tr>
-          <tr>
-            <td style='padding-top: -2% !important;'>
+            <td>
+              <div class='preview-meta'>${inputTitle}</div>
               ${dataIn.text}
             </td>
-            <td style='direction:rtl;'>
+            <td class='preview-he'>
+              <div class='preview-meta'>${dataIn.heRef}</div>
               ${dataIn.he}
             </td>
           </tr>
         </table>
         `
+        $('.translation-version-control').html(translationInput);
+        $('.hebrew-version-control').html(selectVersionHebrew);
         $('.suggestions').html(suggestion);
 
         let suppressTranslationChange = false;
@@ -505,6 +832,7 @@
             if (!isResolvedReference(response)) {
               hasResolvedReference = false;
               setInsertButtonState(false);
+              clearVersionSelectors();
               updatePesukimAvailability(null);
               return;
             }
@@ -520,6 +848,7 @@
             }
             hasResolvedReference = false;
             setInsertButtonState(false);
+            clearVersionSelectors();
             updatePesukimAvailability(null);
           }).findReference(resolvedRef, versions);
         }
