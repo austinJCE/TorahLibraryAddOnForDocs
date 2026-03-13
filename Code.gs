@@ -11,10 +11,45 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
 
 
-const SETTINGS = ["meforash_replace", "meforash_replacement", "yaw_replace", "yaw_replacement", "elodim_replace", "elodim_replacement", "nekudot", "nekudot_filter", "teamim", "versioning", "extended_gemara", "include_translation_source_info"]
+const SETTINGS = [
+  "meforash_replace",
+  "meforash_replacement",
+  "yaw_replace",
+  "yaw_replacement",
+  "elodim_replace",
+  "elodim_replacement",
+  "god_replace",
+  "god_replacement",
+  "nekudot",
+  "nekudot_filter",
+  "teamim",
+  "versioning",
+  "extended_gemara",
+  "include_translation_source_info",
+  "hebrew_font",
+  "hebrew_font_size",
+  "translation_font",
+  "translation_font_size"
+]
 
 function onInstall() {
-  const basicPrefs = {"meforash_replace": false, "yaw_replace": false, "elodim_replace": false, "nekudot": true, "teamim": true, "versioning": true, "nekudot_filter": false, "extended_gemara": false, "include_translation_source_info": false};
+  const basicPrefs = {
+    "meforash_replace": false,
+    "yaw_replace": false,
+    "elodim_replace": false,
+    "god_replace": false,
+    "god_replacement": "G-d",
+    "nekudot": true,
+    "teamim": true,
+    "versioning": true,
+    "nekudot_filter": false,
+    "extended_gemara": false,
+    "include_translation_source_info": false,
+    "hebrew_font": "Arial",
+    "hebrew_font_size": 14,
+    "translation_font": "Arial",
+    "translation_font_size": 11
+  };
   setPreferences(basicPrefs);
   //display release notes in popup
   
@@ -29,7 +64,8 @@ let extendedGemaraPreference = false;
 function onOpen() {
   DocumentApp.getUi().createAddonMenu()
       .addItem('Find & Insert Source', 'sefariaHTML')
-      .addItem('Search Texts (legacy entry)', 'sefariaSearch')
+      .addItem('Transform Divine Names', 'transformDivineNames')
+      .addItem('Link Texts with Sefaria', 'linkTextsWithSefaria')
       .addItem('Preferences', 'preferencesPopup')
       .addItem('Support', 'supportAndFeatureRequestPopup')
       .addItem('Popcorn (beta)', 'popcornHTML')
@@ -115,7 +151,8 @@ function findReference(reference, versions=undefined) {
     json = (userProperties.getProperty("yaw_replace") == "true") ? json.replace(/\bי[\u0591-\u05C7]*ה[\u0591-\u05C7]*\b/g, userProperties.getProperty("yaw_replacement")) : json;
     json = (userProperties.getProperty("elodim_replace") == "true") ? json.replace(/א[\u0591-\u05C7]*ל[\u0591-\u05C7]*ו[\u0591-\u05C7]*ה[\u0591-\u05C7]*י[\u0591-\u05C7]*ם[\u0591-\u05C7]*/g, userProperties.getProperty("elodim_replacement")) : json;
     
-    let data = JSON.parse(json);   
+    let data = JSON.parse(json);
+    applyEnglishDivineNamePreference(data, userProperties);
     return data;
 
   } catch (error) {
@@ -124,6 +161,62 @@ function findReference(reference, versions=undefined) {
     return; 
   }
 
+}
+
+function applyEnglishDivineNamePreference(data, userProperties) {
+  if (!data || userProperties.getProperty("god_replace") != "true") {
+    return;
+  }
+
+  const replacement = userProperties.getProperty("god_replacement") || "G-d";
+  const replaceInNode = (node) => {
+    if (Array.isArray(node)) {
+      return node.map((value) => replaceInNode(value));
+    }
+    if (typeof node === 'string') {
+      return node.replace(/\bGod\b/g, replacement);
+    }
+    return node;
+  };
+
+  data.text = replaceInNode(data.text);
+}
+
+function getTypographySettings() {
+  const userProperties = PropertiesService.getUserProperties();
+  return {
+    hebrewFont: userProperties.getProperty("hebrew_font") || "Arial",
+    hebrewFontSize: Number(userProperties.getProperty("hebrew_font_size") || 14),
+    translationFont: userProperties.getProperty("translation_font") || "Arial",
+    translationFontSize: Number(userProperties.getProperty("translation_font_size") || 11)
+  };
+}
+
+function applyTypographyToParagraph(paragraph, font, size) {
+  if (!paragraph) {
+    return;
+  }
+
+  const text = paragraph.editAsText();
+  const len = text.getText().length;
+  if (len <= 0) {
+    return;
+  }
+
+  if (font) {
+    text.setFontFamily(0, len - 1, font);
+  }
+  if (!isNaN(size) && size > 0) {
+    text.setFontSize(0, len - 1, size);
+  }
+}
+
+function applyHeaderStyleWithTypography(paragraph, isHebrew, typography) {
+  applyTypographyToParagraph(
+    paragraph,
+    isHebrew ? typography.hebrewFont : typography.translationFont,
+    isHebrew ? typography.hebrewFontSize : typography.translationFontSize
+  );
 }
 
 function testRef() {
@@ -232,7 +325,7 @@ function insertAttributionParagraph(paragraph, attributionLines) {
   paragraph.setLeftToRight(true);
 }
 
-function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null, includeTranslationSourceInfo = false, bilingualLayout = "he-right") {
+function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null, includeTranslationSourceInfo = false, bilingualLayout = "he-right", insertSefariaLink = false) {
   if (!data || !data.ref) {
     throw new Error("Unable to insert source: no resolved reference.");
   }
@@ -279,6 +372,8 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
 
   let shouldIncludeEnglishAttribution = includeTranslationSourceInfo && singleLanguage != "he";
   let attributionLines = (shouldIncludeEnglishAttribution) ? getEnglishAttributionLines(data) : [];
+  const typography = getTypographySettings();
+  const sefariaUrl = `https://www.sefaria.org/${encodeURIComponent(data.ref || '').replace(/%20/g, '_')}`;
 
   let resolvedBilingualLayout = (singleLanguage) ? null : (bilingualLayout || "he-right");
   if (resolvedBilingualLayout !== "he-left" && resolvedBilingualLayout !== "he-top" && resolvedBilingualLayout !== "he-right") {
@@ -294,6 +389,11 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
     doc.insertParagraph(index, titleText)
       .setAttributes(headerStyle)
       .setLeftToRight(ltr);
+    let insertedTitle = doc.getChild(index).asParagraph();
+    applyHeaderStyleWithTypography(insertedTitle, singleLanguage == "he", typography);
+    if (insertSefariaLink) {
+      insertedTitle.editAsText().setLinkUrl(sefariaUrl);
+    }
     
 
     let mainTextParagraph = doc.insertParagraph(index+1, "");
@@ -303,6 +403,11 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       mainTextParagraph.setAttributes(nullStyle);
     }
     mainTextParagraph.setLeftToRight(ltr);
+    applyTypographyToParagraph(
+      mainTextParagraph,
+      singleLanguage == "he" ? typography.hebrewFont : typography.translationFont,
+      singleLanguage == "he" ? typography.hebrewFontSize : typography.translationFontSize
+    );
 
     if (singleLanguage == "en" && attributionLines.length > 0) {
       let attributionParagraph = doc.insertParagraph(index+2, "");
@@ -315,22 +420,34 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       doc.insertParagraph(index, data.heRef)
         .setAttributes(headerStyle)
         .setLeftToRight(false);
+      let hebTitleParagraph = doc.getChild(index).asParagraph();
+      applyHeaderStyleWithTypography(hebTitleParagraph, true, typography);
+      if (insertSefariaLink) {
+        hebTitleParagraph.editAsText().setLinkUrl(sefariaUrl);
+      }
 
       let hebTextParagraph = doc.insertParagraph(index + 1, "");
       hebTextParagraph.setLeftToRight(false);
       hebTextParagraph.setAttributes(nullStyle);
       insertRichTextFromHTML(hebTextParagraph, data.he);
       hebTextParagraph.setAttributes(noUnderline);
+      applyTypographyToParagraph(hebTextParagraph, typography.hebrewFont, typography.hebrewFontSize);
 
       doc.insertParagraph(index + 2, title)
         .setAttributes(headerStyle)
         .setLeftToRight(true);
+      let enTitleParagraph = doc.getChild(index + 2).asParagraph();
+      applyHeaderStyleWithTypography(enTitleParagraph, false, typography);
+      if (insertSefariaLink) {
+        enTitleParagraph.editAsText().setLinkUrl(sefariaUrl);
+      }
 
       let engTextParagraph = doc.insertParagraph(index + 3, "");
       engTextParagraph.setLeftToRight(true);
       engTextParagraph.setAttributes(nullStyle);
       insertRichTextFromHTML(engTextParagraph, data.text);
       engTextParagraph.setAttributes(noUnderline);
+      applyTypographyToParagraph(engTextParagraph, typography.translationFont, typography.translationFontSize);
 
       if (shouldIncludeEnglishAttribution && attributionLines.length > 0) {
         let attributionParagraph = doc.insertParagraph(index + 4, "");
@@ -358,6 +475,10 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       engTitle.setLeftToRight(true);
       insertRichTextFromHTML(engTitle, title);
       engTitle.setAttributes(headerStyle);
+      applyTypographyToParagraph(engTitle, typography.translationFont, typography.translationFontSize);
+      if (insertSefariaLink) {
+        engTitle.editAsText().setLinkUrl(sefariaUrl);
+      }
 
       let hebTitle = table.getCell(0, hebrewColumn)
         .setText("")
@@ -365,6 +486,10 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       hebTitle.setLeftToRight(false);
       insertRichTextFromHTML(hebTitle, data.heRef);
       hebTitle.setAttributes(headerStyle);
+      applyTypographyToParagraph(hebTitle, typography.hebrewFont, typography.hebrewFontSize);
+      if (insertSefariaLink) {
+        hebTitle.editAsText().setLinkUrl(sefariaUrl);
+      }
 
       let engText = table.getCell(1, englishColumn)
         .setText("")
@@ -373,6 +498,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       engText.setAttributes(nullStyle);
       insertRichTextFromHTML(engText, data.text);
       engText.setAttributes(noUnderline);
+      applyTypographyToParagraph(engText, typography.translationFont, typography.translationFontSize);
 
       let hebText = table.getCell(1, hebrewColumn)
         .setText("")
@@ -381,6 +507,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       hebText.setAttributes(nullStyle);
       insertRichTextFromHTML(hebText, data.he);
       hebText.setAttributes(noUnderline);
+      applyTypographyToParagraph(hebText, typography.hebrewFont, typography.hebrewFontSize);
 
       if (shouldIncludeEnglishAttribution && attributionLines.length > 0) {
         let attributionParagraph = doc.insertParagraph(index + 1, "");
@@ -554,6 +681,70 @@ function sefariaSearch() {
   // Legacy menu item now routes to the unified sidebar.
   sefariaHTML();
 } 
+
+function transformDivineNames() {
+  const docText = DocumentApp.getActiveDocument().getBody().editAsText();
+  const text = docText.getText();
+  const prefs = getPreferences();
+  let transformed = text;
+
+  if (prefs.meforash_replace == "true") {
+    transformed = transformed.replace(/י[\u0591-\u05C7]*ה[\u0591-\u05C7]*ו[\u0591-\u05C7]*ה[\u0591-\u05C7]*/g, prefs.meforash_replacement || "ה'");
+  }
+  if (prefs.yaw_replace == "true") {
+    transformed = transformed.replace(/\bי[\u0591-\u05C7]*ה[\u0591-\u05C7]*\b/g, prefs.yaw_replacement || "קה");
+  }
+  if (prefs.elodim_replace == "true") {
+    transformed = transformed.replace(/א[\u0591-\u05C7]*ל[\u0591-\u05C7]*ו[\u0591-\u05C7]*ה[\u0591-\u05C7]*י[\u0591-\u05C7]*ם[\u0591-\u05C7]*/g, prefs.elodim_replacement || "אלוקים");
+  }
+  if (prefs.god_replace == "true") {
+    transformed = transformed.replace(/\bGod\b/g, prefs.god_replacement || "G-d");
+  }
+
+  docText.setText(transformed);
+}
+
+function linkTextsWithSefaria() {
+  const bodyText = DocumentApp.getActiveDocument().getBody().editAsText();
+  const docText = bodyText.getText();
+  const candidateRegex = /\b(?:[1-3]\s)?[A-Za-z][A-Za-z.'’\-]*(?:\s+[A-Za-z][A-Za-z.'’\-]*){0,4}\s+\d+(?::\d+(?:-\d+)?)?\b/g;
+  let match;
+  let candidates = [];
+
+  while ((match = candidateRegex.exec(docText)) !== null) {
+    candidates.push(match[0]);
+    if (candidates.length >= 80) {
+      break;
+    }
+  }
+
+  const resolvedMap = {};
+  const uniqueCandidates = [...new Set(candidates)];
+  uniqueCandidates.forEach((candidate) => {
+    const resolved = findReference(candidate);
+    if (resolved && resolved.ref && !resolved.error) {
+      resolvedMap[candidate] = `https://www.sefaria.org/${encodeURIComponent(resolved.ref).replace(/%20/g, '_')}`;
+    }
+  });
+
+  let linkedCount = 0;
+  candidateRegex.lastIndex = 0;
+  while ((match = candidateRegex.exec(docText)) !== null) {
+    const url = resolvedMap[match[0]];
+    if (!url) {
+      continue;
+    }
+    const start = match.index;
+    const end = match.index + match[0].length - 1;
+    if (bodyText.getLinkUrl(start) || bodyText.getLinkUrl(end)) {
+      continue;
+    }
+    bodyText.setLinkUrl(start, end, url);
+    linkedCount++;
+  }
+
+  DocumentApp.getUi().alert(`Linked ${linkedCount} recognizable reference${linkedCount === 1 ? '' : 's'} to Sefaria.`);
+}
 
 function returnTitles() {
     let url = 'https://www.sefaria.org/api/index/titles/';

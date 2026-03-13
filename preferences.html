@@ -60,6 +60,28 @@
       </preference>
     </section>
 
+    <section name="typography">
+      <h1>
+        Typography
+      </h1>
+      <preference>
+        Hebrew font
+        <input type="text" name="hebrew_font" placeholder="Arial">
+      </preference>
+      <preference>
+        Hebrew font size
+        <input type="number" name="hebrew_font_size" min="8" max="48" step="1">
+      </preference>
+      <preference>
+        Translation font
+        <input type="text" name="translation_font" placeholder="Arial">
+      </preference>
+      <preference>
+        Translation font size
+        <input type="number" name="translation_font_size" min="8" max="48" step="1">
+      </preference>
+    </section>
+
     <section name="sheimot">
       <h1>
         Sheimot
@@ -93,6 +115,11 @@
           <option value="אלוקים">אלוקים</option>
           <option value="אלודים">אלודים</option>
         </select>
+      </preference>
+
+      <preference>
+        <input type="checkbox" name="god_replace"> Replace God with
+        <input type="text" name="god_replacement" placeholder="G-d">
       </preference>
 
     </section>
@@ -131,6 +158,13 @@
         for (let j = 0; j < selectors.length; j++) {
           selectors[j].value = preferences[selectors[j].name];
         }
+        let fields = document.querySelectorAll(`input[type="text"], input[type="number"]`);
+        for (let k = 0; k < fields.length; k++) {
+          let fieldName = fields[k].name;
+          if (preferences[fieldName] !== undefined && preferences[fieldName] !== null) {
+            fields[k].value = preferences[fieldName];
+          }
+        }
         $('.hide').fadeOut(1000);
       }).getPreferences();
       
@@ -144,6 +178,9 @@
         $("input[type='checkbox']").each((index, element) => {
           let checked = $(element).is(":checked");
           preferenceObject[$(element).attr("name")] = checked;
+        });
+        $("input[type='text'], input[type='number']").each((index, element) => {
+          preferenceObject[$(element).attr("name")] = $(element).val();
         });
         google.script.run.withSuccessHandler(() => {
           $('#results').html("Successfully updated preferences.");
