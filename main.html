@@ -128,6 +128,13 @@
               <option value="en">Translation only</option>
             </select>
             </label>
+            <label class="bilingual-layout-wrapper" style="display: inline-block; margin-left: 5px;">Layout
+              <select class="bilingual-layout-selection">
+                <option value="he-right" selected>Hebrew right</option>
+                <option value="he-left">Hebrew left</option>
+                <option value="he-top">Hebrew on top</option>
+              </select>
+            </label>
           </p>
         </nav>
         <section name="branding">
@@ -198,6 +205,11 @@
         $('.submit').prop('disabled', !enabled);
       };
 
+      const updateBilingualLayoutVisibility = () => {
+        let outputMode = $('.output-mode-selection').val();
+        $('.bilingual-layout-wrapper').toggle(outputMode === 'both');
+      };
+
       const isResolvedReference = (response) => {
         return !!(response && response.ref && response.indexTitle && !response.error);
       };
@@ -225,6 +237,7 @@
 
         let outputMode = $('.output-mode-selection').val();
         let language = (outputMode === 'both') ? undefined : outputMode;
+        let bilingualLayout = $('.bilingual-layout-selection').val();
 
         let showPesukim = Boolean($('.wants-pesukim').prop('checked'));
         let includeTranslationSourceInfo = $('.include-translation-source-info').is(':checked');
@@ -234,7 +247,7 @@
           $('.hide').add($('.warning')).fadeOut('1000');
         }).withFailureHandler(() => {
           $('.hide').add($('.warning')).fadeOut('1000');
-        }).insertReference(data, language, showPesukim, input, includeTranslationSourceInfo);
+        }).insertReference(data, language, showPesukim, input, includeTranslationSourceInfo, bilingualLayout);
         
         
 
@@ -340,6 +353,9 @@
         }
         return Math.max.apply(null, candidates);
       }
+
+      $('.output-mode-selection').on('change', updateBilingualLayoutVisibility);
+      updateBilingualLayoutVisibility();
 
       function buildVersionModel(dataIn) {
         let versions = Array.isArray(dataIn.versions) ? dataIn.versions : [];

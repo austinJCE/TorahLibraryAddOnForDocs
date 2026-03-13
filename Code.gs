@@ -229,7 +229,7 @@ function insertAttributionParagraph(paragraph, attributionLines) {
   paragraph.setLeftToRight(true);
 }
 
-function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null, includeTranslationSourceInfo = false) {
+function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null, includeTranslationSourceInfo = false, bilingualLayout = "he-right") {
   if (!data || !data.ref) {
     throw new Error("Unable to insert source: no resolved reference.");
   }
@@ -271,6 +271,11 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
 
   let shouldIncludeEnglishAttribution = includeTranslationSourceInfo && singleLanguage != "he";
   let attributionLines = (shouldIncludeEnglishAttribution) ? getEnglishAttributionLines(data) : [];
+
+  let resolvedBilingualLayout = (singleLanguage) ? null : (bilingualLayout || "he-right");
+  if (resolvedBilingualLayout !== "he-left" && resolvedBilingualLayout !== "he-top" && resolvedBilingualLayout !== "he-right") {
+    resolvedBilingualLayout = "he-right";
+  }
   
   if (singleLanguage) {
 
@@ -298,62 +303,92 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
 
   }
   else {
-    /* note: since Hebrew text needs to be inserted in RTL order, we first insert the table without 
-    the Hebrew text and then add in the Hebrew text manually, with the correct text-direction */
-    let cells = [
-      ["", ""],
-      ["", ""]
-    ];
-    let tableStyle = {};
-        tableStyle[DocumentApp.Attribute.BOLD] = false;
-    let table = doc.insertTable(index, cells)
+    if (resolvedBilingualLayout == "he-top") {
+      doc.insertParagraph(index, data.heRef)
+        .setAttributes(headerStyle)
+        .setLeftToRight(false);
 
-    table.setAttributes(tableStyle);
+      let hebTextParagraph = doc.insertParagraph(index + 1, "");
+      hebTextParagraph.setLeftToRight(false);
+      hebTextParagraph.setAttributes(nullStyle);
+      insertRichTextFromHTML(hebTextParagraph, data.he);
+      hebTextParagraph.setAttributes(noUnderline);
 
-    let engTitle = table.getCell(0, 0)
-      .setText("")
-      .insertParagraph(0, "");
-    engTitle.setLeftToRight(true);
-    insertRichTextFromHTML(engTitle, title);
-    engTitle.setAttributes(headerStyle);
+      doc.insertParagraph(index + 2, title)
+        .setAttributes(headerStyle)
+        .setLeftToRight(true);
 
-    let hebTitle = table.getCell(0, 1)
-      .setText("")
-      .insertParagraph(0, "");
-    hebTitle.setLeftToRight(false);
-    insertRichTextFromHTML(hebTitle, data.heRef);
-    hebTitle.setAttributes(headerStyle);
+      let engTextParagraph = doc.insertParagraph(index + 3, "");
+      engTextParagraph.setLeftToRight(true);
+      engTextParagraph.setAttributes(nullStyle);
+      insertRichTextFromHTML(engTextParagraph, data.text);
+      engTextParagraph.setAttributes(noUnderline);
 
-    let engText = table.getCell(1, 0)
-      .setText("")
-      .insertParagraph(0, "")
-      .setLeftToRight(true);
-    engText.setAttributes(nullStyle);
-    insertRichTextFromHTML(engText, data.text);
-    engText.setAttributes(noUnderline);
+      if (shouldIncludeEnglishAttribution && attributionLines.length > 0) {
+        let attributionParagraph = doc.insertParagraph(index + 4, "");
+        insertAttributionParagraph(attributionParagraph, attributionLines);
+      }
+    } else {
+      /* note: since Hebrew text needs to be inserted in RTL order, we first insert the table without 
+      the Hebrew text and then add in the Hebrew text manually, with the correct text-direction */
+      let cells = [
+        ["", ""],
+        ["", ""]
+      ];
+      let tableStyle = {};
+          tableStyle[DocumentApp.Attribute.BOLD] = false;
+      let table = doc.insertTable(index, cells)
 
-    let hebText = table.getCell(1, 1)
-      .setText("")
-      .insertParagraph(0, "");
-    hebText.setLeftToRight(false);
-    hebText.setAttributes(nullStyle);
-    insertRichTextFromHTML(hebText, data.he);
-    hebText.setAttributes(noUnderline);
+      table.setAttributes(tableStyle);
 
-    if (shouldIncludeEnglishAttribution && attributionLines.length > 0) {
-      let attributionParagraph = doc.insertParagraph(index + 1, "");
-      insertAttributionParagraph(attributionParagraph, attributionLines);
-    }
+      let englishColumn = (resolvedBilingualLayout == "he-left") ? 1 : 0;
+      let hebrewColumn = (resolvedBilingualLayout == "he-left") ? 0 : 1;
 
-    /* the constraints of insertParagraph mean that there will always be an extra line break in table cells to which we dynamically add text. See https://stackoverflow.com/questions/39506414/remove-newline-from-google-doc-table-content.
-    This solution was contributed by an expert in Google Apps Script, @tanaike. Thanks @tanaike! [https://stackoverflow.com/questions/76647915/extra-spaces-when-inserting-text-in-google-docs-tables-rich-text-version?noredirect=1#comment135153775_76647915] */ 
+      let engTitle = table.getCell(0, englishColumn)
+        .setText("")
+        .insertParagraph(0, "");
+      engTitle.setLeftToRight(true);
+      insertRichTextFromHTML(engTitle, title);
+      engTitle.setAttributes(headerStyle);
 
-    for (let r = 0; r < table.getNumRows(); r++) {
-      const row = table.getRow(r);
-      for (let c = 0; c < row.getNumCells(); c++) {
-        const cell = row.getCell(c);
-        const n = cell.getNumChildren();
-        cell.getChild(n - 1).removeFromParent();
+      let hebTitle = table.getCell(0, hebrewColumn)
+        .setText("")
+        .insertParagraph(0, "");
+      hebTitle.setLeftToRight(false);
+      insertRichTextFromHTML(hebTitle, data.heRef);
+      hebTitle.setAttributes(headerStyle);
+
+      let engText = table.getCell(1, englishColumn)
+        .setText("")
+        .insertParagraph(0, "")
+        .setLeftToRight(true);
+      engText.setAttributes(nullStyle);
+      insertRichTextFromHTML(engText, data.text);
+      engText.setAttributes(noUnderline);
+
+      let hebText = table.getCell(1, hebrewColumn)
+        .setText("")
+        .insertParagraph(0, "");
+      hebText.setLeftToRight(false);
+      hebText.setAttributes(nullStyle);
+      insertRichTextFromHTML(hebText, data.he);
+      hebText.setAttributes(noUnderline);
+
+      if (shouldIncludeEnglishAttribution && attributionLines.length > 0) {
+        let attributionParagraph = doc.insertParagraph(index + 1, "");
+        insertAttributionParagraph(attributionParagraph, attributionLines);
+      }
+
+      /* the constraints of insertParagraph mean that there will always be an extra line break in table cells to which we dynamically add text. See https://stackoverflow.com/questions/39506414/remove-newline-from-google-doc-table-content.
+      This solution was contributed by an expert in Google Apps Script, @tanaike. Thanks @tanaike! [https://stackoverflow.com/questions/76647915/extra-spaces-when-inserting-text-in-google-docs-tables-rich-text-version?noredirect=1#comment135153775_76647915] */ 
+
+      for (let r = 0; r < table.getNumRows(); r++) {
+        const row = table.getRow(r);
+        for (let c = 0; c < row.getNumCells(); c++) {
+          const cell = row.getCell(c);
+          const n = cell.getNumChildren();
+          cell.getChild(n - 1).removeFromParent();
+        }
       }
     }
 
