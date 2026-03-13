@@ -324,7 +324,8 @@
     }
 
     .versioning-select,
-    .translation-combobox {
+    .translation-filter-input,
+    .translation-version-select {
       width: 100%;
       box-sizing: border-box;
       border: 1px solid var(--border);
@@ -442,8 +443,46 @@
       padding-top: 0.5em;
     }
 
-    .translation-combobox {
-      width: 100%;
+    .translation-version-select {
+      margin-top: 6px;
+      min-height: 150px;
+      padding: 4px;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .results-toggle-button {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--selected);
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .selected-result-summary {
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #444;
+    }
+
+    .selected-result-summary strong {
+      display: block;
+      font-size: 13px;
+      color: var(--text);
+      margin-bottom: 2px;
+      overflow-wrap: anywhere;
     }
 
     .visually-hidden {
@@ -455,15 +494,6 @@
       overflow: hidden;
       clip: rect(0, 0, 0, 0);
       border: 0;
-    }
-
-    .ui-autocomplete-category {
-      font-weight: bold;
-      font-size: 11px;
-      padding: 4px 8px;
-      color: #555;
-      border-top: 1px solid #eee;
-      background: #fafafa;
     }
 
     </style>
@@ -510,10 +540,17 @@
       </section>
 
       <section class="results-panel">
-        <div class="result-group-label">Library matches</div>
-        <ul class="result-list library-results"></ul>
-        <div class="result-group-label">Search results</div>
-        <ul class="result-list search-results"></ul>
+        <div class="results-header">
+          <div class="result-group-label" style="margin: 0;">Results</div>
+          <button type="button" class="results-toggle-button" style="display:none;">Show results</button>
+        </div>
+        <div class="selected-result-summary" style="display:none;"></div>
+        <div class="results-lists">
+          <div class="result-group-label">Library matches</div>
+          <ul class="result-list library-results"></ul>
+          <div class="result-group-label">Search results</div>
+          <ul class="result-list search-results"></ul>
+        </div>
       </section>
 
       <section class="display-section">
@@ -690,7 +727,9 @@
       let latestResolveRequestId = 0;
       let latestQueryRequestId = 0;
       let selectedResultKey = null;
+      let selectedResultSummary = null;
       let queryState = { libraryMatches: [], searchResults: [] };
+      let resultsCollapsed = false;
 
       let hasResolvedReference = false;
       setInsertButtonState(false);
@@ -732,8 +771,21 @@
 
       });
 
+      const updateResultsVisibility = () => {
+        const shouldCollapse = resultsCollapsed && !!selectedResultSummary;
+        $('.results-lists').toggle(!shouldCollapse);
+        $('.results-toggle-button').toggle(!!selectedResultSummary).text(shouldCollapse ? 'Show results' : 'Hide results');
+        if (shouldCollapse) {
+          $('.selected-result-summary').html(`<strong>${escapeHTML(selectedResultSummary.label)}</strong>${selectedResultSummary.subtitle ? `<div>${escapeHTML(selectedResultSummary.subtitle)}</div>` : ''}`).show();
+        } else {
+          $('.selected-result-summary').hide().empty();
+        }
+      };
+
       const clearSelectedResult = () => {
         selectedResultKey = null;
+        selectedResultSummary = null;
+        resultsCollapsed = false;
         hasResolvedReference = false;
         setInsertButtonState(false);
         data = {};
@@ -741,6 +793,7 @@
         updatePesukimAvailability(null);
         $('.result-item').removeClass('selected').attr('aria-pressed', 'false');
         $('.suggestions').html("<b>Select a result to preview it.</b>");
+        updateResultsVisibility();
       };
 
       const renderResultGroup = (selector, items, groupName) => {
@@ -763,6 +816,7 @@
       const renderResults = () => {
         renderResultGroup('.library-results', queryState.libraryMatches, 'Library matches');
         renderResultGroup('.search-results', queryState.searchResults, 'Search results');
+        updateResultsVisibility();
       };
 
       const formatRefForResult = (ref) => {
@@ -908,28 +962,26 @@
         event.preventDefault();
         const key = $(this).attr('data-key');
         const ref = $(this).attr('data-ref');
+        const label = $(this).find('.result-title').text().trim() || ref;
+        const subtitle = $(this).find('.result-subtitle').first().text().trim();
         selectedResultKey = key;
+        selectedResultSummary = { label, subtitle };
+        resultsCollapsed = true;
         $('.result-item').removeClass('selected').attr('aria-pressed', 'false');
         $(this).addClass('selected').attr('aria-pressed', 'true');
+        updateResultsVisibility();
         resolveSelectedResult(ref, ref);
       });
 
-      renderResults();
-
-      $.widget("custom.catcomplete", $.ui.autocomplete, {
-        _renderMenu: function(ul, items) {
-          let currentCategory = "";
-          $.each(items, function(index, item) {
-            if (item.category !== currentCategory) {
-              ul.append(`<li class='ui-autocomplete-category'>${item.category}</li>`);
-              currentCategory = item.category;
-            }
-            $('<li>').append(`<div>${item.label}</div>`).appendTo(ul)
-              .data('item.autocomplete', item)
-              .data('ui-autocomplete-item', item);
-          });
+      $('.results-toggle-button').on('click', () => {
+        if (!selectedResultSummary) {
+          return;
         }
+        resultsCollapsed = !resultsCollapsed;
+        updateResultsVisibility();
       });
+
+      renderResults();
 
       function escapeHTML(value) {
         return String(value || "")
@@ -1107,7 +1159,7 @@
         });
         selectVersionHebrew += `</select>`;
 
-        let translationInput = `<label class="version-label" for="translation-version-input">Translation</label><input type="text" id="translation-version-input" class="translation-combobox" placeholder="Search translation version" value="${escapeHTML(enSelectedVersionTitle)}">`;
+        let translationInput = `<label class="version-label" for="translation-version-filter">Translation</label><input type="text" id="translation-version-filter" class="translation-filter-input" placeholder="Filter translation versions" aria-label="Filter translation versions"><select id="translation-version-selection" class="translation-version-select" size="6" aria-label="Translation versions"></select>`;
 
         let languageGroups = {};
         translationEntries.forEach((entry) => {
@@ -1132,7 +1184,8 @@
             translationItems.push({
               label: entry.label,
               value: entry.versionTitle,
-              category: groupLabel
+              category: groupLabel,
+              searchable: `${entry.label} ${entry.versionTitle} ${groupLabel}`.toLowerCase()
             });
           });
         });
@@ -1155,43 +1208,28 @@
         $('.hebrew-version-control').html(selectVersionHebrew);
         $('.suggestions').html(suggestion);
 
-        const applyTranslationSelection = (item) => {
-          if (!item) {
-            return false;
-          }
-          $('.translation-combobox').val(item.label);
-          $('.translation-combobox').attr('data-selected-version', item.value);
-          getVersions();
-          return true;
-        };
+        let currentEnVersion = enSelectedVersionTitle;
 
-        const resolveTranslationInput = () => {
-          let typedValue = ($('.translation-combobox').val() || '').trim();
-          if (!typedValue) {
-            $('.translation-combobox').val(enSelectedVersionTitle);
-            $('.translation-combobox').attr('data-selected-version', enSelectedVersionTitle);
-            return;
-          }
+        const renderTranslationOptions = (filterTerm) => {
+          let query = String(filterTerm || '').trim().toLowerCase();
+          let filtered = translationItems.filter((item) => !query || item.searchable.indexOf(query) >= 0);
+          let optionsHTML = '';
 
-          let lower = typedValue.toLowerCase();
-          let matched = translationItems.find((item) => item.label === typedValue || item.value === typedValue);
-          if (!matched) {
-            let containsMatches = translationItems.filter((item) => {
-              return item.label.toLowerCase().indexOf(lower) >= 0 || item.value.toLowerCase().indexOf(lower) >= 0;
+          if (!filtered.length) {
+            optionsHTML = `<option value="" disabled>No matching translations</option>`;
+          } else {
+            filtered.forEach((item) => {
+              let selected = item.value === currentEnVersion ? 'selected' : '';
+              optionsHTML += `<option value="${escapeHTML(item.value)}" ${selected}>${escapeHTML(item.category)}: ${escapeHTML(item.label)}</option>`;
             });
-            if (containsMatches.length === 1) {
-              matched = containsMatches[0];
-            }
           }
 
-          if (!applyTranslationSelection(matched)) {
-            $('.translation-combobox').val(enSelectedVersionTitle);
-            $('.translation-combobox').attr('data-selected-version', enSelectedVersionTitle);
-          }
+          $('.translation-version-select').html(optionsHTML);
         };
 
         let getVersions = () => {
-          let enVersion = $('.translation-combobox').attr('data-selected-version') || enSelectedVersionTitle || $('.translation-combobox').val();
+          let selectedTranslation = $('.translation-version-select').val();
+          let enVersion = selectedTranslation || currentEnVersion || enSelectedVersionTitle;
           let heVersion = $('.he-version-selection').val();
           let versions = {"en": enVersion, "he": heVersion};
           let requestId = ++latestResolveRequestId;
@@ -1225,48 +1263,28 @@
             clearVersionSelectors();
             updatePesukimAvailability(null);
           }).findReference(resolvedRef, versions);
-        }
+        };
 
-        $('.translation-combobox').attr('data-selected-version', enSelectedVersionTitle);
-        $('.translation-combobox').catcomplete({
-          appendTo: '.suggestions',
-          delay: 50,
-          minLength: 0,
-          source: (request, response) => {
-            let searchTerm = (request.term || '').toLowerCase();
-            let filtered = translationItems.filter((item) => {
-              return item.label.toLowerCase().indexOf(searchTerm) >= 0 ||
-                item.value.toLowerCase().indexOf(searchTerm) >= 0 ||
-                item.category.toLowerCase().indexOf(searchTerm) >= 0;
-            });
-            response(filtered);
-          },
-          focus: (event) => event.preventDefault(),
-          select: (event, ui) => {
-            event.preventDefault();
-            applyTranslationSelection(ui.item);
-          },
-          change: (event, ui) => {
-            if (ui && ui.item) {
-              applyTranslationSelection(ui.item);
-              return;
-            }
-            resolveTranslationInput();
-          }
-        }).on('focus', function() {
-          $(this).catcomplete('search', $(this).val());
+        renderTranslationOptions('');
+
+        $('.translation-filter-input').on('input', function() {
+          renderTranslationOptions($(this).val());
         }).on('keydown', function(event) {
-          if (event.key === 'ArrowDown' && !$(this).catcomplete('widget').is(':visible')) {
-            $(this).catcomplete('search', $(this).val());
-          }
-          if (event.key === 'Enter' && !$(this).catcomplete('widget').is(':visible')) {
+          if (event.key === 'ArrowDown') {
             event.preventDefault();
-            resolveTranslationInput();
+            $('.translation-version-select').focus();
           }
-        }).on('blur', function() {
-          setTimeout(resolveTranslationInput, 0);
         });
-        
+
+        $('.translation-version-select').on('change', function() {
+          let selected = $(this).val();
+          if (!selected) {
+            return;
+          }
+          currentEnVersion = selected;
+          getVersions();
+        });
+
         $('.he-version-selection').on('change', () => {
           getVersions();
         });
