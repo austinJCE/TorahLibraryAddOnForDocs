@@ -64,6 +64,35 @@
       align-items: center;
     }
 
+    .search-control-row {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .search-filter-select {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      padding: 8px 10px;
+      font-size: 13px;
+      min-height: 36px;
+    }
+
+    .relevance-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #444;
+      white-space: nowrap;
+      user-select: none;
+    }
+
     #run-sefaria,
     #insert-source {
       border: 0;
@@ -367,6 +396,16 @@
       margin-bottom: 2px;
     }
 
+    .result-type {
+      display: inline-block;
+      margin-bottom: 4px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #5d6878;
+      font-weight: 700;
+    }
+
     .result-subtitle,
     .result-snippet {
       font-size: 12px;
@@ -442,6 +481,27 @@
           <input type="text" class="input disab" placeholder="Reference, title, or phrase" aria-label="Find a source">
         </div>
         <button class="search-submit" id="run-sefaria">Find</button>
+      </section>
+      <section class="search-control-row" aria-label="Search controls">
+        <select class="search-filter-select" aria-label="Corpus filter">
+          <option value="" selected>Corpus: All</option>
+          <option value="Tanakh">Corpus: Tanakh</option>
+          <option value="Mishnah">Corpus: Mishnah</option>
+          <option value="Talmud">Corpus: Talmud</option>
+          <option value="Halakhah">Corpus: Halakhah</option>
+          <option value="Midrash">Corpus: Midrash</option>
+          <option value="Kabbalah">Corpus: Kabbalah</option>
+          <option value="Liturgy">Corpus: Liturgy</option>
+          <option value="Philosophy">Corpus: Philosophy</option>
+          <option value="Tanaitic">Corpus: Tanaitic</option>
+          <option value="Chasidut">Corpus: Chasidut</option>
+          <option value="Musar">Corpus: Musar</option>
+          <option value="Apocrypha">Corpus: Apocrypha</option>
+          <option value="Modern Works">Corpus: Modern Works</option>
+          <option value="Reference">Corpus: Reference</option>
+          <option value="Other">Corpus: Other</option>
+        </select>
+        <label class="relevance-toggle"><input type="checkbox" class="wants-relevance"> Relevance</label>
       </section>
 
       <section class="results-panel">
@@ -635,6 +695,14 @@
         $('.hebrew-version-control').empty();
       };
 
+      const getSearchParameters = () => {
+        const selectedCorpus = $('.search-filter-select').val();
+        return {
+          filters: selectedCorpus ? [selectedCorpus] : [],
+          relevanceSort: $('.wants-relevance').is(':checked')
+        };
+      };
+
       $('#insert-source').click(() => {
         if (!hasResolvedReference || !data || !data.ref) {
           return;
@@ -679,9 +747,10 @@
 
         items.forEach((item) => {
           const selectedClass = item.key === selectedResultKey ? 'selected' : '';
+          const typeBadge = item.typeLabel ? `<div class='result-type'>${escapeHTML(item.typeLabel)}</div>` : '';
           const subtitle = item.subtitle ? `<div class='result-subtitle'>${escapeHTML(item.subtitle)}</div>` : '';
           const snippet = item.snippet ? `<div class='result-snippet'>${item.snippet}</div>` : '';
-          $list.append(`<li><button class='result-item ${selectedClass}' data-key='${escapeHTML(item.key)}' data-ref='${escapeHTML(item.ref)}' aria-pressed='${item.key === selectedResultKey ? 'true' : 'false'}'><div class='result-title'>${escapeHTML(item.label)}</div>${subtitle}${snippet}</button></li>`);
+          $list.append(`<li><button class='result-item ${selectedClass}' data-key='${escapeHTML(item.key)}' data-ref='${escapeHTML(item.ref)}' aria-pressed='${item.key === selectedResultKey ? 'true' : 'false'}'>${typeBadge}<div class='result-title'>${escapeHTML(item.label)}</div>${subtitle}${snippet}</button></li>`);
         });
       };
 
@@ -695,6 +764,24 @@
         const chunks = clean.split(',').map((part) => part.trim()).filter(Boolean);
         if (chunks.length <= 1) return { label: clean, subtitle: '' };
         return { label: chunks[0], subtitle: chunks.slice(1).join(' › ') };
+      };
+
+      const buildResultFromSource = (source, fallbackRef, keyPrefix, index, snippet, typeLabel) => {
+        const ref = source.ref || fallbackRef || '';
+        const display = formatRefForResult(ref);
+        const sourcePath = Array.isArray(source.path) ? source.path.filter(Boolean) : [];
+        const breadcrumb = sourcePath.length > 1
+          ? sourcePath.slice(1).join(' › ')
+          : (display.subtitle || source.heRef || '');
+
+        return {
+          key: `${keyPrefix}-${index}-${ref || index}`,
+          ref,
+          label: sourcePath[0] || display.label || ref || 'Result',
+          subtitle: breadcrumb,
+          snippet,
+          typeLabel
+        };
       };
 
       const runUnifiedQuery = () => {
@@ -715,39 +802,45 @@
             key: `library-title-${index}-${title}`,
             ref: title,
             label: title,
-            subtitle: 'Library title match'
+            subtitle: 'Title match',
+            typeLabel: 'Library'
           }));
 
         queryState.libraryMatches = [{
           key: `library-ref-${input}`,
           ref: input,
           label: input,
-          subtitle: 'Direct reference lookup'
+          subtitle: 'Direct reference lookup',
+          typeLabel: 'Library'
         }].concat(prefixTitles);
         queryState.searchResults = [];
         renderResults();
 
         const requestId = ++latestQueryRequestId;
+        const searchParameters = getSearchParameters();
         google.script.run.withSuccessHandler((response) => {
           if (requestId !== latestQueryRequestId) return;
-          queryState.searchResults = (response || []).slice(0, 10).map((hit, index) => {
+          const hits = (response || []).slice(0, 12);
+          const libraryPathHits = [];
+          const contentHits = [];
+          hits.forEach((hit, index) => {
             const source = (hit && hit._source) ? hit._source : {};
-            const display = formatRefForResult(source.ref || '');
             const snippet = hit && hit.highlight && hit.highlight.naive_lemmatizer && hit.highlight.naive_lemmatizer[0] ? hit.highlight.naive_lemmatizer[0] : '';
-            return {
-              key: `search-${index}-${source.ref || index}`,
-              ref: source.ref || '',
-              label: display.label || source.ref || 'Search result',
-              subtitle: display.subtitle,
-              snippet
-            };
+            const pathDepth = Array.isArray(source.path) ? source.path.filter(Boolean).length : 0;
+            if (pathDepth > 1) {
+              libraryPathHits.push(buildResultFromSource(source, source.ref, 'library-search', index, snippet, 'Library path'));
+              return;
+            }
+            contentHits.push(buildResultFromSource(source, source.ref, 'search', index, snippet, 'Content hit'));
           });
+          queryState.libraryMatches = queryState.libraryMatches.concat(libraryPathHits).slice(0, 10);
+          queryState.searchResults = contentHits;
           renderResults();
         }).withFailureHandler(() => {
           if (requestId !== latestQueryRequestId) return;
           queryState.searchResults = [];
           renderResults();
-        }).findSearch(input, [], false);
+        }).findSearch(input, searchParameters.filters, searchParameters.relevanceSort);
       };
 
       const resolveSelectedResult = (selectedRef, inputLabel) => {
@@ -792,6 +885,12 @@
       $('.input').on('keydown', (event) => {
         if (event.key === 'Enter') {
           event.preventDefault();
+          runUnifiedQuery();
+        }
+      });
+
+      $('.search-filter-select, .wants-relevance').on('change', () => {
+        if (($('.input').val() || '').trim()) {
           runUnifiedQuery();
         }
       });
@@ -856,7 +955,17 @@
 
       function buildPreviewMeta(primaryRef, fallbackRef) {
         let breadcrumb = formatBreadcrumb(primaryRef);
-        let fallback = String(fallbackRef || primaryRef || '').trim();
+        if (!breadcrumb && fallbackRef && fallbackRef.indexTitle && Array.isArray(fallbackRef.sections)) {
+          breadcrumb = [fallbackRef.indexTitle].concat(fallbackRef.sections).join(' › ');
+        }
+        let fallback = '';
+        if (typeof fallbackRef === 'string') {
+          fallback = fallbackRef.trim();
+        } else if (fallbackRef && typeof fallbackRef === 'object') {
+          fallback = String(fallbackRef.ref || fallbackRef.heRef || primaryRef || '').trim();
+        } else {
+          fallback = String(primaryRef || '').trim();
+        }
         let display = breadcrumb || fallback;
         return `<div class='preview-meta'>${escapeHTML(display)}</div>`;
       }
@@ -1028,7 +1137,7 @@
               ${dataIn.text}
             </td>
             <td class='preview-he'>
-              ${buildPreviewMeta(dataIn.heRef, dataIn.ref)}
+              ${buildPreviewMeta(dataIn.heRef, dataIn)}
               ${dataIn.he}
             </td>
           </tr>
