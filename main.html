@@ -713,6 +713,32 @@
         return !!(response && response.ref && response.indexTitle && !response.error);
       };
 
+      const hasRenderableText = (value) => {
+        if (Array.isArray(value)) {
+          return value.some((part) => hasRenderableText(part));
+        }
+        if (value === null || value === undefined) {
+          return false;
+        }
+        const stripped = String(value)
+          .replace(/<[^>]*>/g, '')
+          .replace(/&nbsp;/gi, ' ')
+          .trim();
+        return stripped.length > 0;
+      };
+
+      const isInsertableReference = (response) => {
+        if (!isResolvedReference(response)) {
+          return false;
+        }
+        return hasRenderableText(response.text) || hasRenderableText(response.he);
+      };
+
+      const buildNonInsertableMessage = (response) => {
+        const prompt = buildDepthPrompt(response);
+        return `<b>This result is not directly insertable yet.</b><br><span class='result-subtitle'>${escapeHTML(prompt)}</span>`;
+      };
+
       const buildDepthPrompt = (response) => {
         let sectionNames = (response && Array.isArray(response.sectionNames)) ? response.sectionNames.filter(Boolean) : [];
         if (sectionNames.length >= 2) {
@@ -914,7 +940,7 @@
             return;
           }
 
-          if (isResolvedReference(response)) {
+          if (isInsertableReference(response)) {
             updateSuggestion(response, inputLabel);
             updatePesukimAvailability(response);
             data = response;
@@ -927,8 +953,7 @@
           setInsertButtonState(false);
           clearVersionSelectors();
           updatePesukimAvailability(null);
-          let prompt = buildDepthPrompt(response);
-          $('.suggestions').html(`<br><b>${escapeHTML(prompt)}</b>`);
+          $('.suggestions').html(`<br>${buildNonInsertableMessage(response)}`);
         }).withFailureHandler(() => {
           if (requestId !== latestResolveRequestId) {
             return;
@@ -1177,15 +1202,18 @@
 
         let translationItems = [];
         translationGroupLabels.forEach((groupLabel) => {
+          let cleanGroupLabel = String(groupLabel || '').replace(/\s+/g, ' ').trim() || 'Other';
           if (!languageGroups[groupLabel] || languageGroups[groupLabel].length === 0) {
             return;
           }
           languageGroups[groupLabel].forEach((entry) => {
+            let cleanLabel = String(entry.label || entry.versionTitle || '').replace(/\s+/g, ' ').trim();
+            let normalizedLabel = cleanLabel.replace(/^[-–—:•\s]+/, '');
             translationItems.push({
-              label: entry.label,
+              label: normalizedLabel,
               value: entry.versionTitle,
-              category: groupLabel,
-              searchable: `${entry.label} ${entry.versionTitle} ${groupLabel}`.toLowerCase()
+              category: cleanGroupLabel,
+              searchable: `${normalizedLabel} ${entry.versionTitle} ${cleanGroupLabel}`.toLowerCase()
             });
           });
         });
@@ -1220,7 +1248,7 @@
           } else {
             filtered.forEach((item) => {
               let selected = item.value === currentEnVersion ? 'selected' : '';
-              optionsHTML += `<option value="${escapeHTML(item.value)}" ${selected}>${escapeHTML(item.category)}: ${escapeHTML(item.label)}</option>`;
+              optionsHTML += `<option value="${escapeHTML(item.value)}" ${selected}>${escapeHTML(item.category)} - ${escapeHTML(item.label)}</option>`;
             });
           }
 
@@ -1241,11 +1269,12 @@
             if (requestId !== latestResolveRequestId) {
               return;
             }
-            if (!isResolvedReference(response)) {
+            if (!isInsertableReference(response)) {
               hasResolvedReference = false;
               setInsertButtonState(false);
               clearVersionSelectors();
               updatePesukimAvailability(null);
+              $('.suggestions').html(`<br>${buildNonInsertableMessage(response)}`);
               return;
             }
             updateSuggestion(response, inputTitle);
