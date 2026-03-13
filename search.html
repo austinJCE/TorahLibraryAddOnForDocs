@@ -195,6 +195,12 @@
     <script>
     let selectedReference = '';
 
+    const clearSelectedSource = () => {
+      selectedReference = '';
+      $('.source').removeClass('selected').attr('aria-pressed', 'false');
+      $('.insert-button').prop('disabled', true);
+    };
+
     const formatRefDisplay = (source) => {
       const rawRef = source.ref || '';
       const rawHeRef = source.heRef || rawRef;
@@ -244,6 +250,17 @@
       insertSelectedSource();
     });
 
+    $('.suggestions').on('click', '.source', (event) => {
+      setSelectedSource($(event.currentTarget));
+    });
+
+    $('.suggestions').on('keydown', '.source', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        setSelectedSource($(event.currentTarget));
+      }
+    });
+
     $('.search-button').click(() => {
         let filterVal = $('.select-filters').val();
         console.log(filterVal);
@@ -257,8 +274,7 @@
         let input = $('.input').val();
         console.log(`${filters} and ${input}`);
         let pageRank = $('.wants-pagerank').is(':checked');
-        selectedReference = '';
-        $('.insert-button').prop('disabled', true);
+        clearSelectedSource();
 
         $('.suggestions').html(`<img src="https://www.sefaria.org/static/img/ajax-loader.gif" class="search_loading">`);
 
@@ -268,31 +284,26 @@
                 let rtl = response[i]["_source"]["lang"];
                 const source = response[i]["_source"];
                 const refDisplay = formatRefDisplay(source);
-                let text = `
-                    <div class='source ${rtl}' data-ref='${source["ref"]}' tabindex='0' role='button' aria-pressed='false'>
-                      <h3 class='ref' number='${i}'>
-                        <span class='ref-breadcrumb'>${refDisplay.breadcrumb}</span>
-                        ${refDisplay.fallback ? `<span class='ref-fallback'>${refDisplay.fallback}</span>` : ''}
-                      </h3>
-                        <p class='snippet'>
-                          ${response[i]["highlight"]["naive_lemmatizer"][0]}
-                        </p>
-                    </div>
-                  `;
-                $('.suggestions').append(text);
-                
+                const $source = $('<div></div>')
+                  .addClass(`source ${rtl}`)
+                  .attr('data-ref', source["ref"])
+                  .attr('tabindex', '0')
+                  .attr('role', 'button')
+                  .attr('aria-pressed', 'false');
+
+                const $ref = $('<h3></h3>').addClass('ref').attr('number', i);
+                $ref.append($('<span></span>').addClass('ref-breadcrumb').text(refDisplay.breadcrumb));
+
+                if (refDisplay.fallback) {
+                  $ref.append($('<span></span>').addClass('ref-fallback').text(refDisplay.fallback));
+                }
+
+                const snippetHtml = response[i]["highlight"]["naive_lemmatizer"][0] || '';
+                const $snippet = $('<p></p>').addClass('snippet').html(snippetHtml);
+
+                $source.append($ref).append($snippet);
+                $('.suggestions').append($source);
             }
-
-            $('.source').click((event) => {
-                setSelectedSource($(event.currentTarget));
-            });
-
-            $('.source').keydown((event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                setSelectedSource($(event.currentTarget));
-              }
-            });
 
           }).findSearch(input, filters, pageRank);
     });  
