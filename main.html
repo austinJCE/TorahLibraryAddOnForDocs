@@ -462,6 +462,20 @@
       padding: 4px;
     }
 
+    .translation-selected-display {
+      margin-top: 6px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      padding: 6px 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      max-height: 88px;
+      overflow: auto;
+      white-space: normal;
+      word-break: break-word;
+    }
+
     .advanced-version-details {
       margin-top: 10px;
       border-top: 1px solid var(--border);
@@ -1350,6 +1364,7 @@
         const suffixLanguageLUT = {
           en: 'English',
           he: 'Hebrew',
+          ro: 'Romanian',
           yi: 'Yiddish',
           fr: 'French',
           de: 'German',
@@ -1358,6 +1373,12 @@
           ru: 'Russian',
           it: 'Italian',
           ar: 'Arabic',
+          nl: 'Dutch',
+          pl: 'Polish',
+          hu: 'Hungarian',
+          cs: 'Czech',
+          uk: 'Ukrainian',
+          tr: 'Turkish',
           lad: 'Ladino',
           su: 'Sundanese'
         };
@@ -1369,15 +1390,19 @@
         let suffixMatch = title.match(/\[([a-z]{2,3})\]\s*$/i);
         let suffix = suffixMatch ? suffixMatch[1].toLowerCase() : '';
         let suffixLabel = suffixLanguageLUT[suffix] || '';
+        let metadataLooksEnglish = ["en", "eng", "english"].indexOf(lang) >= 0 || /english/i.test(family);
 
         if (["he", "heb", "hebrew"].indexOf(lang) >= 0 || /hebrew/i.test(family)) {
           return { key: "he", label: "Hebrew" };
         }
-        if (["en", "eng", "english"].indexOf(lang) >= 0 || /english/i.test(family)) {
+        if (metadataLooksEnglish) {
           if (suffix && suffix !== 'en' && suffixLabel) {
             return { key: `other:${suffix}`, label: suffixLabel };
           }
           return { key: "en", label: "English" };
+        }
+        if (suffixLabel && normalizedFamily && /english/i.test(normalizedFamily) && suffix !== 'en') {
+          return { key: `other:${suffix}`, label: suffixLabel };
         }
         if (!lang && normalizedFamily) {
           return { key: `other:${normalizedFamily.toLowerCase()}`, label: normalizedFamily };
@@ -1523,7 +1548,7 @@
         });
         selectVersionHebrew += `</select>`;
 
-        let translationInput = `<div class="version-control-header"><label class="version-label" for="translation-version-filter">Translation versions</label><span class="version-count">${translationEntries.length} available</span></div><input type="text" id="translation-version-filter" class="translation-filter-input" placeholder="Filter by language or version name" aria-label="Filter translation versions"><select id="translation-version-selection" class="translation-version-select" size="6" aria-label="Translation versions"></select>`;
+        let translationInput = `<div class="version-control-header"><label class="version-label" for="translation-version-filter">Translation versions</label><span class="version-count">${translationEntries.length} available</span></div><input type="text" id="translation-version-filter" class="translation-filter-input" placeholder="Filter by language or version name" aria-label="Filter translation versions"><select id="translation-version-selection" class="translation-version-select" size="6" aria-label="Translation versions"></select><div class="translation-selected-display" aria-live="polite"></div>`;
 
         let languageGroups = {};
         translationEntries.forEach((entry) => {
@@ -1578,6 +1603,14 @@
 
         let currentEnVersion = enSelectedVersionTitle;
 
+        const syncSelectedTranslationDisplay = () => {
+          let selectedOption = $('.translation-version-select option:selected');
+          let selectedText = selectedOption.length ? selectedOption.text().trim() : '';
+          let selectedTitle = selectedOption.length ? (selectedOption.attr('title') || '') : '';
+          let displayText = selectedText || selectedTitle || 'No translation selected.';
+          $('.translation-selected-display').text(displayText).attr('title', displayText);
+        };
+
         const renderTranslationOptions = (filterTerm) => {
           let query = String(filterTerm || '').trim().toLowerCase();
           let filtered = translationItems.filter((item) => !query || item.searchable.indexOf(query) >= 0);
@@ -1588,11 +1621,12 @@
           } else {
             filtered.forEach((item) => {
               let selected = item.value === currentEnVersion ? 'selected' : '';
-              optionsHTML += `<option value="${escapeHTML(item.value)}" ${selected}>${escapeHTML(item.optionLabel)}</option>`;
+              optionsHTML += `<option value="${escapeHTML(item.value)}" ${selected} title="${escapeHTML(item.optionLabel)}">${escapeHTML(item.optionLabel)}</option>`;
             });
           }
 
           $('.translation-version-select').html(optionsHTML);
+          syncSelectedTranslationDisplay();
         };
 
         let getVersions = () => {
@@ -1651,6 +1685,7 @@
 
         $('.translation-version-select').on('change', function() {
           let selected = $(this).val();
+          syncSelectedTranslationDisplay();
           if (!selected) {
             return;
           }

@@ -104,14 +104,73 @@ function getVersioningPreference() {
   }
 }
 
-function findReference(reference, versions=undefined) {
+
+function normalizeReferenceInput(reference) {
+  let normalized = String(reference || '').trim();
+  if (!normalized) {
+    return '';
+  }
+
+  const finalFormMap = {
+    'ך': 'כ',
+    'ם': 'מ',
+    'ן': 'נ',
+    'ף': 'פ',
+    'ץ': 'צ'
+  };
+
+  normalized = normalized
+    .replace(/[־‐-―]/g, '-')
+    .replace(/[“”„‟″״]/g, '"')
+    .replace(/[‘’‚‛′׳]/g, "'")
+    .replace(/[‎‏‪-‮]/g, '')
+    .replace(/\s*[:：]\s*/g, ':')
+    .replace(/\s*[-–—]\s*/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  normalized = normalized.replace(/[ךםןףץ]/g, (ch) => finalFormMap[ch] || ch);
+  normalized = normalized.replace(/([֐-׿])\s+([֐-׿])/g, '$1 $2');
+  return normalized;
+}
+
+function resolveReferenceWithFallbacks(reference, versions) {
+  const candidates = [];
+  const normalized = normalizeReferenceInput(reference);
+  if (normalized) {
+    candidates.push(normalized);
+  }
+  const original = String(reference || '').trim();
+  if (original && candidates.indexOf(original) < 0) {
+    candidates.push(original);
+  }
+
+  for (let i = 0; i < candidates.length; i++) {
+    const resolved = findReference(candidates[i], versions, true);
+    if (resolved && resolved.ref && !resolved.error) {
+      return resolved;
+    }
+  }
+
+  return;
+}
+
+function findReference(reference, versions=undefined, skipNormalization=false) {
   // Technical debt: this resolver still fails hard on incomplete/partial refs (e.g. "Shemo" before "Shemot").
   // We should return structured "incomplete reference" states instead of relying on exception flow.
   //reference = "Shemot 12:1"; /* this is a test harness */
-  Logger.log(`Reference: ${reference}`);
+  let safeReference = String(reference || '').trim();
+  if (!safeReference) {
+    return;
+  }
+  if (!skipNormalization) {
+    return resolveReferenceWithFallbacks(safeReference, versions);
+  }
+
+  Logger.log(`Reference: ${safeReference}`);
   let url = 'https://www.sefaria.org/api/texts/'
   
-  let encodedReference = encodeURIComponent(reference);
+  let encodedReference = encodeURIComponent(safeReference);
 
   if (versions) {
     let encodedEnVersion = encodeURIComponent(versions.en || "");
@@ -325,6 +384,32 @@ function insertAttributionParagraph(paragraph, attributionLines) {
   paragraph.setLeftToRight(true);
 }
 
+
+function buildLinkedTitleText(baseTitle, data, singleLanguage) {
+  let safeTitle = String(baseTitle || '').trim();
+  let modeLabel = singleLanguage === 'he' ? 'Hebrew' : (singleLanguage === 'en' ? 'Translation' : 'Bilingual');
+  let versionLabel = '';
+
+  if (singleLanguage === 'he') {
+    versionLabel = String((data && data.heVersionTitle) || '').trim();
+  } else if (singleLanguage === 'en') {
+    versionLabel = String((data && data.versionTitle) || '').trim();
+  } else {
+    const enVersion = String((data && data.versionTitle) || '').trim();
+    const heVersion = String((data && data.heVersionTitle) || '').trim();
+    if (enVersion && heVersion) {
+      versionLabel = `EN: ${enVersion}; HE: ${heVersion}`;
+    } else {
+      versionLabel = enVersion || heVersion;
+    }
+  }
+
+  if (!versionLabel) {
+    return `${safeTitle} (${modeLabel})`;
+  }
+  return `${safeTitle} (${modeLabel} • ${versionLabel})`;
+}
+
 function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null, includeTranslationSourceInfo = false, bilingualLayout = "he-right", insertSefariaLink = false) {
   if (!data || !data.ref) {
     throw new Error("Unable to insert source: no resolved reference.");
@@ -384,6 +469,9 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
 
     let ltr = (singleLanguage == "he") ? false : true;
     let titleText = (singleLanguage == "he") ? data.heRef : title;
+    if (insertSefariaLink) {
+      titleText = buildLinkedTitleText(titleText, data, singleLanguage);
+    }
     let mainText = (singleLanguage == "he") ? data.he : data.text;
     
     doc.insertParagraph(index, titleText)
@@ -417,7 +505,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
   }
   else {
     if (resolvedBilingualLayout == "he-top") {
-      doc.insertParagraph(index, data.heRef)
+      doc.insertParagraph(index, insertSefariaLink ? buildLinkedTitleText(data.heRef, data, 'he') : data.heRef)
         .setAttributes(headerStyle)
         .setLeftToRight(false);
       let hebTitleParagraph = doc.getChild(index).asParagraph();
@@ -433,7 +521,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       hebTextParagraph.setAttributes(noUnderline);
       applyTypographyToParagraph(hebTextParagraph, typography.hebrewFont, typography.hebrewFontSize);
 
-      doc.insertParagraph(index + 2, title)
+      doc.insertParagraph(index + 2, insertSefariaLink ? buildLinkedTitleText(title, data, 'en') : title)
         .setAttributes(headerStyle)
         .setLeftToRight(true);
       let enTitleParagraph = doc.getChild(index + 2).asParagraph();
@@ -473,7 +561,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
         .setText("")
         .insertParagraph(0, "");
       engTitle.setLeftToRight(true);
-      insertRichTextFromHTML(engTitle, title);
+      insertRichTextFromHTML(engTitle, insertSefariaLink ? buildLinkedTitleText(title, data, 'en') : title);
       engTitle.setAttributes(headerStyle);
       applyTypographyToParagraph(engTitle, typography.translationFont, typography.translationFontSize);
       if (insertSefariaLink) {
@@ -484,7 +572,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
         .setText("")
         .insertParagraph(0, "");
       hebTitle.setLeftToRight(false);
-      insertRichTextFromHTML(hebTitle, data.heRef);
+      insertRichTextFromHTML(hebTitle, insertSefariaLink ? buildLinkedTitleText(data.heRef, data, 'he') : data.heRef);
       hebTitle.setAttributes(headerStyle);
       applyTypographyToParagraph(hebTitle, typography.hebrewFont, typography.hebrewFontSize);
       if (insertSefariaLink) {
@@ -685,6 +773,12 @@ function sefariaSearch() {
 function transformDivineNames() {
   const body = DocumentApp.getActiveDocument().getBody();
   const prefs = getPreferences();
+  const noTransformsEnabled = [prefs.meforash_replace, prefs.yaw_replace, prefs.elodim_replace, prefs.god_replace]
+    .every((value) => value != "true");
+  if (noTransformsEnabled) {
+    DocumentApp.getUi().alert('No divine-name transforms are enabled. Open Preferences and enable at least one transform before running this action.');
+    return;
+  }
   const hebrewMarks = "\\u0591-\\u05C7";
   const hebrewChars = "\\u0590-\\u05FF";
   const replaceRangesInTextElement = (textElement, ranges) => {
@@ -795,18 +889,51 @@ function linkTextsWithSefaria() {
   const bodyText = DocumentApp.getActiveDocument().getBody().editAsText();
   const docText = bodyText.getText();
   const candidatePatterns = [
-    // e.g. Genesis 1:1, Genesis 1:1-2, I Kings 3
-    /\b(?:[1-3]|I{1,3})\s+[A-Za-z][A-Za-z.'’\-]*(?:\s+[A-Za-z][A-Za-z.'’\-]*){0,4}\s+\d+(?::\d+(?:-\d+)?)?\b/g,
+    // e.g. Genesis 1:1, Genesis 1:1-2, I Kings 3, 1Kings 3:4
+    /\b(?:[1-3]|I{1,3})\s*[A-Za-z][A-Za-z.'’\-]*(?:\s+[A-Za-z][A-Za-z.'’\-]*){0,4}\s+\d+(?::\d+(?:-\d+)?)?\b/g,
     /\b[A-Za-z][A-Za-z.'’\-]*(?:\s+[A-Za-z][A-Za-z.'’\-]*){0,4}\s+\d+(?::\d+(?:-\d+)?)?\b/g,
     // e.g. Berakhot 2a
     /\b[A-Za-z][A-Za-z.'’\-]*(?:\s+[A-Za-z][A-Za-z.'’\-]*){0,3}\s+\d+[ab]\b/gi
   ];
+
+  const transliterationBookMap = {
+    bereshit: 'Genesis',
+    bereishit: 'Genesis',
+    בראשית: 'Genesis',
+    shemot: 'Exodus',
+    shemos: 'Exodus',
+    שמות: 'Exodus',
+    vayikra: 'Leviticus',
+    ויקרא: 'Leviticus',
+    bamidbar: 'Numbers',
+    במדבר: 'Numbers',
+    devarim: 'Deuteronomy',
+    דברים: 'Deuteronomy'
+  };
   let match;
   let candidates = [];
   const seen = {};
 
   const normalizeCandidate = (candidate) => {
-    return String(candidate || '').trim().replace(/[.,;:!?]+$/g, '');
+    let normalized = normalizeReferenceInput(String(candidate || '').trim().replace(/[.,;:!?]+$/g, ''));
+    normalized = normalized.replace(/\b([1-3]|I{1,3})([A-Za-z])/g, '$1 $2');
+
+    const numberedHead = normalized.match(/^([1-3]|I{1,3})\s+([^\d]+?)\s+(\d+(?::\d+(?:-\d+)?)?)$/i);
+    if (numberedHead) {
+      const mappedBook = transliterationBookMap[numberedHead[2].trim().toLowerCase()];
+      if (mappedBook) {
+        return `${numberedHead[1]} ${mappedBook} ${numberedHead[3]}`;
+      }
+    }
+
+    const head = normalized.match(/^([^\d]+?)\s+(\d+(?::\d+(?:-\d+)?)?)$/);
+    if (head) {
+      const mapped = transliterationBookMap[head[1].trim().toLowerCase()];
+      if (mapped) {
+        return `${mapped} ${head[2]}`;
+      }
+    }
+    return normalized;
   };
 
   candidatePatterns.forEach((candidateRegex) => {
@@ -842,7 +969,7 @@ function linkTextsWithSefaria() {
         continue;
       }
       const start = match.index;
-      const end = match.index + normalized.length - 1;
+      const end = match.index + match[0].length - 1;
       if (bodyText.getLinkUrl(start) || bodyText.getLinkUrl(end)) {
         continue;
       }
