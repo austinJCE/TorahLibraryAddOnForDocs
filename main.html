@@ -818,6 +818,25 @@
           .trim();
       };
 
+      const normalizeUnifiedReferenceInput = (value) => {
+        let normalized = String(value || '').trim();
+        if (!normalized) {
+          return '';
+        }
+        normalized = normalized
+          .replace(/[־‐-―]/g, '-')
+          .replace(/[“”„‟″״]/g, '"')
+          .replace(/[‘’‚‛′׳]/g, "'")
+          .replace(/[‎‏‪-‮]/g, '')
+          .replace(/׃/g, ':')
+          .replace(/\s*[:：]\s*/g, ':')
+          .replace(/\s*[-–—]\s*/g, '-')
+          .replace(/([֐-׿])["'׳״]+(?=[\s:.-]|$)/g, '$1')
+          .replace(/([֐-׿])["'׳״]+(?=[֐-׿])/g, '$1')
+          .replace(/\s+/g, ' ')
+          .trim();
+        return normalized;
+      };
 
       const mapSefariaRefSlugToLookupRef = (slug) => {
         let decoded = String(slug || '').trim();
@@ -1109,7 +1128,8 @@
       };
 
       const runUnifiedQuery = () => {
-        const input = ($('.input').val() || '').trim();
+        const input = normalizeUnifiedReferenceInput(($('.input').val() || '').trim());
+        $('.input').val(input);
         clearSelectedResult();
         pendingPreferredVersions = null;
 
@@ -1574,7 +1594,7 @@
             let cleanLabel = normalizeOptionText(entry.fullTitle || entry.label || entry.versionTitle);
             let fallbackLabel = normalizeOptionText(entry.versionTitle);
             let normalizedLabel = cleanLabel || fallbackLabel || `Translation ${entry.index + 1}`;
-            let optionLabel = `${cleanGroupLabel} — ${normalizedLabel}`;
+            let optionLabel = normalizeOptionText(`${cleanGroupLabel} — ${normalizedLabel}`);
             translationItems.push({
               label: normalizedLabel,
               optionLabel,

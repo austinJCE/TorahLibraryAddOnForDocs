@@ -26,6 +26,7 @@ const SETTINGS = [
   "versioning",
   "extended_gemara",
   "include_translation_source_info",
+  "popcorn_enabled",
   "hebrew_font",
   "hebrew_font_size",
   "translation_font",
@@ -45,6 +46,7 @@ function onInstall() {
     "nekudot_filter": false,
     "extended_gemara": false,
     "include_translation_source_info": false,
+    "popcorn_enabled": false,
     "hebrew_font": "Arial",
     "hebrew_font_size": 14,
     "translation_font": "Arial",
@@ -62,14 +64,19 @@ function onInstall() {
 let extendedGemaraPreference = false;
 
 function onOpen() {
-  DocumentApp.getUi().createAddonMenu()
+  const menu = DocumentApp.getUi().createAddonMenu()
       .addItem('Find & Insert Source', 'sefariaHTML')
       .addItem('Transform Divine Names', 'transformDivineNames')
       .addItem('Link Texts with Sefaria', 'linkTextsWithSefaria')
       .addItem('Preferences', 'preferencesPopup')
-      .addItem('Support', 'supportAndFeatureRequestPopup')
-      .addItem('Popcorn (beta)', 'popcornHTML')
-      .addToUi();
+      .addItem('Support', 'supportAndFeatureRequestPopup');
+
+  const prefs = getPreferences();
+  if (prefs.popcorn_enabled == "true") {
+    menu.addItem('Popcorn (beta)', 'popcornHTML');
+  }
+
+  menu.addToUi();
 }
 
 function sefariaHTML() {
@@ -111,27 +118,62 @@ function normalizeReferenceInput(reference) {
     return '';
   }
 
-  const finalFormMap = {
-    'ך': 'כ',
-    'ם': 'מ',
-    'ן': 'נ',
-    'ף': 'פ',
-    'ץ': 'צ'
-  };
-
   normalized = normalized
     .replace(/[־‐-―]/g, '-')
     .replace(/[“”„‟″״]/g, '"')
     .replace(/[‘’‚‛′׳]/g, "'")
     .replace(/[‎‏‪-‮]/g, '')
+    .replace(/\u05C3/g, ':')
     .replace(/\s*[:：]\s*/g, ':')
     .replace(/\s*[-–—]\s*/g, '-')
     .replace(/\s+/g, ' ')
     .trim();
 
-  normalized = normalized.replace(/[ךםןףץ]/g, (ch) => finalFormMap[ch] || ch);
+  // Normalize common Hebrew numeral punctuation: א׳:א׳-ב׳ => א:א-ב
+  normalized = normalized
+    .replace(/([\u0590-\u05FF])['"׳״]+(?=[\s:.-]|$)/g, '$1')
+    .replace(/([\u0590-\u05FF])['"׳״]+(?=[\u0590-\u05FF])/g, '$1');
+
   normalized = normalized.replace(/([֐-׿])\s+([֐-׿])/g, '$1 $2');
   return normalized;
+}
+
+function findRefsInDocumentText(documentText) {
+  const payload = {
+    text: {
+      title: '',
+      body: String(documentText || '')
+    }
+  };
+
+  try {
+    const enqueueResponse = UrlFetchApp.fetch('https://www.sefaria.org/api/find-refs', {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    const enqueueData = JSON.parse(enqueueResponse.getContentText() || '{}');
+    const taskId = enqueueData.task_id;
+    if (!taskId) {
+      return [];
+    }
+
+    for (let attempt = 0; attempt < 12; attempt++) {
+      Utilities.sleep(400);
+      const statusResponse = UrlFetchApp.fetch(`https://www.sefaria.org/api/async/${encodeURIComponent(taskId)}`, { muteHttpExceptions: true });
+      const statusData = JSON.parse(statusResponse.getContentText() || '{}');
+      if (!statusData.ready) {
+        continue;
+      }
+      const body = (((statusData || {}).result || {}).body || {});
+      return Array.isArray(body.results) ? body.results : [];
+    }
+  } catch (error) {
+    Logger.log(`Failed to fetch find-refs output: ${error.message}`);
+  }
+
+  return [];
 }
 
 function resolveReferenceWithFallbacks(reference, versions) {
@@ -888,94 +930,31 @@ function transformDivineNames() {
 function linkTextsWithSefaria() {
   const bodyText = DocumentApp.getActiveDocument().getBody().editAsText();
   const docText = bodyText.getText();
-  const candidatePatterns = [
-    // e.g. Genesis 1:1, Genesis 1:1-2, I Kings 3, 1Kings 3:4
-    /\b(?:[1-3]|I{1,3})\s*[A-Za-z][A-Za-z.'’\-]*(?:\s+[A-Za-z][A-Za-z.'’\-]*){0,4}\s+\d+(?::\d+(?:-\d+)?)?\b/g,
-    /\b[A-Za-z][A-Za-z.'’\-]*(?:\s+[A-Za-z][A-Za-z.'’\-]*){0,4}\s+\d+(?::\d+(?:-\d+)?)?\b/g,
-    // e.g. Berakhot 2a
-    /\b[A-Za-z][A-Za-z.'’\-]*(?:\s+[A-Za-z][A-Za-z.'’\-]*){0,3}\s+\d+[ab]\b/gi
-  ];
-
-  const transliterationBookMap = {
-    bereshit: 'Genesis',
-    bereishit: 'Genesis',
-    בראשית: 'Genesis',
-    shemot: 'Exodus',
-    shemos: 'Exodus',
-    שמות: 'Exodus',
-    vayikra: 'Leviticus',
-    ויקרא: 'Leviticus',
-    bamidbar: 'Numbers',
-    במדבר: 'Numbers',
-    devarim: 'Deuteronomy',
-    דברים: 'Deuteronomy'
-  };
-  let match;
-  let candidates = [];
-  const seen = {};
-
-  const normalizeCandidate = (candidate) => {
-    let normalized = normalizeReferenceInput(String(candidate || '').trim().replace(/[.,;:!?]+$/g, ''));
-    normalized = normalized.replace(/\b([1-3]|I{1,3})([A-Za-z])/g, '$1 $2');
-
-    const numberedHead = normalized.match(/^([1-3]|I{1,3})\s+([^\d]+?)\s+(\d+(?::\d+(?:-\d+)?)?)$/i);
-    if (numberedHead) {
-      const mappedBook = transliterationBookMap[numberedHead[2].trim().toLowerCase()];
-      if (mappedBook) {
-        return `${numberedHead[1]} ${mappedBook} ${numberedHead[3]}`;
-      }
-    }
-
-    const head = normalized.match(/^([^\d]+?)\s+(\d+(?::\d+(?:-\d+)?)?)$/);
-    if (head) {
-      const mapped = transliterationBookMap[head[1].trim().toLowerCase()];
-      if (mapped) {
-        return `${mapped} ${head[2]}`;
-      }
-    }
-    return normalized;
-  };
-
-  candidatePatterns.forEach((candidateRegex) => {
-    candidateRegex.lastIndex = 0;
-    while ((match = candidateRegex.exec(docText)) !== null) {
-      let normalized = normalizeCandidate(match[0]);
-      if (!normalized || seen[normalized]) {
-        continue;
-      }
-      seen[normalized] = true;
-      candidates.push(normalized);
-      if (candidates.length >= 120) {
-        break;
-      }
-    }
-  });
-
-  const resolvedMap = {};
-  candidates.forEach((candidate) => {
-    const resolved = findReference(candidate);
-    if (resolved && resolved.ref && !resolved.error) {
-      resolvedMap[candidate] = `https://www.sefaria.org/${encodeURIComponent(resolved.ref).replace(/%20/g, '_')}`;
-    }
-  });
-
+  const linkerMatches = findRefsInDocumentText(docText);
   let linkedCount = 0;
-  candidatePatterns.forEach((candidateRegex) => {
-    candidateRegex.lastIndex = 0;
-    while ((match = candidateRegex.exec(docText)) !== null) {
-      let normalized = normalizeCandidate(match[0]);
-      const url = resolvedMap[normalized];
-      if (!url) {
-        continue;
-      }
-      const start = match.index;
-      const end = match.index + match[0].length - 1;
-      if (bodyText.getLinkUrl(start) || bodyText.getLinkUrl(end)) {
-        continue;
-      }
-      bodyText.setLinkUrl(start, end, url);
-      linkedCount++;
+  linkerMatches.forEach((match) => {
+    if (!match || match.linkFailed || !Array.isArray(match.refs) || !match.refs.length) {
+      return;
     }
+    const start = Number(match.startChar);
+    const endExclusive = Number(match.endChar);
+    if (!isFinite(start) || !isFinite(endExclusive)) {
+      return;
+    }
+    const end = endExclusive - 1;
+    if (start < 0 || end < start || end >= docText.length) {
+      return;
+    }
+    if (bodyText.getLinkUrl(start) || bodyText.getLinkUrl(end)) {
+      return;
+    }
+    const ref = String(match.refs[0] || '').trim();
+    if (!ref) {
+      return;
+    }
+    const url = `https://www.sefaria.org/${encodeURIComponent(ref).replace(/%20/g, '_')}`;
+    bodyText.setLinkUrl(start, end, url);
+    linkedCount++;
   });
 
   DocumentApp.getUi().alert(`Linked ${linkedCount} recognizable reference${linkedCount === 1 ? '' : 's'} to Sefaria.`);
@@ -1039,6 +1018,11 @@ function findSearch(input, filters, pageRank) {
 }
 
 function popcornHTML() {
+  const prefs = getPreferences();
+  if (prefs.popcorn_enabled != "true") {
+    DocumentApp.getUi().alert('Popcorn is currently disabled. Enable it from Preferences to use this beta feature.');
+    return;
+  }
   let mainHTMLOutput = HtmlService.createHtmlOutputFromFile('popcorn').setTitle('Popcorn (beta)').setWidth(300);
   DocumentApp.getUi().showSidebar(mainHTMLOutput);
 }
