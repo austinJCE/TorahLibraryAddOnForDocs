@@ -1,55 +1,141 @@
 # Torah Library Add-On for Google Docs
 
-A Google Docs add-on that inserts Torah sources directly from the Sefaria API into Google Docs, with support for Hebrew/English insertion, orthography preferences, and version-aware translation handling.
+A Google Docs add-on that brings Sefaria-powered source finding, previewing, insertion, linking, and formatting into Google Docs.
 
 > This is not an official Sefaria project.
 
 ## Project overview
 
 This repository contains the Google Apps Script code and add-on UI templates used to:
-- search or reference a Sefaria text,
-- preview available versions,
-- insert the selected content into the active Google Doc,
-- apply user preferences (orthography, language output, etc.), and
-- optionally include English translation/source attribution in inserted output.
 
-The codebase is intentionally lightweight and Apps Script-native (no heavy local emulation of Google Docs APIs).
+- find a Sefaria source by reference, title, nested path, or phrase,
+- preview the selected source before insertion,
+- insert Source, Translation, or Source with Translation into the active Google Doc,
+- configure Hebrew/translation display and formatting preferences,
+- link inserted or existing references to Sefaria,
+- apply divine-name transformation preferences, and
+- manage user preferences through persistent `PropertiesService` settings.
+
+The codebase is intentionally lightweight and Apps Script-native, without trying to emulate Google Docs APIs locally.
 
 ## Main features
 
-- **Insert Source sidebar** for direct source insertion by reference/title.
-- **Search Texts sidebar** for broader source discovery.
-- **Preferences dialog** for persistent user settings via `PropertiesService`.
-- **Orthography controls** (nekudot, ta'amim, Sheimot replacement options).
-- **Version-aware insertion** for Hebrew/English text versions.
-- **Optional English translation attribution** checkbox:
-  - Adds attribution block below Translation-only insertions.
-  - Adds attribution block below bilingual table insertions.
-  - Attribution format:
-    - first line: `<versionTitle>`
-    - optional metadata lines when available (`Source: <domain/url>`, `Digitization: ...`, `License: ...`)
+### Unified Find & Insert workflow
 
-## New optional translation/source attribution setting
+The add-on now centers on a unified **Find & Insert Source** sidebar that combines direct lookup and search into a single workflow:
 
-In the **Insert Source** sidebar, the checkbox:
+1. find a source by reference, title, nested path, phrase, or Sefaria URL,
+2. select a result,
+3. configure display/layout/options,
+4. preview it,
+5. insert it into the current Google Doc.
 
-- `Include English translation attribution (version/source)`
+The sidebar groups results into:
 
-controls whether attribution is appended to English output.
+- **Library matches** first
+- **Search results** second
 
-Behavior details:
-1. Attribution is only relevant when Translation text is inserted (Translation-only or bilingual output).
+### Display and layout controls
+
+The unified sidebar supports:
+
+- **Source**
+- **Translation**
+- **Source with Translation**
+
+For bilingual insertion, layout options include:
+
+- **Hebrew on top**
+- **Hebrew left**
+- **Hebrew right**
+
+### Hebrew formatting controls
+
+The unified sidebar includes visible Hebrew formatting controls for:
+
+- **Vowels**
+- **Cantillation**
+
+Advanced source-edition/version controls remain available for cases where a specific source edition is needed.
+
+### Translation/version handling
+
+The add-on supports:
+
+- version-aware translation selection,
+- improved translation label handling,
+- translation filtering,
+- language-aware translation display labels,
+- optional translation details/attribution in inserted output.
+
+### Linking features
+
+The add-on supports:
+
+- **Insert Sefaria link** for inserted content,
+- **Open on Sefaria** for the currently selected result,
+- **Link Texts with Sefaria** as a document-level action for turning recognizable references in the current Doc into Sefaria hyperlinks.
+
+### Preferences
+
+Persistent user preferences include:
+
+- orthography controls,
+- divine-name transformation controls,
+- Hebrew font and font size defaults,
+- Translation font and font size defaults,
+- optional English divine-name replacement,
+- preference-gated legacy features such as Popcorn.
+
+### Structural-node handling
+
+When a selected result is a non-leaf or structural node rather than directly insertable text, the sidebar now provides clearer guidance and keeps insertion disabled until a text-bearing node is selected.
+
+## Key enhancements in this fork
+
+This fork substantially expands the original add-on workflow, including:
+
+- replacing the older split insertion/search flow with a unified sidebar,
+- improving search-result selection and preview behavior,
+- adding bilingual layout controls,
+- surfacing Vowels and Cantillation controls,
+- improving translation/version selection UX,
+- adding linking workflows,
+- adding typography preferences,
+- improving divine-name workflows,
+- improving structural-node guidance and preview clarity.
+
+See [CHANGELOG.md](./CHANGELOG.md) for a fuller summary of changes and [LICENSE.md](./LICENSE.md) for the repository license.
+
+## Translation details / attribution
+
+When Translation text is inserted, the add-on can optionally append a compact translation details block.
+
+Behavior summary:
+
+1. Translation details are only relevant when Translation is inserted (Translation-only or bilingual output).
 2. The formatter first uses `data.versionSource` when present.
-3. If missing, it falls back to searching `data.versions` for a matching English version title.
-4. If no source is found, it still emits a version-title-only attribution block.
-5. If no `versionTitle` is available, no attribution is inserted.
+3. If missing, it falls back to matching `data.versions`.
+4. If no source is found, it still emits a version-title-only block when possible.
+5. If no usable translation version title is available, no translation-details block is inserted.
+
+## Menu actions
+
+The add-on menu includes:
+
+- **Find & Insert Source**
+- **Transform Divine Names**
+- **Link Texts with Sefaria**
+- **Preferences**
+- **Support**
+- **Popcorn** (legacy/original-developer feature, preference-gated)
 
 ## Repository structure
 
-- `Code.gs` - Main Apps Script server logic (menu setup, Sefaria API calls, insertion, preferences).
-- `attribution.js` - Pure helper module for translation/source attribution logic (shared by GAS runtime and local tests).
-- `main.html` - Insert Source sidebar UI.
-- `search.html` - Search Texts sidebar UI.
+- `Code.gs` - Main Apps Script server logic (menu setup, Sefaria API calls, insertion, linking, preferences, divine-name transforms).
+- `attribution.js` - Pure helper module for translation/source attribution logic.
+- `main.html` - Unified Find & Insert sidebar UI.
+- `search.html` - Legacy search UI kept only as historical/reference material if still present.
 - `preferences.html` - Preferences dialog UI.
 - `support-and-features.html` - Support/feature request modal.
 - `release-notes.html` - Release notes modal.
@@ -63,7 +149,7 @@ Behavior details:
 
 - Keep changes small and PR-friendly.
 - Prefer pure helpers for logic that can be tested outside Google Docs APIs.
-- Avoid adding local infra that tries to emulate `DocumentApp`.
+- Avoid adding local infrastructure that tries to emulate `DocumentApp`.
 
 ### 2) Run local unit tests
 
@@ -73,42 +159,58 @@ Prerequisite: Node.js 18+ (for built-in `node:test`).
 npm test
 ```
 
-This runs the lightweight attribution logic tests only.
+Current local tests are intentionally lightweight and cover pure logic only.
 
-### 3) Manual validation in Apps Script (safe workflow)
+### 3) Manual validation in Apps Script
 
-Before opening a PR against the real add-on app repo, validate in a **separate test Apps Script project** and a **test Google Doc**:
+Before opening a PR against the production add-on repo, validate in a separate Apps Script test project and a non-production Google Doc.
 
-1. Create a copy/fork of this repo branch locally.
-2. Create a new standalone Apps Script project (or a disposable copy of the add-on project).
-3. Copy updated script/html files into that test project.
-4. Open a non-production Google Doc dedicated for testing.
-5. Run the add-on in test mode and verify:
-   - source insertion still works,
-   - Translation-only insertion with checkbox ON includes attribution block below translation,
-   - bilingual insertion with checkbox ON includes attribution block below the table,
-   - checkbox OFF omits attribution,
-   - missing metadata still produces version-title-only fallback,
-   - existing preferences behavior is unchanged.
-6. Only after successful test validation, prepare your PR to the real app repository.
+Recommended manual validation includes:
 
-## Contribution guidelines
+- unified search/find flow works,
+- result selection and collapse behavior works,
+- Source / Translation / Source with Translation insertion works,
+- bilingual layout options work,
+- Vowels / Cantillation toggles work,
+- translation details behavior works,
+- linking features work,
+- preferences persist and affect insertion correctly,
+- divine-name transforms behave as expected.
 
-- Open small, reviewable PRs.
-- Include:
-  - what changed,
-  - why,
-  - local test results,
-  - manual validation notes.
-- For changes touching insertion formatting, include sample before/after outputs in PR notes when possible.
 
-## Local testing details
+### 4) Local testing details
 
-Current local tests intentionally cover only pure logic:
+Current local tests intentionally cover only pure logic such as:
+
 - attribution formatting,
 - source fallback resolution,
 - empty/edge input behavior.
 
-They do **not** attempt to emulate Google Docs `DocumentApp`, cursor behavior, or table insertion APIs.
+They do **not** attempt to emulate Google Docs `DocumentApp`, cursor behavior, selection behavior, or table insertion APIs.
 
-This keeps test setup fast and maintainable while still guarding logic regressions in the new feature.
+This keeps local testing fast and maintainable while still guarding against regressions in isolated logic.
+
+### 5) Contribution guidelines
+
+Open small, reviewable PRs where possible.
+
+Include:
+
+- what changed,
+- why,
+- local test results,
+- manual validation notes.
+
+For formatting or insertion changes, include before/after examples or screenshots when possible.
+
+
+
+## Licensing
+
+The source code in this repository is licensed under the [MIT License](./LICENSE.md).
+
+See [CHANGELOG.md](./CHANGELOG.md) for a summary of major fork enhancements.
+
+This project uses the Sefaria API but is not an official Sefaria project.
+Texts and metadata retrieved from Sefaria may carry separate attribution,
+copyright, or reuse terms depending on the source text.
