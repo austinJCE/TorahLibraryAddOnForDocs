@@ -73,7 +73,7 @@ function onOpen() {
 
   const prefs = getPreferences();
   if (prefs.popcorn_enabled == "true") {
-    menu.addItem('Popcorn (beta)', 'popcornHTML');
+    menu.addItem('Popcorn (beta, legacy feature by Shlomi Helfgot)', 'popcornHTML');
   }
 
   menu.addToUi();
