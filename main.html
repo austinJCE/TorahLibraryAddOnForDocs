@@ -78,9 +78,19 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       background: #fff;
+      background-image: none !important;
       padding: 8px 10px;
       font-size: 13px;
       min-height: 36px;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+
+    .search-filter-select:hover,
+    .search-filter-select:focus {
+      background: #fff;
+      border-color: var(--selected);
     }
 
     .relevance-toggle {
@@ -564,6 +574,13 @@
       overflow-wrap: anywhere;
     }
 
+    .results-hint {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      display: none;
+    }
+
     .preview-state-title {
       margin: 0 0 6px;
       font-size: 14px;
@@ -642,6 +659,7 @@
           <ul class="result-list library-results"></ul>
           <div class="result-group-label">Search results</div>
           <ul class="result-list search-results"></ul>
+          <p class="results-hint" aria-live="polite"></p>
         </div>
       </section>
 
@@ -838,6 +856,11 @@
         return normalized;
       };
 
+      const isLikelyHebrewScriptInput = (value) => {
+        const normalized = String(value || '').trim();
+        return /[\u0590-\u05FF]/.test(normalized) && !/[A-Za-z]/.test(normalized);
+      };
+
       const mapSefariaRefSlugToLookupRef = (slug) => {
         let decoded = String(slug || '').trim();
         if (!decoded) {
@@ -985,6 +1008,7 @@
 
       let latestResolveRequestId = 0;
       let latestQueryRequestId = 0;
+      let latestDirectRefValidationRequestId = 0;
       let selectedResultKey = null;
       let selectedResultSummary = null;
       let selectedRefValue = null;
@@ -1006,6 +1030,15 @@
       const clearVersionSelectors = () => {
         $('.translation-version-control').empty();
         $('.hebrew-version-control').empty();
+      };
+
+      const setResultsHint = (message) => {
+        const text = String(message || '').trim();
+        if (!text) {
+          $('.results-hint').hide().text('');
+          return;
+        }
+        $('.results-hint').text(text).show();
       };
 
       const getSearchParameters = () => {
@@ -1131,6 +1164,7 @@
         const input = normalizeUnifiedReferenceInput(($('.input').val() || '').trim());
         $('.input').val(input);
         clearSelectedResult();
+        setResultsHint('');
         pendingPreferredVersions = null;
 
         if (!input) {
@@ -1179,15 +1213,43 @@
             typeLabel: 'Library'
           }));
 
-        queryState.libraryMatches = [{
+        const directRefMatch = {
           key: `library-ref-${input}`,
           ref: input,
           label: input,
           subtitle: 'Direct reference lookup',
           typeLabel: 'Library'
-        }].concat(prefixTitles);
+        };
+
+        const isHebrewScriptInput = isLikelyHebrewScriptInput(input);
+        queryState.libraryMatches = isHebrewScriptInput
+          ? prefixTitles
+          : [directRefMatch].concat(prefixTitles);
         queryState.searchResults = [];
         renderResults();
+
+        if (isHebrewScriptInput) {
+          const validationRequestId = ++latestDirectRefValidationRequestId;
+          const activeQueryId = latestQueryRequestId + 1;
+          google.script.run.withSuccessHandler((response) => {
+            if (validationRequestId !== latestDirectRefValidationRequestId || activeQueryId !== latestQueryRequestId) {
+              return;
+            }
+            const isValidDirectRef = getResolvedNodeState(response).resolved;
+            if (isValidDirectRef) {
+              queryState.libraryMatches = [directRefMatch].concat(queryState.libraryMatches).slice(0, 10);
+              setResultsHint('');
+            } else {
+              setResultsHint('No direct library match for this Hebrew ref. Check spelling and try again.');
+            }
+            renderResults();
+          }).withFailureHandler(() => {
+            if (validationRequestId !== latestDirectRefValidationRequestId || activeQueryId !== latestQueryRequestId) {
+              return;
+            }
+            setResultsHint('No direct library match for this Hebrew ref. Check spelling and try again.');
+          }).findReference(input);
+        }
 
         const requestId = ++latestQueryRequestId;
         const searchParameters = getSearchParameters();
