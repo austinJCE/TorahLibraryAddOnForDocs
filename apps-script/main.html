@@ -811,7 +811,8 @@
         include_translation_source_info: $('.include-translation-source-info').is(':checked')
       });
     });
-    google.script.run.withSuccessHandler((titles) => {
+    const initializeUnifiedSearch = (titles) => {
+      const safeTitles = Array.isArray(titles) ? titles : [];
     
       $(".input").removeAttr("disabled");
 
@@ -819,7 +820,7 @@
 
       $('.input').autocomplete({
           source: ( request, response ) => {
-              let matches = $.map(titles, (tag) => {
+              let matches = $.map(safeTitles, (tag) => {
                 if ( tag.toUpperCase().indexOf(request.term.toUpperCase()) === 0 ) {
                   return tag;
                 }
@@ -953,7 +954,7 @@
 
       const normalizeLatinLookupTitleCase = (value) => {
         const input = String(value || '').trim();
-        if (!input || !/[A-Za-z]/.test(input) || /[\u0590-\u05FF]/.test(input) || !Array.isArray(titles)) {
+        if (!input || !/[A-Za-z]/.test(input) || /[\u0590-\u05FF]/.test(input)) {
           return input;
         }
 
@@ -961,7 +962,7 @@
         let bestMatch = '';
         let bestMatchLength = 0;
 
-        titles.forEach((title) => {
+        safeTitles.forEach((title) => {
           const candidate = String(title || '').trim();
           if (!candidate || !/[A-Za-z]/.test(candidate)) {
             return;
@@ -1359,7 +1360,7 @@
           return;
         }
 
-        const prefixTitles = titles
+        const prefixTitles = safeTitles
           .filter((title) => title && title.toUpperCase().indexOf(input.toUpperCase()) === 0)
           .slice(0, 6)
           .map((title, index) => ({
@@ -2019,6 +2020,13 @@
         google.script.host.close();
       });
 
+    };
+
+    google.script.run.withSuccessHandler((titles) => {
+      initializeUnifiedSearch(titles);
+    }).withFailureHandler(() => {
+      initializeUnifiedSearch([]);
+      $('.suggestions').prepend("<div class='insert-warning' role='alert' aria-live='assertive'>Title suggestions are temporarily unavailable. You can still use Find with refs or free-text queries.</div>");
     }).returnTitles();
     </script>
 
