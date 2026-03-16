@@ -472,6 +472,12 @@
       padding: 4px;
     }
 
+    .translation-version-select option {
+      text-indent: 0;
+      padding-left: 0;
+      margin-left: 0;
+    }
+
     .translation-selected-display {
       margin-top: 6px;
       border: 1px solid var(--border);
@@ -522,6 +528,18 @@
     .noninsertable-warning .preview-state-title {
       color: #6a4d00;
       margin-bottom: 4px;
+    }
+
+    .insert-warning {
+      border: 1px solid #d93025;
+      background: #fdecea;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      color: #8d1f1a;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.45;
     }
 
     .advanced-version-details summary::-webkit-details-marker {
@@ -836,9 +854,48 @@
         return String(value || '')
           .replace(/&nbsp;/gi, ' ')
           .replace(/<[^>]*>/g, '')
+          .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, '')
           .replace(/^[\s\-–—:•·]+/, '')
           .replace(/\s+/g, ' ')
           .trim();
+      };
+
+      const showInsertWarning = (message) => {
+        let warningText = String(message || 'Could not insert at the current selection. Place the cursor where you want the source inserted, then try again.').trim();
+        $('.insert-warning').remove();
+        $('.suggestions').prepend(`<div class='insert-warning' role='alert' aria-live='assertive'>${escapeHTML(warningText)}</div>`);
+      };
+
+      const buildSefariaOpenUrl = () => {
+        if (!data || !data.ref) {
+          return '';
+        }
+
+        const refSlug = encodeURIComponent(data.ref).replace(/%20/g, '_');
+        const params = new URLSearchParams();
+        const outputMode = $('.output-mode-selection').val();
+        const languageByMode = {
+          en: 'en',
+          he: 'he',
+          both: 'bi'
+        };
+        const selectedLang = languageByMode[outputMode] || 'bi';
+        if (selectedLang) {
+          params.set('lang', selectedLang);
+        }
+
+        const selectedTranslationVersion = $('.translation-version-select').val() || data.versionTitle || '';
+        const selectedSourceVersion = $('.he-version-selection').val() || data.heVersionTitle || '';
+
+        if (selectedTranslationVersion) {
+          params.set('ven', selectedTranslationVersion);
+        }
+        if (selectedSourceVersion) {
+          params.set('vhe', selectedSourceVersion);
+        }
+
+        const query = params.toString();
+        return query ? `https://www.sefaria.org/${refSlug}?${query}` : `https://www.sefaria.org/${refSlug}`;
       };
 
       const normalizeUnifiedReferenceInput = (value) => {
@@ -1112,9 +1169,10 @@
         $('.hide').add($('.warning')).fadeIn('1000');
         google.script.run.withSuccessHandler(() => {
           $('.hide').add($('.warning')).fadeOut('1000');
-        }).withFailureHandler(() => {
+          $('.insert-warning').remove();
+        }).withFailureHandler((error) => {
           $('.hide').add($('.warning')).fadeOut('1000');
-          $('.suggestions').prepend("<div class='result-subtitle'><b>Could not insert at the current selection. Place the cursor where you want the source inserted, then try again.</b></div>");
+          showInsertWarning(error && error.message);
         }).insertReference(data, language, showPesukim, input, includeTranslationSourceInfo, bilingualLayout, insertSefariaLink);
         
         
@@ -1414,13 +1472,13 @@
       });
 
       $('#open-on-sefaria').on('click', () => {
-        if (!data || !data.ref) {
+        const sefariaUrl = buildSefariaOpenUrl();
+        if (!sefariaUrl) {
           return;
         }
-        const refSlug = encodeURIComponent(data.ref).replace(/%20/g, '_');
         const win = window.open('', '_blank');
         if (win) {
-          win.location.href = `https://www.sefaria.org/${refSlug}`;
+          win.location.href = sefariaUrl;
         }
       });
 
