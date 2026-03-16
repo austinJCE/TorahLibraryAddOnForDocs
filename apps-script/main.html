@@ -1222,36 +1222,33 @@
         };
 
         const isHebrewScriptInput = isLikelyHebrewScriptInput(input);
-        queryState.libraryMatches = isHebrewScriptInput
-          ? prefixTitles
-          : [directRefMatch].concat(prefixTitles);
+        queryState.libraryMatches = prefixTitles;
         queryState.searchResults = [];
         renderResults();
 
-        if (isHebrewScriptInput) {
-          const validationRequestId = ++latestDirectRefValidationRequestId;
-          const activeQueryId = latestQueryRequestId + 1;
-          google.script.run.withSuccessHandler((response) => {
-            if (validationRequestId !== latestDirectRefValidationRequestId || activeQueryId !== latestQueryRequestId) {
-              return;
-            }
-            const isValidDirectRef = getResolvedNodeState(response).resolved;
-            if (isValidDirectRef) {
-              queryState.libraryMatches = [directRefMatch].concat(queryState.libraryMatches).slice(0, 10);
-              setResultsHint('');
-            } else {
-              setResultsHint('No direct library match for this Hebrew ref. Check spelling and try again.');
-            }
-            renderResults();
-          }).withFailureHandler(() => {
-            if (validationRequestId !== latestDirectRefValidationRequestId || activeQueryId !== latestQueryRequestId) {
-              return;
-            }
-            setResultsHint('No direct library match for this Hebrew ref. Check spelling and try again.');
-          }).findReference(input);
-        }
-
         const requestId = ++latestQueryRequestId;
+        const validationRequestId = ++latestDirectRefValidationRequestId;
+        google.script.run.withSuccessHandler((response) => {
+          if (validationRequestId !== latestDirectRefValidationRequestId || requestId !== latestQueryRequestId) {
+            return;
+          }
+          const isValidDirectRef = getResolvedNodeState(response).resolved;
+          if (isValidDirectRef) {
+            queryState.libraryMatches = [directRefMatch].concat(queryState.libraryMatches).slice(0, 10);
+            setResultsHint('');
+          } else if (isHebrewScriptInput) {
+            setResultsHint('No direct library match for this Hebrew ref. Check spelling and try again.');
+          }
+          renderResults();
+        }).withFailureHandler(() => {
+          if (validationRequestId !== latestDirectRefValidationRequestId || requestId !== latestQueryRequestId) {
+            return;
+          }
+          if (isHebrewScriptInput) {
+            setResultsHint('No direct library match for this Hebrew ref. Check spelling and try again.');
+          }
+        }).findReference(input);
+
         const searchParameters = getSearchParameters();
         google.script.run.withSuccessHandler((response) => {
           if (requestId !== latestQueryRequestId) return;
