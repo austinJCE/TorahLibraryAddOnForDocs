@@ -106,7 +106,7 @@ This fork substantially expands the original add-on workflow, including:
 - improving divine-name workflows,
 - improving structural-node guidance and preview clarity.
 
-See [CHANGELOG.md](./CHANGELOG.md) for a fuller summary of changes and [LICENSE.md](./LICENSE.md) for the repository license.
+See [docs/CHANGELOG.md](./docs/CHANGELOG.md) for a fuller summary of changes and [LICENSE.md](./LICENSE.md) for the repository license.
 
 ## Translation details / attribution
 
@@ -175,6 +175,7 @@ All Google Apps Script source files now live under `apps-script/`:
 
 ### Tests
 - `tests/attribution.test.js` - Lightweight local unit tests for attribution formatting/fallback behavior.
+- `tests/review-schema-contract.test.js` - Lightweight local unit tests for Review Schema contract normalization and adapters.
 
 ## Development workflow
 
