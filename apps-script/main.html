@@ -492,6 +492,31 @@
       word-break: break-word;
     }
 
+    .preview-refresh-status {
+      margin: 6px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preview-refresh-status::before {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border: 2px solid #d2d7df;
+      border-top-color: #5672a5;
+      border-radius: 50%;
+      animation: preview-spin 0.8s linear infinite;
+    }
+
+    @keyframes preview-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     .advanced-version-details {
       margin-top: 10px;
       border-top: 1px solid var(--border);
@@ -1111,6 +1136,7 @@
       let queryState = { libraryMatches: [], searchResults: [] };
       let resultsCollapsed = false;
       let pendingPreferredVersions = null;
+      let unavailableTranslationVersionsByRef = {};
 
       let hasResolvedReference = false;
       setInsertButtonState(false);
@@ -1230,6 +1256,33 @@
         updateResultsVisibility();
       };
 
+      const selectResultItem = (item) => {
+        if (!item || !item.key || !item.ref) {
+          return;
+        }
+        selectedResultKey = item.key;
+        selectedResultSummary = { label: item.label || item.ref, subtitle: item.subtitle || '' };
+        resultsCollapsed = true;
+        $('.result-item').removeClass('selected').attr('aria-pressed', 'false');
+        $('.result-item').filter(function() {
+          return $(this).attr('data-key') === item.key;
+        }).addClass('selected').attr('aria-pressed', 'true');
+        updateResultsVisibility();
+        resolveSelectedResult(item.ref, item.label || item.ref);
+      };
+
+      const autoSelectSingleResultIfNeeded = () => {
+        if (selectedResultKey) {
+          return;
+        }
+        const total = queryState.libraryMatches.length + queryState.searchResults.length;
+        if (total !== 1) {
+          return;
+        }
+        const onlyResult = queryState.libraryMatches[0] || queryState.searchResults[0];
+        selectResultItem(onlyResult);
+      };
+
       const formatRefForResult = (ref) => {
         const clean = String(ref || '').trim();
         const chunks = clean.split(',').map((part) => part.trim()).filter(Boolean);
@@ -1338,6 +1391,7 @@
             setResultsHint('No direct library match for this Hebrew ref. Check spelling and try again.');
           }
           renderResults();
+          autoSelectSingleResultIfNeeded();
         }).withFailureHandler(() => {
           if (validationRequestId !== latestDirectRefValidationRequestId || requestId !== latestQueryRequestId) {
             return;
@@ -1370,10 +1424,12 @@
           queryState.libraryMatches = queryState.libraryMatches.concat(libraryPathHits).slice(0, 10);
           queryState.searchResults = contentHits;
           renderResults();
+          autoSelectSingleResultIfNeeded();
         }).withFailureHandler(() => {
           if (requestId !== latestQueryRequestId) return;
           queryState.searchResults = [];
           renderResults();
+          autoSelectSingleResultIfNeeded();
         }).findSearch(input, searchParameters.filters, searchParameters.relevanceSort);
       };
 
@@ -1451,16 +1507,11 @@
         }
         event.preventDefault();
         const key = $(this).attr('data-key');
-        const ref = $(this).attr('data-ref');
-        const label = $(this).find('.result-title').text().trim() || ref;
-        const subtitle = $(this).find('.result-subtitle').first().text().trim();
-        selectedResultKey = key;
-        selectedResultSummary = { label, subtitle };
-        resultsCollapsed = true;
-        $('.result-item').removeClass('selected').attr('aria-pressed', 'false');
-        $(this).addClass('selected').attr('aria-pressed', 'true');
-        updateResultsVisibility();
-        resolveSelectedResult(ref, label);
+        const item = queryState.libraryMatches.concat(queryState.searchResults).find((result) => result.key === key);
+        if (!item) {
+          return;
+        }
+        selectResultItem(item);
       });
 
       $('.results-toggle-button').on('click', () => {
@@ -1713,6 +1764,10 @@
 
       function updateSuggestion(dataIn, inputTitle) {
         const resolvedRef = dataIn && dataIn.ref ? dataIn.ref : inputTitle;
+        const availabilityKey = String(resolvedRef || '').trim();
+        if (!unavailableTranslationVersionsByRef[availabilityKey]) {
+          unavailableTranslationVersionsByRef[availabilityKey] = {};
+        }
         let versionEntries = buildVersionModel(dataIn);
         let enSelectedVersionTitle = dataIn.versionTitle || "";
         let heSelectedVersionTitle = dataIn.heVersionTitle || "";
@@ -1759,7 +1814,8 @@
               optionLabel,
               value: entry.versionTitle,
               category: cleanGroupLabel,
-              searchable: `${normalizedLabel} ${entry.versionTitle} ${cleanGroupLabel}`.toLowerCase()
+              searchable: `${normalizedLabel} ${entry.versionTitle} ${cleanGroupLabel}`.toLowerCase(),
+              isUnavailable: !!unavailableTranslationVersionsByRef[availabilityKey][entry.versionTitle]
             });
           });
         });
@@ -1798,9 +1854,16 @@
           if (!filtered.length) {
             optionsHTML = `<option value="" disabled>No matching translations</option>`;
           } else {
+            const hasAvailableCurrentSelection = filtered.some((item) => item.value === currentEnVersion && !item.isUnavailable);
+            if (!hasAvailableCurrentSelection) {
+              const firstAvailable = filtered.find((item) => !item.isUnavailable);
+              currentEnVersion = firstAvailable ? firstAvailable.value : '';
+            }
             filtered.forEach((item) => {
               let selected = item.value === currentEnVersion ? 'selected' : '';
-              optionsHTML += `<option value="${escapeHTML(item.value)}" ${selected} title="${escapeHTML(item.optionLabel)}">${escapeHTML(item.optionLabel)}</option>`;
+              let disabled = item.isUnavailable ? 'disabled' : '';
+              let optionText = item.isUnavailable ? `${item.optionLabel} (unavailable for this ref)` : item.optionLabel;
+              optionsHTML += `<option value="${escapeHTML(item.value)}" ${selected} ${disabled} title="${escapeHTML(optionText)}">${escapeHTML(optionText)}</option>`;
             });
           }
 
@@ -1808,20 +1871,38 @@
           syncSelectedTranslationDisplay();
         };
 
-        let getVersions = () => {
-          let selectedTranslation = $('.translation-version-select').val();
+        const setPreviewRefreshState = (isRefreshing, message) => {
+          $('.preview-refresh-status').remove();
+          if (isRefreshing) {
+            $('.suggestions').append(`<div class="preview-refresh-status" aria-live="polite">${escapeHTML(message || 'Refreshing preview…')}</div>`);
+          }
+        };
+
+        const markTranslationAvailability = (versionTitle, isUnavailable) => {
+          if (!versionTitle) {
+            return;
+          }
+          if (isUnavailable) {
+            unavailableTranslationVersionsByRef[availabilityKey][versionTitle] = true;
+            return;
+          }
+          delete unavailableTranslationVersionsByRef[availabilityKey][versionTitle];
+        };
+
+        let getVersions = (requestedTranslationVersion) => {
+          let selectedTranslation = requestedTranslationVersion || $('.translation-version-select').val();
           let enVersion = selectedTranslation || currentEnVersion || enSelectedVersionTitle;
           let heVersion = $('.he-version-selection').val();
           let versions = {"en": enVersion, "he": heVersion};
           let requestId = ++latestResolveRequestId;
           hasResolvedReference = false;
           setInsertButtonState(false);
-          $('.suggestions .snippet-loading').remove();
-          $('.suggestions table').append("<tr class='snippet-loading'><td colspan='2'><i>Refreshing preview…</i></td></tr>");
+          setPreviewRefreshState(true, 'Refreshing preview…');
           google.script.run.withSuccessHandler((response) => {
             if (requestId !== latestResolveRequestId) {
               return;
             }
+            setPreviewRefreshState(false);
             const nodeState = getResolvedNodeState(response);
             if (!nodeState.isInsertable) {
               hasResolvedReference = false;
@@ -1832,6 +1913,15 @@
               $('.suggestions').html(`<br>${buildNonInsertableMessage(response)}`);
               return;
             }
+
+            const responseVersion = String((response && response.versionTitle) || '');
+            const responseText = String((response && response.text) || '').replace(/<[^>]*>/g, '').trim();
+            if (enVersion && (responseVersion !== enVersion || !responseText)) {
+              markTranslationAvailability(enVersion, true);
+            } else if (enVersion) {
+              markTranslationAvailability(enVersion, false);
+            }
+
             updateSuggestion(response, inputTitle);
             updatePesukimAvailability(response);
             updateActionabilityUI(nodeState);
@@ -1843,6 +1933,7 @@
             if (requestId !== latestResolveRequestId) {
               return;
             }
+            setPreviewRefreshState(false);
             hasResolvedReference = false;
             setInsertButtonState(false);
             clearVersionSelectors();
@@ -1869,7 +1960,7 @@
             return;
           }
           currentEnVersion = selected;
-          getVersions();
+          getVersions(selected);
         });
 
         $('.he-version-selection').on('change', () => {
