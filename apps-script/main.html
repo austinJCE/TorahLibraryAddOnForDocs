@@ -861,6 +861,40 @@
         return /[\u0590-\u05FF]/.test(normalized) && !/[A-Za-z]/.test(normalized);
       };
 
+      const normalizeLatinLookupTitleCase = (value) => {
+        const input = String(value || '').trim();
+        if (!input || !/[A-Za-z]/.test(input) || /[\u0590-\u05FF]/.test(input) || !Array.isArray(titles)) {
+          return input;
+        }
+
+        const lowerInput = input.toLowerCase();
+        let bestMatch = '';
+        let bestMatchLength = 0;
+
+        titles.forEach((title) => {
+          const candidate = String(title || '').trim();
+          if (!candidate || !/[A-Za-z]/.test(candidate)) {
+            return;
+          }
+
+          const lowerCandidate = candidate.toLowerCase();
+          if (lowerInput !== lowerCandidate && lowerInput.indexOf(`${lowerCandidate} `) !== 0 && lowerInput.indexOf(`${lowerCandidate}:`) !== 0) {
+            return;
+          }
+
+          if (candidate.length > bestMatchLength) {
+            bestMatch = candidate;
+            bestMatchLength = candidate.length;
+          }
+        });
+
+        if (!bestMatch) {
+          return input;
+        }
+
+        return `${bestMatch}${input.slice(bestMatchLength)}`;
+      };
+
       const mapSefariaRefSlugToLookupRef = (slug) => {
         let decoded = String(slug || '').trim();
         if (!decoded) {
@@ -1213,9 +1247,10 @@
             typeLabel: 'Library'
           }));
 
+        const directLookupInput = normalizeLatinLookupTitleCase(input);
         const directRefMatch = {
-          key: `library-ref-${input}`,
-          ref: input,
+          key: `library-ref-${directLookupInput}`,
+          ref: directLookupInput,
           label: input,
           subtitle: 'Direct reference lookup',
           typeLabel: 'Library'
@@ -1247,7 +1282,7 @@
           if (isHebrewScriptInput) {
             setResultsHint('No direct library match for this Hebrew ref. Check spelling and try again.');
           }
-        }).findReference(input);
+        }).findReference(directLookupInput);
 
         const searchParameters = getSearchParameters();
         google.script.run.withSuccessHandler((response) => {
