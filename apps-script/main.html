@@ -684,11 +684,11 @@
       <section class="options-section">
         <div class="section-label">Options</div>
         <div class="options-panel">
-          <div class="toggle-row">
+          <div class="toggle-row hebrew-options-row">
             <label for="wants-vowels">Vowels</label>
             <input id="wants-vowels" type="checkbox" class="wants-vowels" checked>
           </div>
-          <div class="toggle-row">
+          <div class="toggle-row hebrew-options-row">
             <label for="wants-cantillation">Cantillation</label>
             <input id="wants-cantillation" type="checkbox" class="wants-cantillation" checked>
           </div>
@@ -819,6 +819,11 @@
       const updateTranslationDetailsVisibility = () => {
         let outputMode = $('.output-mode-selection').val();
         $('.translation-details-row, .translation-details-help').toggle(outputMode === 'both' || outputMode === 'en');
+      };
+
+      const updateHebrewOptionsVisibility = () => {
+        let outputMode = $('.output-mode-selection').val();
+        $('.hebrew-options-row').toggle(outputMode !== 'en');
       };
 
       const updateVersionControlsVisibility = () => {
@@ -1558,6 +1563,7 @@
       $('.output-mode-selection').on('change', () => {
         updateBilingualLayoutVisibility();
         updateTranslationDetailsVisibility();
+        updateHebrewOptionsVisibility();
         updateVersionControlsVisibility();
         syncDisplayModeCards();
         if (hasResolvedReference && data && data.ref) {
@@ -1581,6 +1587,7 @@
       });
       updateBilingualLayoutVisibility();
       updateTranslationDetailsVisibility();
+      updateHebrewOptionsVisibility();
       updateVersionControlsVisibility();
       syncDisplayModeCards();
       syncLayoutCards();
