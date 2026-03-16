@@ -4,7 +4,7 @@ const {
   getEnglishAttributionDetails,
   getEnglishAttributionLines,
   getEnglishAttribution,
-} = require('../attribution.js');
+} = require('../apps-script/attribution.js');
 
 test('returns empty string when version title is missing', () => {
   assert.equal(getEnglishAttribution({}), '');
