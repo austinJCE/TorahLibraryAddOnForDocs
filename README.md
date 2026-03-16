@@ -119,6 +119,16 @@ Behavior summary:
 4. If no source is found, it still emits a version-title-only block when possible.
 5. If no usable translation version title is available, no translation-details block is inserted.
 
+## Canonical knowledge-contract consumers
+
+This repository now includes schema-focused contract adapters for multiple consumer types:
+
+- display-oriented consumer baseline: Living Library tooltip (`TooltipPayload`) (documented externally),
+- editorial-oriented consumer baseline: Commentary Builder glossary hints (`GlossaryTerm`) (documented externally),
+- workflow/editorial-governance consumer: Review Schema alignment helpers for `ReviewStatus` and `ProvenanceRecord` (this repo pass).
+
+See [`docs/review-schema-alignment.md`](./docs/review-schema-alignment.md) and [`apps-script/review-schema-contract.js`](./apps-script/review-schema-contract.js) for the low-risk schema/adaptor implementation.
+
 ## Menu actions
 
 The add-on menu includes:
@@ -134,6 +144,7 @@ The add-on menu includes:
 
 - `Code.gs` - Main Apps Script server logic (menu setup, Sefaria API calls, insertion, linking, preferences, divine-name transforms).
 - `attribution.js` - Pure helper module for translation/source attribution logic.
+- `review-schema-contract.js` - Canonical Review Schema adapters for `ReviewStatus`, `ProvenanceRecord`, and transitional workflow metadata.
 - `main.html` - Unified Find & Insert sidebar UI.
 - `search.html` - Legacy search UI kept only as historical/reference material if still present.
 - `preferences.html` - Preferences dialog UI.
