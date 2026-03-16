@@ -478,11 +478,6 @@
       margin-left: 0;
     }
 
-    .translation-version-select option.translation-unavailable {
-      color: #7a7a7a;
-      font-style: italic;
-    }
-
     .translation-selected-display {
       margin-top: 6px;
       border: 1px solid var(--border);
@@ -615,29 +610,6 @@
       font-size: 12px;
       color: var(--muted);
       line-height: 1.5;
-    }
-
-    .preview-loading {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 6px;
-    }
-
-    .preview-loading-spinner {
-      width: 12px;
-      height: 12px;
-      border-radius: 999px;
-      border: 2px solid #d3d3d3;
-      border-top-color: var(--selected);
-      animation: preview-spin 0.75s linear infinite;
-    }
-
-    @keyframes preview-spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
     }
 
     .visually-hidden {
@@ -1119,15 +1091,6 @@
         return `${buildPreviewMeta(response && (response.ref || response.heRef), response || '')}<div class='noninsertable-warning'><h4 class='preview-state-title'>This is a section, not a directly insertable text.</h4><p class='preview-state-message'>Choose a subsection or more specific reference to preview and insert.</p><p class='preview-state-message'>${escapeHTML(state.prompt)}</p></div>`;
       };
 
-      const buildPreviewLoadingHTML = (message) => {
-        let text = String(message || 'Refreshing preview…').trim();
-        return `<div class='preview-loading' role='status' aria-live='polite'><span class='preview-loading-spinner' aria-hidden='true'></span><span>${escapeHTML(text)}</span></div>`;
-      };
-
-      const buildTranslationUnavailableLabel = (optionLabel) => {
-        return `${normalizeOptionText(optionLabel)} — unavailable for this ref`;
-      };
-
       const buildDepthPrompt = (response) => {
         let sectionNames = (response && Array.isArray(response.sectionNames)) ? response.sectionNames.filter(Boolean) : [];
         if (sectionNames.length >= 2) {
@@ -1148,7 +1111,6 @@
       let queryState = { libraryMatches: [], searchResults: [] };
       let resultsCollapsed = false;
       let pendingPreferredVersions = null;
-      let translationAvailabilityByRef = {};
 
       let hasResolvedReference = false;
       setInsertButtonState(false);
@@ -1268,28 +1230,6 @@
         updateResultsVisibility();
       };
 
-      const flattenResults = () => {
-        return queryState.libraryMatches.concat(queryState.searchResults);
-      };
-
-      const maybeAutoSelectSingleResult = () => {
-        const allResults = flattenResults().filter((item) => item && item.ref);
-        if (allResults.length !== 1) {
-          return;
-        }
-
-        const only = allResults[0];
-        if (!only || !only.key || selectedResultKey === only.key) {
-          return;
-        }
-
-        selectedResultKey = only.key;
-        selectedResultSummary = { label: only.label || only.ref, subtitle: only.subtitle || '' };
-        resultsCollapsed = true;
-        renderResults();
-        resolveSelectedResult(only.ref, only.label || only.ref);
-      };
-
       const formatRefForResult = (ref) => {
         const clean = String(ref || '').trim();
         const chunks = clean.split(',').map((part) => part.trim()).filter(Boolean);
@@ -1386,17 +1326,6 @@
 
         const requestId = ++latestQueryRequestId;
         const validationRequestId = ++latestDirectRefValidationRequestId;
-        let pendingAsyncResultGroups = 2;
-        const finishResultGroup = () => {
-          if (requestId !== latestQueryRequestId) {
-            return;
-          }
-          pendingAsyncResultGroups = Math.max(0, pendingAsyncResultGroups - 1);
-          if (pendingAsyncResultGroups === 0) {
-            maybeAutoSelectSingleResult();
-          }
-        };
-
         google.script.run.withSuccessHandler((response) => {
           if (validationRequestId !== latestDirectRefValidationRequestId || requestId !== latestQueryRequestId) {
             return;
@@ -1409,7 +1338,6 @@
             setResultsHint('No direct library match for this Hebrew ref. Check spelling and try again.');
           }
           renderResults();
-          finishResultGroup();
         }).withFailureHandler(() => {
           if (validationRequestId !== latestDirectRefValidationRequestId || requestId !== latestQueryRequestId) {
             return;
@@ -1417,7 +1345,6 @@
           if (isHebrewScriptInput) {
             setResultsHint('No direct library match for this Hebrew ref. Check spelling and try again.');
           }
-          finishResultGroup();
         }).findReference(directLookupInput);
 
         const searchParameters = getSearchParameters();
@@ -1443,12 +1370,10 @@
           queryState.libraryMatches = queryState.libraryMatches.concat(libraryPathHits).slice(0, 10);
           queryState.searchResults = contentHits;
           renderResults();
-          finishResultGroup();
         }).withFailureHandler(() => {
           if (requestId !== latestQueryRequestId) return;
           queryState.searchResults = [];
           renderResults();
-          finishResultGroup();
         }).findSearch(input, searchParameters.filters, searchParameters.relevanceSort);
       };
 
@@ -1459,7 +1384,7 @@
         setInsertButtonState(false);
         $('#open-on-sefaria').prop('disabled', true);
         updatePesukimAvailability(null);
-        $('.suggestions').html(buildPreviewLoadingHTML('Loading preview…'));
+        $('.suggestions').html("<br><b>Loading preview…</b>");
         google.script.run.withSuccessHandler((response) => {
           if (requestId !== latestResolveRequestId) {
             return;
@@ -1832,13 +1757,9 @@
             translationItems.push({
               label: normalizedLabel,
               optionLabel,
-              unavailableLabel: buildTranslationUnavailableLabel(optionLabel),
               value: entry.versionTitle,
               category: cleanGroupLabel,
-              searchable: `${normalizedLabel} ${entry.versionTitle} ${cleanGroupLabel}`.toLowerCase(),
-              availableForRef: Object.prototype.hasOwnProperty.call(translationAvailabilityByRef, `${resolvedRef}::${entry.versionTitle}`)
-                ? translationAvailabilityByRef[`${resolvedRef}::${entry.versionTitle}`]
-                : entry.versionTitle === enSelectedVersionTitle
+              searchable: `${normalizedLabel} ${entry.versionTitle} ${cleanGroupLabel}`.toLowerCase()
             });
           });
         });
@@ -1869,71 +1790,34 @@
           $('.translation-selected-display').text(displayText).attr('title', displayText);
         };
 
-        const markTranslationAvailability = (resolvedVersionTitle, attemptedVersionTitle) => {
-          let resolved = String(resolvedVersionTitle || '').trim();
-          let attempted = String(attemptedVersionTitle || '').trim();
-          if (!attempted) {
-            return;
-          }
-
-          let wasResolved = !!(resolved && resolved === attempted);
-          translationAvailabilityByRef[`${resolvedRef}::${attempted}`] = wasResolved;
-          translationItems.forEach((item) => {
-            if (item.value === attempted) {
-              item.availableForRef = wasResolved;
-            }
-          });
-        };
-
         const renderTranslationOptions = (filterTerm) => {
           let query = String(filterTerm || '').trim().toLowerCase();
           let filtered = translationItems.filter((item) => !query || item.searchable.indexOf(query) >= 0);
           let optionsHTML = '';
-          let hasSelectableOption = false;
 
           if (!filtered.length) {
             optionsHTML = `<option value="" disabled>No matching translations</option>`;
           } else {
             filtered.forEach((item) => {
-              let isUnavailable = item.availableForRef === false;
-              let selected = item.value === currentEnVersion && !isUnavailable ? 'selected' : '';
-              let disabled = isUnavailable ? 'disabled' : '';
-              let optionClass = isUnavailable ? 'class="translation-unavailable"' : '';
-              let label = isUnavailable ? item.unavailableLabel : item.optionLabel;
-              if (!isUnavailable) {
-                hasSelectableOption = true;
-              }
-              optionsHTML += `<option value="${escapeHTML(item.value)}" ${selected} ${disabled} ${optionClass} title="${escapeHTML(label)}">${escapeHTML(label)}</option>`;
+              let selected = item.value === currentEnVersion ? 'selected' : '';
+              optionsHTML += `<option value="${escapeHTML(item.value)}" ${selected} title="${escapeHTML(item.optionLabel)}">${escapeHTML(item.optionLabel)}</option>`;
             });
           }
 
-          if (!hasSelectableOption && filtered.length) {
-            optionsHTML += `<option value="" disabled>No available translations for this ref</option>`;
-          }
-
           $('.translation-version-select').html(optionsHTML);
-          if (!$('.translation-version-select').val()) {
-            let firstEnabled = $('.translation-version-select option:not(:disabled)').first();
-            if (firstEnabled.length) {
-              firstEnabled.prop('selected', true);
-              currentEnVersion = firstEnabled.val();
-            }
-          }
-          if (currentEnVersion && !$('.translation-version-select option:selected').length) {
-            currentEnVersion = '';
-          }
           syncSelectedTranslationDisplay();
         };
 
-        let getVersions = (targetTranslationVersion) => {
-          let selectedTranslation = targetTranslationVersion || $('.translation-version-select').val();
+        let getVersions = () => {
+          let selectedTranslation = $('.translation-version-select').val();
           let enVersion = selectedTranslation || currentEnVersion || enSelectedVersionTitle;
           let heVersion = $('.he-version-selection').val();
           let versions = {"en": enVersion, "he": heVersion};
           let requestId = ++latestResolveRequestId;
           hasResolvedReference = false;
           setInsertButtonState(false);
-          $('.suggestions').html(buildPreviewLoadingHTML('Refreshing preview…'));
+          $('.suggestions .snippet-loading').remove();
+          $('.suggestions table').append("<tr class='snippet-loading'><td colspan='2'><i>Refreshing preview…</i></td></tr>");
           google.script.run.withSuccessHandler((response) => {
             if (requestId !== latestResolveRequestId) {
               return;
@@ -1948,13 +1832,6 @@
               $('.suggestions').html(`<br>${buildNonInsertableMessage(response)}`);
               return;
             }
-
-            const resolvedTranslation = String((response && response.versionTitle) || '').trim();
-            markTranslationAvailability(resolvedTranslation, enVersion);
-            if (enVersion && resolvedTranslation && resolvedTranslation !== enVersion) {
-              renderTranslationOptions($('.translation-filter-input').val());
-            }
-
             updateSuggestion(response, inputTitle);
             updatePesukimAvailability(response);
             updateActionabilityUI(nodeState);
@@ -1966,8 +1843,6 @@
             if (requestId !== latestResolveRequestId) {
               return;
             }
-            markTranslationAvailability('', enVersion);
-            renderTranslationOptions($('.translation-filter-input').val());
             hasResolvedReference = false;
             setInsertButtonState(false);
             clearVersionSelectors();
@@ -1994,7 +1869,7 @@
             return;
           }
           currentEnVersion = selected;
-          getVersions(selected);
+          getVersions();
         });
 
         $('.he-version-selection').on('change', () => {
