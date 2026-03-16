@@ -129,7 +129,7 @@ A worked example Google Doc is available here:
 
 For a summary of major fork enhancements, see:
 
-- [CHANGELOG.md](../CHANGELOG.md)
+- [CHANGELOG.md](./CHANGELOG.md)
 
 ## Current limitations
 

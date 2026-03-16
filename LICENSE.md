@@ -1,6 +1,7 @@
 MIT License
 
 Copyright (c) 2014-2024 Shlomi Helfgot
+Copyright (c) 2026 Austin Swafford
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

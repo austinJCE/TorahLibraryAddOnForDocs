@@ -46,6 +46,7 @@ All notable changes in this fork are documented here.
 - Improved language label normalization for translations, including lightweight suffix-based fallback.
 - Updated menu structure to emphasize the unified workflow.
 - Updated release/documentation text to reflect the expanded scope of the add-on.
+- Updated divine-name workflows across insertion-time transforms and menu-driven document transformations.
 
 ### Fixed
 - Search result click-target issues.
