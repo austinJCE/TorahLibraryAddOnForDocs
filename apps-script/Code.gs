@@ -466,8 +466,49 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
   let selection = docWrapper.getSelection();
   let index = doc.getNumChildren();
 
+  const resolveSafeSelectionInsertionIndex = () => {
+    if (!selection) {
+      return null;
+    }
+
+    let rangeElements = selection.getRangeElements();
+    if (!rangeElements || rangeElements.length !== 1) {
+      throw new Error("Could not insert at this selection. Select simple text in a single paragraph, or place the cursor where you want the source inserted.");
+    }
+
+    let rangeElement = rangeElements[0];
+    if (!rangeElement || !rangeElement.isPartial()) {
+      throw new Error("Could not insert at this selection. Select simple text in a single paragraph, or place the cursor where you want the source inserted.");
+    }
+
+    let element = rangeElement.getElement();
+    if (!element || element.getType() !== DocumentApp.ElementType.TEXT) {
+      throw new Error("Could not insert at this selection. Select plain paragraph text (not table/header/footer content), or place the cursor where you want the source inserted.");
+    }
+
+    let parent = element.getParent();
+    if (!parent || (parent.getType() !== DocumentApp.ElementType.PARAGRAPH && parent.getType() !== DocumentApp.ElementType.LIST_ITEM)) {
+      throw new Error("Could not insert at this selection. Select plain paragraph text, or place the cursor where you want the source inserted.");
+    }
+
+    let container = parent.getParent();
+    if (container !== doc) {
+      throw new Error("Could not insert at this selection. This add-on currently supports replacing selected body text only.");
+    }
+
+    let start = rangeElement.getStartOffset();
+    let end = rangeElement.getEndOffsetInclusive();
+    if (start < 0 || end < start) {
+      throw new Error("Could not insert at this selection. Select plain paragraph text, or place the cursor where you want the source inserted.");
+    }
+
+    let textElement = element.asText();
+    textElement.deleteText(start, end);
+    return container.getChildIndex(parent) + 1;
+  };
+
   if (!cursor && selection) {
-    throw new Error("Please place the cursor where you want to insert the source. Inserting over selected text is not yet supported.");
+    index = resolveSafeSelectionInsertionIndex();
   }
 
   if (cursor) {
