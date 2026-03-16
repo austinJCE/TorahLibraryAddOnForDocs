@@ -19,6 +19,7 @@ This repository contains the Google Apps Script code and add-on UI templates use
 The codebase is intentionally lightweight and Apps Script-native, without trying to emulate Google Docs APIs locally.
 
 ## Main features
+See [docs/CHANGELOG.md](./docs/CHANGELOG.md) for a fuller summary of changes and [LICENSE.md](./LICENSE.md) for the repository license.
 
 ### Unified Find & Insert workflow
 
@@ -130,18 +131,41 @@ The add-on menu includes:
 - **Support**
 - **Popcorn** (legacy/original-developer feature, preference-gated)
 
+## Demo and walkthrough
+
+- [Worked example Google Doc](PASTE_GOOGLE_DOC_LINK_HERE)
+- [Google Docs walkthrough](./docs/google-docs-walkthrough.md)
+
+
 ## Repository structure
 
-- `Code.gs` - Main Apps Script server logic (menu setup, Sefaria API calls, insertion, linking, preferences, divine-name transforms).
-- `attribution.js` - Pure helper module for translation/source attribution logic.
-- `main.html` - Unified Find & Insert sidebar UI.
-- `search.html` - Legacy search UI kept only as historical/reference material if still present.
-- `preferences.html` - Preferences dialog UI.
-- `support-and-features.html` - Support/feature request modal.
-- `release-notes.html` - Release notes modal.
-- `consts.gs` - Constants/supporting data.
+- `LICENSE.md` - Repository license.
+- `README.md` - Project overview, workflow notes, and contribution/testing guidance.
+
+### Apps Script implementation
+
+All Google Apps Script source files now live under `apps-script/`:
+
+- `apps-script/Code.gs` - Main Apps Script server logic (menu setup, Sefaria API calls, insertion, linking, preferences, divine-name transforms, typography application).
+- `apps-script/appsscript.json` - Apps Script project manifest.
+- `apps-script/attribution.js` - Pure helper module for translation/source attribution logic.
+- `apps-script/consts.gs` - Constants and supporting data.
+- `apps-script/main.html` - Unified Find & Insert sidebar UI.
+- `apps-script/preferences.html` - Preferences dialog UI.
+- `apps-script/release-notes.html` - Release notes modal.
+- `apps-script/support-and-features.html` - Support/feature request modal.
+- `apps-script/popcorn.html` - Legacy/original-developer Popcorn feature UI.
+- `apps-script/search.html` - Legacy search UI retained only as historical/reference material if still present.
+- `apps-script/package.json` - Local package metadata for lightweight test tooling.
+
+### Documentation
+
+- `docs/CHANGELOG.md` - Summary of major enhancements in this fork.
+- `docs/google-docs-walkthrough.md` - End-user walkthrough for the current unified workflow.
+
+### Tests
+
 - `tests/attribution.test.js` - Lightweight local unit tests for attribution formatting/fallback behavior.
-- `appsscript.json` - Apps Script project manifest.
 
 ## Development workflow
 
@@ -203,13 +227,9 @@ Include:
 
 For formatting or insertion changes, include before/after examples or screenshots when possible.
 
-
-
 ## Licensing
 
 The source code in this repository is licensed under the [MIT License](./LICENSE.md).
-
-See [CHANGELOG.md](./CHANGELOG.md) for a summary of major fork enhancements.
 
 This project uses the Sefaria API but is not an official Sefaria project.
 Texts and metadata retrieved from Sefaria may carry separate attribution,
