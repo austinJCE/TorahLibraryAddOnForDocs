@@ -5,50 +5,409 @@
     <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
     <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/smoothness/jquery-ui.css" />
     <style>
-      html, body { height: 100%; }
-      body { margin: 0; overflow: hidden; }
-      .preferences-dialog { display: flex; flex-direction: column; height: 100vh; }
-      .preferences-shell { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 16px; }
-      .save-bar { background: #fff; border-top: 1px solid #ddd; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
-      .hide { position: absolute; top: 0; left: 0; width: 600px; height: 400px; background: rgba(255,255,255,0.5); z-index: 2; }
-      .hide > img { position: absolute; top: 48%; left: 48%; }
-      #results { color: green; }
-      preference { display: block; margin: 8px 0; }
-      .section-note { margin: 4px 0 10px; color: #666; font-size: 12px; line-height: 1.4; }
-      .typography-block { border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px; margin: 10px 0 14px; background: #fafafa; }
-      .typography-subheader { font-weight: 700; font-size: 13px; margin: 0 0 8px; }
-      .typography-row { display: grid; grid-template-columns: 2.2fr 1fr 1fr; gap: 10px; align-items: end; }
-      .typography-field label, .preference-field label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; }
-      .typography-field select, .typography-field input, .preference-field select, .preference-field input[type="text"], .preference-field input[type="number"] { width: 100%; box-sizing: border-box; }
-      .toggle-line { display: flex; align-items: center; gap: 8px; }
-      .font-pref { margin-bottom: 1rem; }
-      .font-pref label { display: block; font-weight: 600; margin-bottom: 0.35rem; }
-      .font-pref select { width: 100%; max-width: 28rem; padding: 0.35rem 0.5rem; font-size: 1rem; }
-      .font-note { margin-top: 0.35rem; font-size: 0.9rem; color: #555; }
-      .font-preview { margin-top: 0.5rem; padding: 0.5rem 0.65rem; border: 1px solid #ddd; border-radius: 0.4rem; background: #fafafa; line-height: 1.5; }
-      .font-preview .label { display: block; font-size: 0.8rem; color: #666; margin-bottom: 0.2rem; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      .font-preview.hebrew { direction: rtl; font-size: 1.35rem; }
-      .font-preview.translation { direction: ltr; font-size: 1.1rem; }
+      html, body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #f8f7f5;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #222;
+      }
+
+      .preferences-dialog {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      .preferences-shell {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 12px 16px 16px;
+      }
+
+      .save-bar {
+        background: #fff;
+        border-top: 1px solid #ddd;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .hide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 600px;
+        height: 400px;
+        background: rgba(255,255,255,0.5);
+        z-index: 2;
+      }
+
+      .hide > img {
+        position: absolute;
+        top: 48%;
+        left: 48%;
+      }
+
+      #results {
+        color: green;
+      }
+
+      .section-card {
+        background: #fff;
+        border: 1px solid #e3dfd8;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+      }
+
+      .section-card h1 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        line-height: 1.2;
+      }
+
+      .section-note {
+        margin: 0 0 10px;
+        color: #666;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      preference {
+        display: block;
+        margin: 8px 0;
+      }
+
+      .subsection-title {
+        margin: 10px 0 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #333;
+      }
+
+      .compact-row {
+        display: grid;
+        grid-template-columns: minmax(180px, 2.2fr) 80px 120px;
+        gap: 10px;
+        align-items: end;
+      }
+
+      .compact-field label,
+      .preference-field label {
+        display: block;
+        font-size: 12px;
+        color: #555;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+
+      .compact-field select,
+      .compact-field input,
+      .preference-field select,
+      .preference-field input[type="text"],
+      .preference-field input[type="number"] {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .inline-preview {
+        margin-top: 6px;
+        padding: 6px 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: #fafafa;
+        line-height: 1.45;
+      }
+
+      .inline-preview .label {
+        display: block;
+        font-size: 11px;
+        color: #666;
+        margin-bottom: 2px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .inline-preview.hebrew {
+        direction: rtl;
+        font-size: 1.2rem;
+      }
+
+      .inline-preview.translation,
+      .inline-preview.transliteration {
+        direction: ltr;
+        font-size: 1rem;
+      }
+
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 10px 0;
+      }
+
+      .toggle-copy {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .toggle-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .toggle-help {
+        margin-top: 2px;
+        color: #666;
+        font-size: 11px;
+        line-height: 1.35;
+      }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 42px;
+        height: 24px;
+        flex: 0 0 auto;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background-color: #c7c7c7;
+        transition: .2s;
+        border-radius: 999px;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        top: 3px;
+        background-color: white;
+        transition: .2s;
+        border-radius: 50%;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      }
+
+      .switch input:checked + .slider {
+        background-color: #1f3b68;
+      }
+
+      .switch input:focus + .slider {
+        box-shadow: 0 0 0 2px rgba(31,59,104,0.15);
+      }
+
+      .switch input:checked + .slider:before {
+        transform: translateX(18px);
+      }
+
+      details.compact-accordion {
+        border: 1px solid #e3dfd8;
+        border-radius: 8px;
+        background: #faf9f7;
+        padding: 8px 10px;
+        margin-top: 8px;
+      }
+
+      details.compact-accordion summary {
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 13px;
+        color: #333;
+        list-style: none;
+      }
+
+      details.compact-accordion summary::-webkit-details-marker {
+        display: none;
+      }
+
+      details.compact-accordion summary::before {
+        content: "▸";
+        margin-right: 6px;
+        color: #666;
+      }
+
+      details.compact-accordion[open] summary::before {
+        content: "▾";
+      }
+
+      .accordion-summary-note {
+        font-weight: 400;
+        color: #666;
+        margin-left: 8px;
+      }
+
+      .replacement-grid {
+        margin-top: 10px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .replacement-row {
+        display: grid;
+        grid-template-columns: auto minmax(80px, 110px) minmax(120px, 1fr);
+        gap: 10px;
+        align-items: center;
+      }
+
+      .replacement-label {
+        font-size: 13px;
+        color: #333;
+        white-space: nowrap;
+      }
+
+      .mini-help {
+        margin-top: 8px;
+        font-size: 11px;
+        color: #666;
+        line-height: 1.4;
+      }
     </style>
+
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
   </head>
   <body>
-    <aside class="hide"><img src="https://www.sefaria.org/static/img/ajax-loader.gif"></aside>
+    <aside class="hide">
+      <img src="https://www.sefaria.org/static/img/ajax-loader.gif">
+    </aside>
+
     <div class="preferences-dialog">
       <div class="preferences-shell">
-        <section name="orthography">
-          <h1>Orthography</h1>
-          <preference><span class="toggle-line"><input type="checkbox" name="nekudot"> Nekudot <select name="nekudot_filter"><option value="always">when possible</option><option value="tanakh">only in Tanakh/Bible</option></select></span></preference>
-          <preference><span class="toggle-line"><input type="checkbox" name="teamim"> Ta'amei HaMiqra</span></preference>
+
+        <section class="section-card" name="hebrew-text-settings">
+          <h1>Hebrew Text Settings</h1>
+          <p class="section-note">These defaults control how Hebrew source text is displayed and how divine-name replacements are applied during insertion.</p>
+
+          <div class="toggle-row">
+            <div class="toggle-copy">
+              <div class="toggle-title">Vowels</div>
+              <div class="toggle-help">Matches the sidebar setting for Hebrew text display.</div>
+            </div>
+            <label class="switch" for="nekudot">
+              <input id="nekudot" type="checkbox" name="nekudot">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <preference class="preference-field">
+            <label for="nekudot_filter">When to include vowels</label>
+            <select id="nekudot_filter" name="nekudot_filter">
+              <option value="always">When possible</option>
+              <option value="tanakh">Only in Tanakh / Bible</option>
+            </select>
+          </preference>
+
+          <div class="toggle-row">
+            <div class="toggle-copy">
+              <div class="toggle-title">Cantillation</div>
+              <div class="toggle-help">Matches the sidebar setting for Hebrew text display.</div>
+            </div>
+            <label class="switch" for="teamim">
+              <input id="teamim" type="checkbox" name="teamim">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-copy">
+              <div class="toggle-title">Apply divine-name replacements on insertion</div>
+              <div class="toggle-help">If enabled, inserted text will use the mappings below automatically.</div>
+            </div>
+            <label class="switch" for="apply_sheimot_on_insertion">
+              <input id="apply_sheimot_on_insertion" type="checkbox" name="apply_sheimot_on_insertion">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <details class="compact-accordion">
+            <summary>
+              Divine-name replacement mappings
+              <span class="accordion-summary-note" id="sheimot_summary_note">Configure default replacements</span>
+            </summary>
+
+            <div class="replacement-grid">
+              <div class="replacement-row">
+                <label class="switch" for="meforash_replace">
+                  <input id="meforash_replace" type="checkbox" name="meforash_replace">
+                  <span class="slider"></span>
+                </label>
+                <div class="replacement-label">יהוה</div>
+                <select name="meforash_replacement">
+                  <option value="ה'">ה'</option>
+                  <option value="יקוק">יקוק</option>
+                  <option value="השם">השם</option>
+                  <option value="ד'">ד'</option>
+                  <option value="ידוד">ידוד</option>
+                  <option value="יהו-ה">יהו-ה</option>
+                  <option value="יחוח">יחוח</option>
+                </select>
+              </div>
+
+              <div class="replacement-row">
+                <label class="switch" for="yaw_replace">
+                  <input id="yaw_replace" type="checkbox" name="yaw_replace">
+                  <span class="slider"></span>
+                </label>
+                <div class="replacement-label">יה</div>
+                <select name="yaw_replacement">
+                  <option value="קה">קה</option>
+                  <option value="השם">השם</option>
+                </select>
+              </div>
+
+              <div class="replacement-row">
+                <label class="switch" for="elodim_replace">
+                  <input id="elodim_replace" type="checkbox" name="elodim_replace">
+                  <span class="slider"></span>
+                </label>
+                <div class="replacement-label">אלוהים</div>
+                <select name="elodim_replacement">
+                  <option value="אלוקים">אלוקים</option>
+                  <option value="אלודים">אלודים</option>
+                </select>
+              </div>
+
+              <div class="replacement-row">
+                <label class="switch" for="god_replace">
+                  <input id="god_replace" type="checkbox" name="god_replace">
+                  <span class="slider"></span>
+                </label>
+                <div class="replacement-label">God</div>
+                <input type="text" name="god_replacement" placeholder="G-d">
+              </div>
+            </div>
+
+            <div class="mini-help">
+              These mappings define the replacement rules themselves. The document-wide transform command remains separate from insertion-time replacement.
+            </div>
+          </details>
         </section>
-        <section name="typography">
-          <h1>Typography</h1>
-          <p class="section-note">These defaults are applied when text is inserted. Some specialty fonts may need to be enabled manually in Google Docs via Font &gt; More fonts.</p>
-          <div class="typography-block">
-            <div class="typography-subheader">Source</div>
-            <preference class="font-pref">
-              <label for="hebrew_font">Hebrew font</label>
+
+        <section class="section-card" name="source">
+          <h1>Source</h1>
+
+          <div class="compact-row">
+            <div class="compact-field">
+              <label for="hebrew_font">Font</label>
               <select name="hebrew_font" id="hebrew_font">
                 <optgroup label="Full Scholarly Support">
                   <option value="Ezra SIL">Ezra SIL (Sefaria)</option>
@@ -64,22 +423,36 @@
                   <option value="Times New Roman">Times New Roman (Word compatible)</option>
                 </optgroup>
               </select>
-              <div class="font-note" id="hebrew_font_note"></div>
-              <div class="font-preview hebrew" id="hebrew_font_preview">
-                <span class="label">Preview</span>
-                ...וְעַתָּ֗ה כִּתְב֤וּ לָכֶם֙ אֶת־הַשִּׁירָ֣ה
-              </div>
-            </preference>
-            <div class="typography-row">
-              <div class="typography-field"></div>
-              <div class="typography-field"><label for="hebrew-font-size">Font size</label><input id="hebrew-font-size" type="number" name="hebrew_font_size" min="8" max="48" step="1"></div>
-              <div class="typography-field"><label for="hebrew-font-style">Style</label><select id="hebrew-font-style" name="hebrew_font_style"><option value="normal">Normal</option><option value="italic">Italic</option><option value="bold">Bold</option><option value="bold_italic">Bold + Italic</option></select></div>
+            </div>
+
+            <div class="compact-field">
+              <label for="hebrew_font_size">Size</label>
+              <input id="hebrew_font_size" type="number" name="hebrew_font_size" min="8" max="48" step="1">
+            </div>
+
+            <div class="compact-field">
+              <label for="hebrew_font_style">Style</label>
+              <select id="hebrew_font_style" name="hebrew_font_style">
+                <option value="normal">Normal</option>
+                <option value="italic">Italic</option>
+                <option value="bold">Bold</option>
+                <option value="bold_italic">Bold + Italic</option>
+              </select>
             </div>
           </div>
-          <div class="typography-block">
-            <div class="typography-subheader">Translation</div>
-            <preference class="font-pref">
-              <label for="translation_font">Translation font</label>
+
+          <div class="inline-preview hebrew" id="hebrew_font_preview">
+            <span class="label">Preview</span>
+            ...וְעַתָּ֗ה כִּתְב֤וּ לָכֶם֙ אֶת־הַשִּׁירָ֣ה
+          </div>
+        </section>
+
+        <section class="section-card" name="translation">
+          <h1>Translation</h1>
+
+          <div class="compact-row">
+            <div class="compact-field">
+              <label for="translation_font">Font</label>
               <select name="translation_font" id="translation_font">
                 <optgroup label="Google Fonts">
                   <option value="Crimson Text">Crimson Text</option>
@@ -93,103 +466,264 @@
                   <option value="Verdana">Verdana</option>
                 </optgroup>
               </select>
-              <div class="font-note" id="translation_font_note"></div>
-              <div class="font-preview translation" id="translation_font_preview">
-                <span class="label">Preview</span>
-                Therefore, write down this poem…
-              </div>
-            </preference>
-            <div class="typography-row">
-              <div class="typography-field"></div>
-              <div class="typography-field"><label for="translation-font-size">Font size</label><input id="translation-font-size" type="number" name="translation_font_size" min="8" max="48" step="1"></div>
-              <div class="typography-field"><label for="translation-font-style">Style</label><select id="translation-font-style" name="translation_font_style"><option value="normal">Normal</option><option value="italic">Italic</option><option value="bold">Bold</option><option value="bold_italic">Bold + Italic</option></select></div>
+            </div>
+
+            <div class="compact-field">
+              <label for="translation_font_size">Size</label>
+              <input id="translation_font_size" type="number" name="translation_font_size" min="8" max="48" step="1">
+            </div>
+
+            <div class="compact-field">
+              <label for="translation_font_style">Style</label>
+              <select id="translation_font_style" name="translation_font_style">
+                <option value="normal">Normal</option>
+                <option value="italic">Italic</option>
+                <option value="bold">Bold</option>
+                <option value="bold_italic">Bold + Italic</option>
+              </select>
             </div>
           </div>
-          <div class="typography-block">
-            <div class="typography-subheader">Transliteration</div>
-            <div class="typography-row">
-              <div class="typography-field"><label for="transliteration-font">Font</label><select id="transliteration-font" name="transliteration_font"><option value="Crimson Text">Crimson Text</option><option value="EB Garamond">EB Garamond</option><option value="Roboto">Roboto</option><option value="Calibri">Calibri</option><option value="Georgia">Georgia</option><option value="Times New Roman">Times New Roman</option><option value="Verdana">Verdana</option></select></div>
-              <div class="typography-field"><label for="transliteration-font-size">Font size</label><input id="transliteration-font-size" type="number" name="transliteration_font_size" min="8" max="48" step="1"></div>
-              <div class="typography-field"><label for="transliteration-font-style">Style</label><select id="transliteration-font-style" name="transliteration_font_style"><option value="normal">Normal</option><option value="italic">Italic</option><option value="bold">Bold</option><option value="bold_italic">Bold + Italic</option></select></div>
-            </div>
+
+          <div class="inline-preview translation" id="translation_font_preview">
+            <span class="label">Preview</span>
+            Therefore, write down this poem…
           </div>
         </section>
-        <section name="transliteration">
-          <h1>Transliteration defaults</h1>
-          <preference class="preference-field"><span class="toggle-line"><input type="checkbox" name="include_transliteration_default"> Include transliteration by default when Hebrew output is selected</span></preference>
-          <preference class="preference-field"><label for="transliteration-scheme">Default transliteration scheme</label><select id="transliteration-scheme" name="transliteration_scheme"><option value="simple_english">Simple English</option><option value="academic_lite">Academic-lite</option><option value="modern_israeli">Modern Israeli</option></select></preference>
+
+        <section class="section-card" name="transliteration">
+          <h1>Transliteration</h1>
+
+          <div class="toggle-row">
+            <div class="toggle-copy">
+              <div class="toggle-title">Include transliteration by default</div>
+              <div class="toggle-help">When Hebrew output is selected, transliteration will start enabled.</div>
+            </div>
+            <label class="switch" for="include_transliteration_default">
+              <input id="include_transliteration_default" type="checkbox" name="include_transliteration_default">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <preference class="preference-field">
+            <label for="transliteration_scheme">Scheme</label>
+            <select id="transliteration_scheme" name="transliteration_scheme">
+              <option value="simple_english">Simple English</option>
+              <option value="academic_lite">Academic-lite</option>
+              <option value="modern_israeli">Modern Israeli</option>
+            </select>
+          </preference>
+
+          <div class="compact-row">
+            <div class="compact-field">
+              <label for="transliteration_font">Font</label>
+              <select id="transliteration_font" name="transliteration_font">
+                <option value="Crimson Text">Crimson Text</option>
+                <option value="EB Garamond">EB Garamond</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Calibri">Calibri</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Verdana">Verdana</option>
+              </select>
+            </div>
+
+            <div class="compact-field">
+              <label for="transliteration_font_size">Size</label>
+              <input id="transliteration_font_size" type="number" name="transliteration_font_size" min="8" max="48" step="1">
+            </div>
+
+            <div class="compact-field">
+              <label for="transliteration_font_style">Style</label>
+              <select id="transliteration_font_style" name="transliteration_font_style">
+                <option value="normal">Normal</option>
+                <option value="italic">Italic</option>
+                <option value="bold">Bold</option>
+                <option value="bold_italic">Bold + Italic</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="inline-preview transliteration" id="transliteration_preview">
+            <span class="label">Preview</span>
+            Ve'atah kitvu lachem et hashirah
+          </div>
         </section>
-        <section name="sheimot">
-          <h1>Sheimot</h1>
-          <preference><span class="toggle-line"><input type="checkbox" name="meforash_replace"> Replace יהוה with <select name="meforash_replacement"><option value="ה'">ה'</option><option value="יקוק">יקוק</option><option value="השם">השם</option><option value="ד'">ד'</option><option value="ידוד">ידוד</option><option value="יהו-ה">יהו-ה</option><option value="יחוח">יחוח</option></select></span></preference>
-          <preference><span class="toggle-line"><input type="checkbox" name="yaw_replace"> Replace יה with <select name="yaw_replacement"><option value="קה">קה</option><option value="השם">השם</option></select></span></preference>
-          <preference><span class="toggle-line"><input type="checkbox" name="elodim_replace"> Replace אלוהים with <select name="elodim_replacement"><option value="אלוקים">אלוקים</option><option value="אלודים">אלודים</option></select></span></preference>
-          <preference><span class="toggle-line"><input type="checkbox" name="god_replace"> Replace God with <input type="text" name="god_replacement" placeholder="G-d"></span></preference>
-        </section>
-        <section name="features">
-          <h1>Features</h1>
-          <preference><span class="toggle-line"><input type="checkbox" name="popcorn_enabled"> Enable Popcorn (beta, legacy feature by Shlomi Helfgot) menu item</span></preference>
+
+        <section class="section-card" name="features">
+          <h1>Experimental Features</h1>
+
+          <div class="toggle-row">
+            <div class="toggle-copy">
+              <div class="toggle-title">Enable Popcorn</div>
+              <div class="toggle-help">Legacy beta feature by Shlomi Helfgot.</div>
+            </div>
+            <label class="switch" for="popcorn_enabled">
+              <input id="popcorn_enabled" type="checkbox" name="popcorn_enabled">
+              <span class="slider"></span>
+            </label>
+          </div>
         </section>
       </div>
-      <section class="save-bar" name="actions"><button class="blue submit">Save Preferences</button><span id="results"></span></section>
+
+      <section class="save-bar" name="actions">
+        <button class="blue submit">Save Preferences</button>
+        <span id="results"></span>
+      </section>
     </div>
+
     <script>
       const fontMeta = {
-        "Ezra SIL": { stack: "'Ezra SIL', 'SBL Hebrew', 'Times New Roman', serif", word: false },
-        "SBL Hebrew": { stack: "'SBL Hebrew', 'Ezra SIL', 'Times New Roman', serif", word: false },
-        "Arial": { stack: "Arial, 'Noto Sans Hebrew', sans-serif", word: true },
-        "David": { stack: "David, 'Times New Roman', serif", word: false },
-        "Frank Ruhl Libre": { stack: "'Frank Ruhl Libre', 'Times New Roman', serif", word: false },
-        "Noto Rashi Hebrew": { stack: "'Noto Rashi Hebrew', 'Noto Serif Hebrew', serif", word: false },
-        "Noto Sans Hebrew": { stack: "'Noto Sans Hebrew', Arial, sans-serif", word: false },
-        "Noto Serif Hebrew": { stack: "'Noto Serif Hebrew', 'Times New Roman', serif", word: false },
-        "Times New Roman": { stack: "'Times New Roman', serif", word: true },
-        "Crimson Text": { stack: "'Crimson Text', Georgia, serif", word: false },
-        "EB Garamond": { stack: "'EB Garamond', Georgia, serif", word: false },
-        "Roboto": { stack: "Roboto, Arial, sans-serif", word: false },
-        "Calibri": { stack: "Calibri, Arial, sans-serif", word: true },
-        "Georgia": { stack: "Georgia, serif", word: false },
-        "Verdana": { stack: "Verdana, Arial, sans-serif", word: false }
+        "Ezra SIL": { stack: "'Ezra SIL', 'SBL Hebrew', 'Times New Roman', serif" },
+        "SBL Hebrew": { stack: "'SBL Hebrew', 'Ezra SIL', 'Times New Roman', serif" },
+        "Arial": { stack: "Arial, 'Noto Sans Hebrew', sans-serif" },
+        "David": { stack: "David, 'Times New Roman', serif" },
+        "Frank Ruhl Libre": { stack: "'Frank Ruhl Libre', 'Times New Roman', serif" },
+        "Noto Rashi Hebrew": { stack: "'Noto Rashi Hebrew', 'Noto Serif Hebrew', serif" },
+        "Noto Sans Hebrew": { stack: "'Noto Sans Hebrew', Arial, sans-serif" },
+        "Noto Serif Hebrew": { stack: "'Noto Serif Hebrew', 'Times New Roman', serif" },
+        "Times New Roman": { stack: "'Times New Roman', serif" },
+        "Crimson Text": { stack: "'Crimson Text', Georgia, serif" },
+        "EB Garamond": { stack: "'EB Garamond', Georgia, serif" },
+        "Roboto": { stack: "Roboto, Arial, sans-serif" },
+        "Calibri": { stack: "Calibri, Arial, sans-serif" },
+        "Georgia": { stack: "Georgia, serif" },
+        "Verdana": { stack: "Verdana, Arial, sans-serif" }
       };
-      function updateFontPreview(selectId, previewId, noteId) {
+
+      const transliterationExamples = {
+        simple_english: "Ve'atah kitvu lachem et hashirah",
+        academic_lite: "Veʿattah kitvu lakhem et hashirah",
+        modern_israeli: "Veata khitvu lakhem et hashira"
+      };
+
+      function updateFontPreview(selectId, previewId) {
         const select = document.getElementById(selectId);
         const preview = document.getElementById(previewId);
-        const note = document.getElementById(noteId);
-        if (!select || !preview || !note) return;
+        if (!select || !preview) return;
         const meta = fontMeta[select.value];
         if (!meta) return;
         select.style.fontFamily = meta.stack;
         preview.style.fontFamily = meta.stack;
-        note.textContent = meta.word ? "Word compatible" : "";
       }
+
+      function updateTransliterationPreview() {
+        const scheme = document.getElementById("transliteration_scheme");
+        const font = document.getElementById("transliteration_font");
+        const preview = document.getElementById("transliteration_preview");
+        if (!scheme || !preview) return;
+
+        const label = preview.querySelector(".label");
+        const example = transliterationExamples[scheme.value] || transliterationExamples.simple_english;
+
+        preview.innerHTML = "";
+        if (label) {
+          preview.appendChild(label);
+        } else {
+          const span = document.createElement("span");
+          span.className = "label";
+          span.textContent = "Preview";
+          preview.appendChild(span);
+        }
+        preview.appendChild(document.createTextNode(example));
+
+        if (font && fontMeta[font.value]) {
+          preview.style.fontFamily = fontMeta[font.value].stack;
+        }
+      }
+
+      function updateSheimotSummary() {
+        const enabled = [
+          document.querySelector('input[name="meforash_replace"]'),
+          document.querySelector('input[name="yaw_replace"]'),
+          document.querySelector('input[name="elodim_replace"]'),
+          document.querySelector('input[name="god_replace"]')
+        ].filter(Boolean).filter(el => el.checked).length;
+
+        const node = document.getElementById("sheimot_summary_note");
+        if (!node) return;
+        node.textContent = enabled > 0 ? enabled + " mapping" + (enabled === 1 ? "" : "s") + " enabled" : "No mappings enabled";
+      }
+
       google.script.run.withSuccessHandler(function(preferences) {
         var checkboxes = document.querySelectorAll('input[type="checkbox"]');
         for (var n = 0; n < checkboxes.length; n += 1) {
           var checkbox = checkboxes[n].name;
-          if (preferences[checkbox] == "true") { checkboxes[n].checked = true; }
+          if (preferences[checkbox] == "true") {
+            checkboxes[n].checked = true;
+          }
         }
-        var selectors = document.querySelectorAll('select');
+
+        var selectors = document.querySelectorAll("select");
         for (var j = 0; j < selectors.length; j += 1) {
-          if (preferences[selectors[j].name] !== undefined && preferences[selectors[j].name] !== null) { selectors[j].value = preferences[selectors[j].name]; }
+          if (preferences[selectors[j].name] !== undefined && preferences[selectors[j].name] !== null) {
+            selectors[j].value = preferences[selectors[j].name];
+          }
         }
+
         var fields = document.querySelectorAll('input[type="text"], input[type="number"]');
         for (var k = 0; k < fields.length; k += 1) {
           var fieldName = fields[k].name;
-          if (preferences[fieldName] !== undefined && preferences[fieldName] !== null) { fields[k].value = preferences[fieldName]; }
+          if (preferences[fieldName] !== undefined && preferences[fieldName] !== null) {
+            fields[k].value = preferences[fieldName];
+          }
         }
-        updateFontPreview("hebrew_font", "hebrew_font_preview", "hebrew_font_note");
-        updateFontPreview("translation_font", "translation_font_preview", "translation_font_note");
-        $('.hide').fadeOut(1000);
+
+        updateFontPreview("hebrew_font", "hebrew_font_preview");
+        updateFontPreview("translation_font", "translation_font_preview");
+        updateTransliterationPreview();
+        updateSheimotSummary();
+
+        $(".hide").fadeOut(1000);
       }).getPreferences();
-      document.getElementById("hebrew_font").addEventListener("change", function() { updateFontPreview("hebrew_font", "hebrew_font_preview", "hebrew_font_note"); });
-      document.getElementById("translation_font").addEventListener("change", function() { updateFontPreview("translation_font", "translation_font_preview", "translation_font_note"); });
-      $('.submit').click(function() {
-        $('#results').html('<img src="https://www.sefaria.org/static/img/ajax-loader.gif">');
+
+      document.getElementById("hebrew_font").addEventListener("change", function() {
+        updateFontPreview("hebrew_font", "hebrew_font_preview");
+      });
+
+      document.getElementById("translation_font").addEventListener("change", function() {
+        updateFontPreview("translation_font", "translation_font_preview");
+      });
+
+      document.getElementById("transliteration_font").addEventListener("change", function() {
+        updateTransliterationPreview();
+      });
+
+      document.getElementById("transliteration_scheme").addEventListener("change", function() {
+        updateTransliterationPreview();
+      });
+
+      [
+        "meforash_replace",
+        "yaw_replace",
+        "elodim_replace",
+        "god_replace"
+      ].forEach(function(name) {
+        var el = document.getElementById(name);
+        if (el) {
+          el.addEventListener("change", updateSheimotSummary);
+        }
+      });
+
+      $(".submit").click(function() {
+        $("#results").html('<img src="https://www.sefaria.org/static/img/ajax-loader.gif">');
         var preferenceObject = {};
-        $('select').each(function(index, element) { preferenceObject[$(element).attr('name')] = $(element).val(); });
-        $("input[type='checkbox']").each(function(index, element) { preferenceObject[$(element).attr('name')] = $(element).is(':checked'); });
-        $("input[type='text'], input[type='number']").each(function(index, element) { preferenceObject[$(element).attr('name')] = $(element).val(); });
-        google.script.run.withSuccessHandler(function() { $('#results').html('Successfully updated preferences.'); }).setPreferences(preferenceObject);
+
+        $("select").each(function(index, element) {
+          preferenceObject[$(element).attr("name")] = $(element).val();
+        });
+
+        $("input[type='checkbox']").each(function(index, element) {
+          preferenceObject[$(element).attr("name")] = $(element).is(":checked");
+        });
+
+        $("input[type='text'], input[type='number']").each(function(index, element) {
+          preferenceObject[$(element).attr("name")] = $(element).val();
+        });
+
+        google.script.run.withSuccessHandler(function() {
+          $("#results").html("Successfully updated preferences.");
+          updateSheimotSummary();
+        }).setPreferences(preferenceObject);
       });
     </script>
   </body>

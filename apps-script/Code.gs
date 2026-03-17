@@ -1,7 +1,3 @@
-function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
-}
-
 /*
 Copyright 2014-2024 Shlomi Helfgot
 Modifications copyright 2026 Austin Swafford
@@ -9,55 +5,60 @@ Licensed under the MIT License. See repository LICENSE.md.
 כל המביא דבר בשם אומרו מביא גאולה לעולם
 */
 
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
 
 
 const SETTINGS = [
-  "meforash_replace",
-  "meforash_replacement",
-  "yaw_replace",
-  "yaw_replacement",
+  "apply_sheimot_on_insertion",
   "elodim_replace",
   "elodim_replacement",
+  "extended_gemara",
   "god_replace",
   "god_replacement",
-  "nekudot",
-  "nekudot_filter",
-  "teamim",
-  "versioning",
-  "extended_gemara",
-  "include_translation_source_info",
-  "popcorn_enabled",
   "hebrew_font",
   "hebrew_font_size",
+  "include_translation_source_info",
+  "include_transliteration_default",
+  "meforash_replace",
+  "meforash_replacement",
+  "nekudot",
+  "nekudot_filter",
+  "popcorn_enabled",
+  "teamim",
   "translation_font",
   "translation_font_size",
   "translation_font_style",
   "transliteration_font",
   "transliteration_font_size",
   "transliteration_font_style",
-  "include_transliteration_default",
-  "transliteration_scheme"
-]
+  "transliteration_scheme",
+  "versioning",
+  "yaw_replace",
+  "yaw_replacement"
+];
 
 function onInstall() {
-  const basicPrefs = {
-    "meforash_replace": false,
-    "yaw_replace": false,
-    "elodim_replace": false,
-    "god_replace": false,
-    "god_replacement": "G-d",
-    "nekudot": true,
-    "teamim": true,
-    "versioning": true,
-    "nekudot_filter": false,
-    "extended_gemara": false,
-    "include_translation_source_info": false,
-    "popcorn_enabled": false,
-    "hebrew_font": "Arial",
-    "hebrew_font_size": 14,
-    "translation_font": "Arial",
-    "translation_font_size": 11
-  };
+	  const basicPrefs = {
+	  "apply_sheimot_on_insertion": false,
+	  "elodim_replace": false,
+	  "extended_gemara": false,
+	  "god_replace": false,
+	  "god_replacement": "G-d",
+	  "hebrew_font": "Arial",
+	  "hebrew_font_size": 14,
+	  "include_translation_source_info": false,
+	  "meforash_replace": false,
+	  "nekudot": true,
+	  "nekudot_filter": false,
+	  "popcorn_enabled": false,
+	  "teamim": true,
+	  "translation_font": "Arial",
+	  "translation_font_size": 11,
+	  "versioning": true,
+	  "yaw_replace": false
+	};
   setPreferences(basicPrefs);
   //display release notes in popup
   
@@ -87,7 +88,10 @@ function onOpen() {
 
 function sefariaHTML() {
   onOpen();
-  let mainHTMLOutput = HtmlService.createHtmlOutputFromFile('main').setTitle('Find & Insert Source').setWidth(300);
+  let template = HtmlService.createTemplateFromFile('main');
+  let mainHTMLOutput = template.evaluate()
+    .setTitle('Find & Insert Source')
+    .setWidth(300);
   DocumentApp.getUi().showSidebar(mainHTMLOutput);
   extendedGemaraPreference = PropertiesService.getUserProperties().getProperty("extended_gemara");
 }
