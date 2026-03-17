@@ -93,11 +93,6 @@
             <label for="wants-cantillation">Cantillation</label>
             <input id="wants-cantillation" type="checkbox" class="wants-cantillation" checked>
           </div>
-                    <div class="toggle-row transliteration-row">
-            <label for="include-transliteration">Include transliteration</label>
-            <input id="include-transliteration" type="checkbox" class="include-transliteration">
-          </div>
-          <p class="helper-text transliteration-help">Adds a generated transliterated line beneath Hebrew output.</p>
           <div class="toggle-row pesukim-wrapper">
             <label for="wants-pesukim">Line markers</label>
             <input id="wants-pesukim" type="checkbox" class="wants-pesukim" checked>

@@ -1,7 +1,3 @@
-function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
-}
-
 /*
 Copyright 2014-2024 Shlomi Helfgot
 Modifications copyright 2026 Austin Swafford
@@ -30,13 +26,7 @@ const SETTINGS = [
   "hebrew_font",
   "hebrew_font_size",
   "translation_font",
-  "translation_font_size",
-  "translation_font_style",
-  "transliteration_font",
-  "transliteration_font_size",
-  "transliteration_font_style",
-  "include_transliteration_default",
-  "transliteration_scheme"
+  "translation_font_size"
 ]
 
 function onInstall() {
@@ -292,19 +282,14 @@ function applyEnglishDivineNamePreference(data, userProperties) {
 function getTypographySettings() {
   const userProperties = PropertiesService.getUserProperties();
   return {
-    hebrewFont: userProperties.getProperty("hebrew_font") || "Noto Serif Hebrew",
+    hebrewFont: userProperties.getProperty("hebrew_font") || "Arial",
     hebrewFontSize: Number(userProperties.getProperty("hebrew_font_size") || 14),
-    hebrewFontStyle: userProperties.getProperty("hebrew_font_style") || "normal",
-    translationFont: userProperties.getProperty("translation_font") || "EB Garamond",
-    translationFontSize: Number(userProperties.getProperty("translation_font_size") || 11),
-    translationFontStyle: userProperties.getProperty("translation_font_style") || "normal",
-    transliterationFont: userProperties.getProperty("transliteration_font") || "EB Garamond",
-    transliterationFontSize: Number(userProperties.getProperty("transliteration_font_size") || 11),
-    transliterationFontStyle: userProperties.getProperty("transliteration_font_style") || "italic"
+    translationFont: userProperties.getProperty("translation_font") || "Arial",
+    translationFontSize: Number(userProperties.getProperty("translation_font_size") || 11)
   };
 }
 
-function applyTypographyToParagraph(paragraph, font, size, style) {
+function applyTypographyToParagraph(paragraph, font, size) {
   if (!paragraph) {
     return;
   }
@@ -321,39 +306,14 @@ function applyTypographyToParagraph(paragraph, font, size, style) {
   if (!isNaN(size) && size > 0) {
     text.setFontSize(0, len - 1, size);
   }
-
-  const fontStyle = String(style || "normal");
-  text.setBold(0, len - 1, fontStyle === "bold" || fontStyle === "bold_italic");
-  text.setItalic(0, len - 1, fontStyle === "italic" || fontStyle === "bold_italic");
 }
 
 function applyHeaderStyleWithTypography(paragraph, isHebrew, typography) {
   applyTypographyToParagraph(
     paragraph,
     isHebrew ? typography.hebrewFont : typography.translationFont,
-    isHebrew ? typography.hebrewFontSize : typography.translationFontSize,
-    isHebrew ? typography.hebrewFontStyle : typography.translationFontStyle
+    isHebrew ? typography.hebrewFontSize : typography.translationFontSize
   );
-}
-
-function insertTransliterationParagraphAfter(doc, index, transliterationText, typography, ltr) {
-  if (!transliterationText) {
-    return;
-  }
-  let paragraph = doc.insertParagraph(index, transliterationText);
-  paragraph.setLeftToRight(ltr !== false);
-  paragraph.setAttributes({});
-  applyTypographyToParagraph(paragraph, typography.transliterationFont, typography.transliterationFontSize, typography.transliterationFontStyle);
-}
-
-function insertTransliterationIntoCell(cell, transliterationText, typography) {
-  if (!cell || !transliterationText) {
-    return;
-  }
-  let paragraph = cell.insertParagraph(cell.getNumChildren(), transliterationText);
-  paragraph.setLeftToRight(true);
-  paragraph.setAttributes({});
-  applyTypographyToParagraph(paragraph, typography.transliterationFont, typography.transliterationFontSize, typography.transliterationFontStyle);
 }
 
 function testRef() {
@@ -488,7 +448,7 @@ function buildLinkedTitleText(baseTitle, data, singleLanguage) {
   return `${safeTitle} (${modeLabel} • ${versionLabel})`;
 }
 
-function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null, includeTranslationSourceInfo = false, bilingualLayout = "he-right", insertSefariaLink = false, includeTransliteration = false) {
+function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null, includeTranslationSourceInfo = false, bilingualLayout = "he-right", insertSefariaLink = false) {
   if (!data || !data.ref) {
     throw new Error("Unable to insert source: no resolved reference.");
   }
@@ -577,9 +537,6 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
   let shouldIncludeEnglishAttribution = includeTranslationSourceInfo && singleLanguage != "he";
   let attributionLines = (shouldIncludeEnglishAttribution) ? getEnglishAttributionLines(data) : [];
   const typography = getTypographySettings();
-  const currentPrefs = getPreferences();
-  const transliterationScheme = currentPrefs.transliteration_scheme || "simple_english";
-  const transliterationText = (includeTransliteration && data.he) ? transliterateHebrewHtmlPreservingBasicBreaks(data.he, transliterationScheme, { keepNiqqud: true }) : "";
   const sefariaUrl = `https://www.sefaria.org/${encodeURIComponent(data.ref || '').replace(/%20/g, '_')}`;
 
   let resolvedBilingualLayout = (singleLanguage) ? null : (bilingualLayout || "he-right");
@@ -616,13 +573,8 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
     applyTypographyToParagraph(
       mainTextParagraph,
       singleLanguage == "he" ? typography.hebrewFont : typography.translationFont,
-      singleLanguage == "he" ? typography.hebrewFontSize : typography.translationFontSize,
-      singleLanguage == "he" ? typography.hebrewFontStyle : typography.translationFontStyle
+      singleLanguage == "he" ? typography.hebrewFontSize : typography.translationFontSize
     );
-
-    if (singleLanguage == "he" && transliterationText) {
-      insertTransliterationParagraphAfter(doc, index + 2, transliterationText, typography, true);
-    }
 
     if (singleLanguage == "en" && attributionLines.length > 0) {
       let attributionParagraph = doc.insertParagraph(index+2, "");
@@ -646,30 +598,26 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       hebTextParagraph.setAttributes(nullStyle);
       insertRichTextFromHTML(hebTextParagraph, data.he);
       hebTextParagraph.setAttributes(noUnderline);
-      applyTypographyToParagraph(hebTextParagraph, typography.hebrewFont, typography.hebrewFontSize, typography.hebrewFontStyle);
+      applyTypographyToParagraph(hebTextParagraph, typography.hebrewFont, typography.hebrewFontSize);
 
-      if (transliterationText) {
-        insertTransliterationParagraphAfter(doc, index + 2, transliterationText, typography, true);
-      }
-
-      doc.insertParagraph(index + (transliterationText ? 3 : 2), insertSefariaLink ? buildLinkedTitleText(title, data, 'en') : title)
+      doc.insertParagraph(index + 2, insertSefariaLink ? buildLinkedTitleText(title, data, 'en') : title)
         .setAttributes(headerStyle)
         .setLeftToRight(true);
-      let enTitleParagraph = doc.getChild(index + (transliterationText ? 3 : 2)).asParagraph();
+      let enTitleParagraph = doc.getChild(index + 2).asParagraph();
       applyHeaderStyleWithTypography(enTitleParagraph, false, typography);
       if (insertSefariaLink) {
         enTitleParagraph.editAsText().setLinkUrl(sefariaUrl);
       }
 
-      let engTextParagraph = doc.insertParagraph(index + (transliterationText ? 4 : 3), "");
+      let engTextParagraph = doc.insertParagraph(index + 3, "");
       engTextParagraph.setLeftToRight(true);
       engTextParagraph.setAttributes(nullStyle);
       insertRichTextFromHTML(engTextParagraph, data.text);
       engTextParagraph.setAttributes(noUnderline);
-      applyTypographyToParagraph(engTextParagraph, typography.translationFont, typography.translationFontSize, typography.translationFontStyle);
+      applyTypographyToParagraph(engTextParagraph, typography.translationFont, typography.translationFontSize);
 
       if (shouldIncludeEnglishAttribution && attributionLines.length > 0) {
-        let attributionParagraph = doc.insertParagraph(index + (transliterationText ? 5 : 4), "");
+        let attributionParagraph = doc.insertParagraph(index + 4, "");
         insertAttributionParagraph(attributionParagraph, attributionLines);
       }
     } else {
@@ -717,7 +665,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       engText.setAttributes(nullStyle);
       insertRichTextFromHTML(engText, data.text);
       engText.setAttributes(noUnderline);
-      applyTypographyToParagraph(engText, typography.translationFont, typography.translationFontSize, typography.translationFontStyle);
+      applyTypographyToParagraph(engText, typography.translationFont, typography.translationFontSize);
 
       let hebText = table.getCell(1, hebrewColumn)
         .setText("")
@@ -726,11 +674,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       hebText.setAttributes(nullStyle);
       insertRichTextFromHTML(hebText, data.he);
       hebText.setAttributes(noUnderline);
-      applyTypographyToParagraph(hebText, typography.hebrewFont, typography.hebrewFontSize, typography.hebrewFontStyle);
-
-      if (transliterationText) {
-        insertTransliterationIntoCell(table.getCell(1, hebrewColumn), transliterationText, typography);
-      }
+      applyTypographyToParagraph(hebText, typography.hebrewFont, typography.hebrewFontSize);
 
       if (shouldIncludeEnglishAttribution && attributionLines.length > 0) {
         let attributionParagraph = doc.insertParagraph(index + 1, "");
@@ -1109,3 +1053,186 @@ function findSearch(input, filters, pageRank) {
   
   return responseJSON["hits"]["hits"];
 }
+
+function popcornHTML() {
+  const prefs = getPreferences();
+  if (prefs.popcorn_enabled != "true") {
+    DocumentApp.getUi().alert('Popcorn is currently disabled. Enable it from Preferences to use this beta feature.');
+    return;
+  }
+  let mainHTMLOutput = HtmlService.createHtmlOutputFromFile('popcorn').setTitle('Popcorn (beta)').setWidth(300);
+  DocumentApp.getUi().showSidebar(mainHTMLOutput);
+}
+
+function insertPopcorn() {
+  // hardcoded in consts file since we don't have that many tokens per day for querying the api, unfortunately
+  
+  let selectSource = (book, isShas) => {
+    // currently only will give daf alef of shas, but that's fine for now because this is shtick anyways
+    let ref = "", section = "", folio = "";
+    if (isShas) {
+      section = Math.floor(book["length"] * Math.random()) + 2;
+      folio = ["a", "b"][Math.floor(Math.random() * 2)];
+      ref = `${book["title"]}.${section}${folio}`;
+    } else {
+      section = Math.floor(book["length"] * Math.random());
+      ref = `${book["title"]}.${section}`;
+    }
+    
+    let data = findReference(ref);
+    
+    // ugly, but easier to fudge the title from scratch rather than get it dynamically and be forced to make yet ANOTHER req to the api
+
+    let amtOfVerses = data.text.length;
+    let randomVerseNumber = Math.floor(Math.random() * amtOfVerses);
+
+    
+    data.text = data.text[randomVerseNumber];
+    //temporary fix
+    data.he = data.he[randomVerseNumber++]
+
+    data.heRef = `${data.heTitle} ${gematriya(section, {punctuate: false})}:${gematriya(randomVerseNumber, {punctuate: false})}`;
+    //ugly fix
+    data.ref = `${ref.replace(/\./g, " ")}:${randomVerseNumber}`;
+
+    insertReference(data);
+
+  };
+  let i = 0;
+  const AMT_OF_POPCORN = 5;
+  while  (i < AMT_OF_POPCORN) {
+    try {
+      let typeOfBook = Math.floor(Math.random() * 2);
+      let bookList = indexForPopcorn[typeOfBook];
+      let bookIndex = Math.floor(bookList.length * Math.random());
+      let book = bookList[bookIndex];
+
+      const isShas = (typeOfBook == 0) ? false : true;
+      
+      selectSource(book, isShas);
+      i++;
+    } catch(e) {
+      Logger.log(`Could not pop the following kernel because ${e.message}`);
+    }
+
+  }
+}
+
+/*
+ * Convert numbers to gematriya representation, and vice-versa.
+ *
+ * Licensed MIT.
+ *
+ * Copyright (c) 2014 Eyal Schachter [and updated to conform to modern ES6 conventions (well, somewhat) by Shlomi Helfgot]
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+	const letters = {}, numbers = {
+		'': 0,
+		א: 1,
+		ב: 2,
+		ג: 3,
+		ד: 4,
+		ה: 5,
+		ו: 6,
+		ז: 7,
+		ח: 8,
+		ט: 9,
+		י: 10,
+		כ: 20,
+		ל: 30,
+		מ: 40,
+		נ: 50,
+		ס: 60,
+		ע: 70,
+		פ: 80,
+		צ: 90,
+		ק: 100,
+		ר: 200,
+		ש: 300,
+		ת: 400,
+		תק: 500,
+		תר: 600,
+		תש: 700,
+		תת: 800,
+		תתק: 900,
+		תתר: 1000
+	};
+  let i;
+	for (i in numbers) {
+		letters[numbers[i]] = i;
+	}
+
+	function gematriya(num, options) {
+		if (options === undefined) {
+			let options = {limit: false, punctuate: true, order: false, geresh: true};
+		}
+
+		if (typeof num !== 'number' && typeof num !== 'string') {
+			throw new TypeError('non-number or string given to gematriya()');
+		}
+
+		if (typeof options !== 'object' || options === null){
+			throw new TypeError('An object was not given as second argument')
+		}
+
+		let limit = options.limit;
+		let order = options.order;
+		let punctuate = typeof options.punctuate === 'undefined' ? true : options.punctuate;
+		let geresh = typeof options.geresh === 'undefined' && punctuate ? true : options.geresh;
+
+		let str = typeof num === 'string';
+
+		if (str) {
+			num = num.replace(/('|")/g,'');
+		}
+		num = num.toString().split('').reverse();
+		if (!str && limit) {
+			num = num.slice(0, limit);
+		}
+
+		num = num.map(function g(n,i){
+			if (str) {
+				return order && numbers[n] < numbers[num[i - 1]] && numbers[n] < 100 ? numbers[n] * 1000 : numbers[n];
+			} else {
+				if (parseInt(n, 10) * Math.pow(10, i) > 1000) {
+					return g(n, i-3);
+				}
+				return letters[parseInt(n, 10) * Math.pow(10, i)];
+			}
+		});
+
+		if (str) {
+			return num.reduce(function(o,t){
+				return o + t;
+			}, 0);
+		} else {
+			num = num.reverse().join('').replace(/יה/g,'טו').replace(/יו/g,'טז').split('');
+
+			if (punctuate || geresh)	{
+				if (num.length === 1) {
+					num.push(geresh ? '׳' : "'");
+				} else if (num.length > 1) {
+					num.splice(-1, 0, geresh ? '״' : '"');
+				}
+			}
+
+			return num.join('');
+		}
+	}
