@@ -1,5 +1,8 @@
 # Torah Library Add-On for Google Docs
 
+> **Repository status:** REFERENCE — related to the [TableofWisdom](https://github.com/austinJCE/TableofWisdom) monorepo ecosystem.
+> See: `TableofWisdom/docs/repo-cleanup-plan.md` for the broader cleanup plan.
+
 A Google Docs add-on that brings Sefaria-powered source finding, previewing, insertion, linking, and formatting into Google Docs.
 
 > This is not an official Sefaria project.
