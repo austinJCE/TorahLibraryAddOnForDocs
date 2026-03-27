@@ -163,84 +163,6 @@
       return byId(selectId + '_custom');
     }
 
-    function getCustomTextField(selectId) {
-      return byId(selectId + '_custom');
-    }
-
-    function getStoredValueFromSelectOrCustom(selectId, hiddenId) {
-      const select = byId(selectId);
-      const custom = getCustomTextField(selectId);
-      const hidden = byId(hiddenId);
-      if (!select || !hidden) return '';
-
-      let value = '';
-      if (select.value === '__other__') {
-        value = custom ? custom.value.trim() : '';
-      } else {
-        value = select.value;
-      }
-      hidden.value = value;
-      return value;
-    }
-
-    function setSelectOrCustomValue(selectId, hiddenId, storedValue) {
-      const select = byId(selectId);
-      const custom = getCustomTextField(selectId);
-      const hidden = byId(hiddenId);
-      if (!select || !hidden) return;
-
-      const value = String(storedValue == null ? '' : storedValue);
-      const matches = Array.from(select.options).some(function(opt) { return opt.value === value; });
-
-      hidden.value = value;
-
-      if (matches) {
-        select.value = value;
-        if (custom) {
-          custom.hidden = true;
-          custom.value = '';
-        }
-      } else {
-        select.value = '__other__';
-        if (custom) {
-          custom.hidden = false;
-          custom.value = value;
-        }
-      }
-
-      syncCustomSelect(select);
-    }
-
-    function toggleCustomTextField(selectId) {
-      const select = byId(selectId);
-      const custom = getCustomTextField(selectId);
-      if (!select || !custom) return;
-      custom.hidden = select.value !== '__other__';
-      if (select.value !== '__other__') custom.value = '';
-    }
-
-    function bindCustomTextSelect(selectId, hiddenId) {
-      const select = byId(selectId);
-      const custom = getCustomTextField(selectId);
-      const hidden = byId(hiddenId);
-      if (!select || !hidden) return;
-
-      select.addEventListener('change', function() {
-        toggleCustomTextField(selectId);
-        getStoredValueFromSelectOrCustom(selectId, hiddenId);
-        syncCustomSelect(select);
-      });
-
-      if (custom) {
-        custom.addEventListener('input', function() {
-          getStoredValueFromSelectOrCustom(selectId, hiddenId);
-        });
-        custom.addEventListener('change', function() {
-          getStoredValueFromSelectOrCustom(selectId, hiddenId);
-        });
-      }
-    }
-
     function getSelectStoredValue(selectId) {
       const select = byId(selectId);
       if (!select) return '';
@@ -446,8 +368,6 @@
 
     function collectPreferenceObject() {
       syncOverridesField();
-      getStoredValueFromSelectOrCustom('ai_model_default_select', 'ai_model_default');
-      getStoredValueFromSelectOrCustom('ai_lesson_style_default_select', 'ai_lesson_style_default');
       const preferenceObject = {};
 
       document.querySelectorAll('select').forEach(function(el) {
@@ -467,13 +387,6 @@
         if (el.dataset.customFor) return;
         preferenceObject[el.name] = el.value;
       });
-
-      if (preferenceObject.ai_provider_default === '__other__') {
-        preferenceObject.ai_provider_default = (byId('ai_provider_default_custom') || {}).value || '';
-      }
-      if (preferenceObject.ai_key_strategy_default === '__other__') {
-        preferenceObject.ai_key_strategy_default = (byId('ai_key_strategy_default_custom') || {}).value || '';
-      }
 
       return preferenceObject;
     }
@@ -501,41 +414,6 @@
               customReplacementFields.forEach(function(name) {
                 setReplacementSelectValue(name, preferences[name]);
               });
-
-              setSelectOrCustomValue('ai_model_default_select', 'ai_model_default', preferences.ai_model_default || 'default');
-              setSelectOrCustomValue('ai_lesson_style_default_select', 'ai_lesson_style_default', preferences.ai_lesson_style_default || 'default');
-
-              (function() {
-                const provider = preferences.ai_provider_default || 'default';
-                const providerSelect = byId('ai_provider_default');
-                const providerCustom = byId('ai_provider_default_custom');
-                if (providerSelect) {
-                  const providerMatch = Array.from(providerSelect.options).some(function(opt) { return opt.value === provider; });
-                  if (providerMatch) {
-                    providerSelect.value = provider;
-                    if (providerCustom) { providerCustom.hidden = true; providerCustom.value = ''; }
-                  } else {
-                    providerSelect.value = '__other__';
-                    if (providerCustom) { providerCustom.hidden = false; providerCustom.value = provider; }
-                  }
-                  syncCustomSelect(providerSelect);
-                }
-
-                const keyStrategy = preferences.ai_key_strategy_default || 'auto';
-                const keySelect = byId('ai_key_strategy_default');
-                const keyCustom = byId('ai_key_strategy_default_custom');
-                if (keySelect) {
-                  const keyMatch = Array.from(keySelect.options).some(function(opt) { return opt.value === keyStrategy; });
-                  if (keyMatch) {
-                    keySelect.value = keyStrategy;
-                    if (keyCustom) { keyCustom.hidden = true; keyCustom.value = ''; }
-                  } else {
-                    keySelect.value = '__other__';
-                    if (keyCustom) { keyCustom.hidden = false; keyCustom.value = keyStrategy; }
-                  }
-                  syncCustomSelect(keySelect);
-                }
-              })();
 
               try {
                 transliterationOverrides = JSON.parse(preferences.transliteration_overrides || '{}') || {};
@@ -778,8 +656,6 @@
       'select#god_replacement',
       'select#ai_provider_default',
       'select#ai_key_strategy_default',
-      'select#ai_model_default_select',
-      'select#ai_lesson_style_default_select',
       'select#ai_saved_key_provider'
     ].join(','));
 
@@ -817,24 +693,6 @@
       }
       el.addEventListener('blur', updateForField);
       el.addEventListener('change', updateForField);
-    });
-
-    bindCustomTextSelect('ai_model_default_select', 'ai_model_default');
-    bindCustomTextSelect('ai_lesson_style_default_select', 'ai_lesson_style_default');
-
-    ['ai_provider_default', 'ai_key_strategy_default'].forEach(function(id) {
-      const el = byId(id);
-      const custom = byId(id + '_custom');
-      if (!el || !custom) return;
-
-      function sync() {
-        custom.hidden = el.value !== '__other__';
-        if (el.value !== '__other__') custom.value = '';
-        syncCustomSelect(el);
-      }
-
-      el.addEventListener('change', sync);
-      sync();
     });
 
     bindReplacementField('meforash_replacement', 'meforash_replace');

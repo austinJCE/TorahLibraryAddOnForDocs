@@ -244,3 +244,34 @@ The source code in this repository is licensed under the [MIT License](./LICENSE
 This project uses the Sefaria API but is not an official Sefaria project.
 Texts and metadata retrieved from Sefaria may carry separate attribution,
 copyright, or reuse terms depending on the source text.
+
+
+
+# Add-on UI Refactor Pack
+
+This pack contains guardrails, a migration checklist, test scaffolding, and a package.json script snippet to help Codex refactor your Apps Script add-on UI without drifting from your existing UX.
+
+## Files included
+
+- `docs/ui-refactor-guardrails.md`
+- `docs/ui-refactor-checklist.md`
+- `tests/validate-html-includes.mjs`
+- `tests/validate-selectors.mjs`
+- `tests/validate-page-contracts.mjs`
+- `tests/snapshot-page-templates.mjs`
+- `tests/fixtures/expected-selectors.json`
+- `package-scripts-snippet.json`
+
+## How to use
+
+1. Copy the `docs/` and `tests/` folders into your repo.
+2. Merge the scripts from `package-scripts-snippet.json` into your existing `package.json`.
+3. Adjust `tests/fixtures/expected-selectors.json` to match your actual critical selectors.
+4. Run `npm run test:ui-snapshots` once to generate baseline snapshots.
+5. After each Codex pass, run `npm run test:ui`.
+
+## Notes
+
+- The selector fixture is intentionally conservative and should be customized to your real contract.
+- The snapshot test is structure-oriented, not a visual browser screenshot test.
+- The JS contract test will intentionally fail until the shared/page module files exist.

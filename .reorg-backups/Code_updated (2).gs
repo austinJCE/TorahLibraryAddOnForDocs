@@ -225,14 +225,6 @@ function supportPopup() {
   DocumentApp.getUi().showModalDialog(html, 'Support');
 }
 
-function releaseNotesPopup() {
-  var html = HtmlService.createHtmlOutputFromFile('release-notes')
-    .setWidth(700)
-    .setHeight(700);
-  SpreadsheetApp.getUi().showModalDialog(html, 'Release Notes');
-}
-
-
 function howItWorksPopup() {
   const html = HtmlService.createHtmlOutputFromFile('help')
       .setWidth(760)
