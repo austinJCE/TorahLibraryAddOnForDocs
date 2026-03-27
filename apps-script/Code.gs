@@ -178,6 +178,7 @@ function openSharedSidebar_(mode) {
   var resolvedMode = setSearchMode_(mode || getSearchMode_());
   var template = HtmlService.createTemplateFromFile('sidebar');
   template.initialMode = resolvedMode;
+  template.appConfig = getUiAppConfig_('sidebar', resolvedMode);
   var output = template.evaluate()
     .setTitle(resolvedMode === 'voices' ? 'Voices' : 'Texts')
     .setWidth(300);
@@ -1758,6 +1759,7 @@ function insertSheetReference(sheetPayload) {
 
 function openAiLessonGenerator() {
   const template = HtmlService.createTemplateFromFile('ai_lesson');
+  template.appConfig = getUiAppConfig_('ai_lesson', 'modal');
   const output = template.evaluate()
     .setWidth(460)
     .setHeight(720);
@@ -2544,6 +2546,7 @@ function insertGeneratedLessonIntoDoc_(lesson, request) {
 
 function preferencesPopup() {
   const template = HtmlService.createTemplateFromFile('preferences');
+  template.appConfig = getUiAppConfig_('preferences', 'modal');
   const output = template.evaluate()
     .setTitle('Preferences')
     .setWidth(600)

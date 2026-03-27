@@ -12,8 +12,9 @@ function surpriseMeHTML() {
     return;
   }
 
-  const output = HtmlService
-    .createHtmlOutputFromFile('surprise-me')
+  const template = HtmlService.createTemplateFromFile('surprise-me');
+  template.appConfig = getUiAppConfig_('surprise_me', 'modal');
+  const output = template.evaluate()
     .setWidth(430)
     .setHeight(620);
 

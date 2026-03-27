@@ -2,6 +2,8 @@
   "name": "torah-library-addon-for-docs",
   "private": true,
   "scripts": {
-    "test": "node --test"
+    "test": "npm run test:ui",
+    "test:ui": "node --test test/ui/*.test.js",
+    "test:ui:update-snapshots": "UPDATE_UI_SNAPSHOTS=1 node --test test/ui/template-snapshots.test.js"
   }
 }
