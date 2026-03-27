@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+  <head>
+    <base target="_top">
+
+    <!--STYLESHEETS-->
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+    <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/smoothness/jquery-ui.css" />
+
+    <?!= include('main_css'); ?>
+
+
+    <!--SCRIPTS-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+
+  </head>
+  <body>
+    <main>
+      <div class="sidebar-scroll">
+
+      <aside class="hide">
+        <img src="https://www.sefaria.org/static/img/ajax-loader.gif">
+      </aside>
+
+      <section class="experience-bar" aria-label="Sidebar mode">
+        <div class="experience-toggle" role="tablist" aria-label="Sidebar complexity">
+          <button type="button" class="experience-pill active" data-experience-mode="default" role="tab" aria-selected="true">Default</button>
+          <button type="button" class="experience-pill" data-experience-mode="custom" role="tab" aria-selected="false">Custom</button>
+        </div>
+        <div class="shortcut-hint">Press / to search</div>
+      </section>
+      <section class="experience-note-row default-only" aria-live="polite">
+        <div class="experience-note">Using your saved Preferences. Switch to Custom to override insertion options for this insert.</div>
+      </section>
+
+      <div class="section-label">Find a source</div>
+      <section class="reference-row">
+        <div class="reference-input-shell">
+          <input type="text" class="input disab" placeholder="Reference, title, or phrase" aria-label="Find a source">
+        </div>
+        <button class="search-submit" id="run-sefaria">Find</button>
+      </section>
+      <section class="query-intel-row" aria-live="polite">
+        <span class="query-badge" id="query-badge">Ready</span>
+        <span class="query-hint" id="query-hint">Type a reference, title, phrase, or paste a Sefaria URL.</span>
+      </section>
+      <section class="search-control-row advanced-only" aria-label="Search controls">
+        <div class="search-filter-card">
+          <div class="search-filter-header">Search filters</div>
+          <div class="search-filter-grid refined-search-filter-grid">
+            <div class="filter-field filter-field-wide">
+              <label for="search-corpus-button">Corpus</label>
+              <div class="multi-select-dropdown" id="search-corpus-dropdown">
+                <button type="button" class="multi-select-button" id="search-corpus-button" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="multi-select-button-text">All corpuses</span>
+                  <span class="multi-select-caret" aria-hidden="true">▾</span>
+                </button>
+                <div class="multi-select-menu corpus-menu" role="listbox" aria-multiselectable="true">
+                  <label class="multi-select-option corpus-option corpus-tanakh"><input type="checkbox" class="search-corpus-option" value="Tanakh"> <span>Tanakh</span></label>
+                  <label class="multi-select-option corpus-option corpus-mishnah"><input type="checkbox" class="search-corpus-option" value="Mishnah"> <span>Mishnah</span></label>
+                  <label class="multi-select-option corpus-option corpus-talmud"><input type="checkbox" class="search-corpus-option" value="Talmud"> <span>Talmud</span></label>
+                  <label class="multi-select-option corpus-option corpus-halakhah"><input type="checkbox" class="search-corpus-option" value="Halakhah"> <span>Halakhah</span></label>
+                  <label class="multi-select-option corpus-option corpus-midrash"><input type="checkbox" class="search-corpus-option" value="Midrash"> <span>Midrash</span></label>
+                  <label class="multi-select-option corpus-option corpus-kabbalah"><input type="checkbox" class="search-corpus-option" value="Kabbalah"> <span>Kabbalah</span></label>
+                  <label class="multi-select-option corpus-option corpus-liturgy"><input type="checkbox" class="search-corpus-option" value="Liturgy"> <span>Liturgy</span></label>
+                  <label class="multi-select-option corpus-option corpus-philosophy"><input type="checkbox" class="search-corpus-option" value="Philosophy"> <span>Philosophy</span></label>
+                  <label class="multi-select-option corpus-option corpus-tanaitic"><input type="checkbox" class="search-corpus-option" value="Tanaitic"> <span>Tanaitic</span></label>
+                  <label class="multi-select-option corpus-option corpus-chasidut"><input type="checkbox" class="search-corpus-option" value="Chasidut"> <span>Chasidut</span></label>
+                  <label class="multi-select-option corpus-option corpus-musar"><input type="checkbox" class="search-corpus-option" value="Musar"> <span>Musar</span></label>
+                  <label class="multi-select-option corpus-option corpus-apocrypha"><input type="checkbox" class="search-corpus-option" value="Apocrypha"> <span>Apocrypha</span></label>
+                  <label class="multi-select-option corpus-option corpus-modernworks"><input type="checkbox" class="search-corpus-option" value="Modern Works"> <span>Modern Works</span></label>
+                  <label class="multi-select-option corpus-option corpus-reference"><input type="checkbox" class="search-corpus-option" value="Reference"> <span>Reference</span></label>
+                  <label class="multi-select-option corpus-option corpus-other"><input type="checkbox" class="search-corpus-option" value="Other"> <span>Other</span></label>
+                </div>
+              </div>
+            </div>
+            <div class="filter-field filter-field-narrow">
+              <label for="search-sort-mode">Sort</label>
+              <select class="search-sort-select" id="search-sort-mode" aria-label="Sort results">
+                <option value="relevance" selected>Relevance</option>
+                <option value="alphabetical-asc">A to Z</option>
+                <option value="alphabetical-desc">Z to A</option>
+              </select>
+            </div>
+          </div>
+          <div class="search-filter-toggles refined-search-toggles">
+            <div class="toggle-row compact-toggle-row translation-filter-row">
+              <label for="translation-only-filter">Translation language</label>
+              <label class="switch" for="translation-only-filter">
+                <input id="translation-only-filter" type="checkbox" class="translation-only-filter">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="filter-field filter-field-wide translation-language-panel" style="display:none;">
+              <label for="translation-language-button">Languages</label>
+              <div class="multi-select-dropdown" id="translation-language-dropdown">
+                <button type="button" class="multi-select-button" id="translation-language-button" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="multi-select-button-text">English</span>
+                  <span class="multi-select-caret" aria-hidden="true">▾</span>
+                </button>
+                <div class="multi-select-menu" role="listbox" aria-multiselectable="true">
+                  <label class="multi-select-option"><input type="checkbox" class="translation-language-option" value="en" checked> <span>English</span></label>
+                  <label class="multi-select-option"><input type="checkbox" class="translation-language-option" value="es"> <span>Spanish</span></label>
+                  <label class="multi-select-option"><input type="checkbox" class="translation-language-option" value="fr"> <span>French</span></label>
+                  <label class="multi-select-option"><input type="checkbox" class="translation-language-option" value="de"> <span>German</span></label>
+                  <label class="multi-select-option"><input type="checkbox" class="translation-language-option" value="ru"> <span>Russian</span></label>
+                  <label class="multi-select-option"><input type="checkbox" class="translation-language-option" value="ar"> <span>Arabic</span></label>
+                  <label class="multi-select-option"><input type="checkbox" class="translation-language-option" value="he"> <span>Hebrew</span></label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="results-panel">
+        <div class="results-header">
+          <div class="result-group-label" style="margin: 0;">Results</div>
+          <button type="button" class="results-toggle-button" style="display:none;">Show results</button>
+        </div>
+        <div class="selected-result-summary" style="display:none;"></div>
+        <div class="results-lists">
+          <div class="result-group-label">Library matches</div>
+          <ul class="result-list library-results"></ul>
+          <div class="result-group-label">Search results</div>
+          <ul class="result-list search-results"></ul>
+          <p class="results-hint" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="recent-results-panel" style="display:none;">
+        <div class="results-header">
+          <div class="result-group-label" style="margin: 0;">Recent</div>
+        </div>
+        <ul class="result-list recent-results"></ul>
+      </section>
+
+      <section class="insertion-settings-section">
+        <details class="sidebar-accordion options-accordion" open>
+          <summary class="section-label accordion-summary">Insertion options</summary>
+          <div class="options-panel accordion-panel">
+            <div class="subsection-label">Display</div>
+            <div class="mode-card-group compact-mode-card-group" role="radiogroup" aria-label="Display mode">
+              <button class="mode-card" data-mode="en" role="radio" aria-checked="false" title="Translation"><span class="mode-card-content"><span class="mode-card-symbol latin">A</span></span><span class="mode-card-label visually-hidden">Translation</span></button>
+              <button class="mode-card" data-mode="both" role="radio" aria-checked="false" title="Source with Translation"><span class="mode-card-content both"><span class="mode-card-symbol latin">A</span><span class="mode-card-plus">+</span><span class="mode-card-symbol">א</span></span><span class="mode-card-label visually-hidden">Source with Translation</span></button>
+              <button class="mode-card" data-mode="he" role="radio" aria-checked="false" title="Source"><span class="mode-card-content"><span class="mode-card-symbol">א</span></span><span class="mode-card-label visually-hidden">Source</span></button>
+            </div>
+
+            <div class="subsection-label bilingual-layout-wrapper">Bilingual layout</div>
+            <div class="layout-option-group bilingual-layout-wrapper" role="radiogroup" aria-label="Bilingual layout">
+              <button class="layout-option" data-layout="he-top" aria-label="Hebrew on top" title="Hebrew on top"><span class="layout-icon layout-icon-top" aria-hidden="true"></span></button>
+              <button class="layout-option" data-layout="he-left" aria-label="Hebrew left" title="Hebrew on left"><span class="layout-icon layout-icon-left" aria-hidden="true"></span></button>
+              <button class="layout-option" data-layout="he-right" aria-label="Hebrew right" title="Hebrew on right"><span class="layout-icon layout-icon-right" aria-hidden="true"></span></button>
+            </div>
+
+            <div class="subsection-label">Text and links</div>
+            <div class="toggle-row hebrew-options-row option-toggle-row">
+              <label for="wants-vowels">Vowels</label>
+              <label class="switch" for="wants-vowels"><input id="wants-vowels" type="checkbox" class="wants-vowels" checked><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row hebrew-options-row option-toggle-row">
+              <label for="wants-cantillation">Cantillation</label>
+              <label class="switch" for="wants-cantillation"><input id="wants-cantillation" type="checkbox" class="wants-cantillation" checked><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row pesukim-wrapper option-toggle-row">
+              <label for="wants-pesukim">Line markers</label>
+              <label class="switch" for="wants-pesukim"><input id="wants-pesukim" type="checkbox" class="wants-pesukim" checked><span class="slider"></span></label>
+            </div>
+            <p class="helper-text pesukim-help">Applies to segmented refs (e.g., verse/line ranges).</p>
+            <div class="toggle-row translation-details-row option-toggle-row">
+              <label for="include-translation-source-info">Translation details</label>
+              <label class="switch" for="include-translation-source-info"><input id="include-translation-source-info" type="checkbox" class="include-translation-source-info"><span class="slider"></span></label>
+            </div>
+            <p class="helper-text translation-details-help">Adds version/source details below inserted text.</p>
+            <div class="toggle-row hebrew-options-row transliteration-options-row option-toggle-row">
+              <label for="include-transliteration">Transliteration</label>
+              <label class="switch" for="include-transliteration"><input id="include-transliteration" type="checkbox" class="include-transliteration"><span class="slider"></span></label>
+            </div>
+            <p class="helper-text transliteration-help">Uses your saved transliteration scheme and overrides.</p>
+            <div class="toggle-row option-toggle-row">
+              <label for="insert-sefaria-link">Insert Sefaria link</label>
+              <label class="switch" for="insert-sefaria-link"><input id="insert-sefaria-link" type="checkbox" class="insert-sefaria-link"><span class="slider"></span></label>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section class="versions-section advanced-only">
+        <details class="sidebar-accordion versions-accordion">
+          <summary class="section-label accordion-summary">Versions</summary>
+          <div class="versions-panel accordion-panel">
+          <div class="version-control translation-version-control"></div>
+          <details class="advanced-version-details">
+            <summary>Source edition (advanced)</summary>
+            <p class="advanced-version-note">Optional: choose a specific Hebrew/source edition only when needed.</p>
+            <div class="version-control hebrew-version-control"></div>
+          </details>
+          </div>
+        </details>
+      </section>
+
+      <section class="preview-section">
+        <div class="section-label">Preview</div>
+        <div class="preview-panel">
+          <section class="suggestions">
+            <b>Please enter the title of a text or a source to insert.</b>
+          </section>
+        </div>
+      </section>
+
+      <button class="submit" id="insert-source" disabled>Insert</button>
+      <button class="submit" id="open-on-sefaria" disabled><span class="open-sefaria-label"><span class="sefaria-badge samekh" aria-hidden="true">ס</span><span>Sefaria</span><span class="external-link-icon" aria-hidden="true">↗</span></span></button>
+
+      </div>
+      <section class="sidebar-footer-tools" aria-label="Tools">
+        <button type="button" class="footer-tool-button open-divine-names-tool" title="Transform Divine Names" aria-label="Transform Divine Names"><span class="tool-icon-stack"><span class="samekh-sized">ה</span><span class="tool-arrow">→</span><span class="samekh-sized">ש</span></span></button>
+        <button type="button" class="footer-tool-button open-linker-tool" title="Link Texts with Sefaria" aria-label="Link Texts with Sefaria"><span class="tool-icon-stack"><span class="link-emoji">🔗</span><span class="tool-arrow">→</span><span class="sefaria-badge samekh" aria-hidden="true">ס</span></span></button>
+        <button type="button" class="footer-tool-button open-preferences-tool" title="Preferences" aria-label="Preferences">⚙</button>
+      </section>
+
+      <select class="output-mode-selection visually-hidden" aria-hidden="true">
+        <option value="both" selected>Source with Translation</option>
+        <option value="he">Source</option>
+        <option value="en">Translation</option>
+      </select>
+      <select class="bilingual-layout-selection visually-hidden" aria-hidden="true">
+        <option value="he-right" selected>Hebrew right</option>
+        <option value="he-left">Hebrew left</option>
+        <option value="he-top">Hebrew on top</option>
+      </select>
+    </main>
+
+    <!--MAIN UX SCRIPT-->
+    <?!= include('main_js'); ?>
+
+
+  </body>
+</html>

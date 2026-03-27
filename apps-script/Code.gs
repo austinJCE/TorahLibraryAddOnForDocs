@@ -19,95 +19,222 @@ const SETTINGS = [
   "god_replacement",
   "hebrew_font",
   "hebrew_font_size",
+  "hebrew_font_style",
   "include_translation_source_info",
   "include_transliteration_default",
+  "insert_citation_default",
+  "insert_sefaria_link_default",
+  "link_texts_default",
+  "show_line_markers_default",
+  "output_mode_default",
+  "bilingual_layout_default",
+  "last_translation_languages",
+  "last_translation_only_filter",
+  "last_search_sort_mode",
+  "last_search_relevance_sort",
   "meforash_replace",
   "meforash_replacement",
   "nekudot",
   "nekudot_filter",
   "popcorn_enabled",
   "teamim",
+  "teamim_filter",
   "translation_font",
   "translation_font_size",
   "translation_font_style",
+  "preferred_translation_language",
   "transliteration_font",
   "transliteration_font_size",
   "transliteration_font_style",
   "transliteration_scheme",
+  "transliteration_overrides",
+  "transliteration_is_biblical_hebrew",
+  "transliteration_biblical_dagesh_mode",
   "versioning",
   "yaw_replace",
-  "yaw_replacement"
+  "yaw_replacement",
+  "source_title_font",
+  "source_title_font_size",
+  "source_title_font_style",
+  "sefaria_link_font",
+  "sefaria_link_font_size",
+  "sefaria_link_font_style",
+  "search_mode",
+  "experimental_ai_source_sheet_enabled",
+  "ai_provider_default",
+  "ai_model_default",
+  "ai_key_strategy_default",
+  "ai_audience_default",
+  "ai_lesson_style_default",
+  "ai_duration_default"
 ];
 
 function onInstall() {
 	  const basicPrefs = {
-	  "apply_sheimot_on_insertion": false,
-	  "elodim_replace": false,
-	  "extended_gemara": false,
-	  "god_replace": false,
-	  "god_replacement": "G-d",
-	  "hebrew_font": "Arial",
-	  "hebrew_font_size": 14,
-	  "include_translation_source_info": false,
-	  "meforash_replace": false,
-	  "nekudot": true,
-	  "nekudot_filter": false,
-	  "popcorn_enabled": false,
-	  "teamim": true,
-	  "translation_font": "Arial",
-	  "translation_font_size": 11,
-	  "versioning": true,
-	  "yaw_replace": false
-	};
+    "apply_sheimot_on_insertion": false,
+    "elodim_replace": false,
+    "extended_gemara": false,
+    "god_replace": false,
+    "god_replacement": "G-d",
+    "preferred_translation_language": "en",
+    "hebrew_font": "Noto Sans Hebrew",
+    "hebrew_font_size": 18,
+    "hebrew_font_style": "normal",
+    "include_translation_source_info": false,
+    "include_transliteration_default": false,
+    "insert_sefaria_link_default": true,
+    "show_line_markers_default": true,
+    "output_mode_default": "both",
+    "bilingual_layout_default": "he-right",
+    "meforash_replace": false,
+    "nekudot": true,
+    "nekudot_filter": "always",
+    "popcorn_enabled": false,
+    "teamim": true,
+    "teamim_filter": "available",
+    "translation_font": "Noto Sans Hebrew",
+    "translation_font_size": 11,
+    "translation_font_style": "normal",
+    "transliteration_font": "Noto Sans Hebrew",
+    "transliteration_font_size": 11,
+    "transliteration_font_style": "italic",
+    "transliteration_scheme": "traditional",
+    "transliteration_overrides": "{}",
+    "transliteration_is_biblical_hebrew": true,
+    "transliteration_biblical_dagesh_mode": "none",
+    "versioning": true,
+    "yaw_replace": false,
+    "search_mode": "basic",
+    "experimental_ai_source_sheet_enabled": false,
+    "ai_provider_default": "default",
+    "ai_model_default": "",
+    "ai_key_strategy_default": "auto"
+  };
   setPreferences(basicPrefs);
   //display release notes in popup
   
   let html = HtmlService.createHtmlOutputFromFile('release-notes')
-      .setWidth(600)
-      .setHeight(400);
+      .setWidth(720)
+      .setHeight(760);
   DocumentApp.getUi().showModalDialog(html, 'Release Notes');
 }
 
 let extendedGemaraPreference = false;
 
-function onOpen() {
-  const menu = DocumentApp.getUi().createAddonMenu()
-      .addItem('Find & Insert Source', 'sefariaHTML')
+function onOpen(e) {
+  const ui = DocumentApp.getUi();
+  const addOnMenu = ui.createAddonMenu();
+  const quickActionsMenu = ui.createMenu('Quick Actions')
       .addItem('Transform Divine Names', 'transformDivineNames')
-      .addItem('Link Texts with Sefaria', 'linkTextsWithSefaria')
-      .addItem('Preferences', 'preferencesPopup')
-      .addItem('Support', 'supportAndFeatureRequestPopup');
+      .addItem('Link Texts with Sefaria', 'linkTextsWithSefaria');
 
-  const prefs = getPreferences();
-  if (prefs.popcorn_enabled == "true") {
-    menu.addItem('Popcorn (beta, legacy feature by Shlomi Helfgot)', 'popcornHTML');
+  let experimentalAiEnabled = false;
+  let surpriseEnabled = false;
+
+  // Per Google Workspace add-on guidance, avoid reading PropertiesService while
+  // the add-on is still in AuthMode.NONE so the menu always renders.
+  if (!e || e.authMode !== ScriptApp.AuthMode.NONE) {
+    const prefs = getPreferences();
+    experimentalAiEnabled = prefs.experimental_ai_source_sheet_enabled == "true";
+    surpriseEnabled = prefs.popcorn_enabled == "true";
   }
 
-  menu.addToUi();
+  if (experimentalAiEnabled) {
+    quickActionsMenu.addSeparator()
+      .addItem("Today's Daf Lesson (45 min)", 'runQuickActionTodaysDafLessonMenu')
+      .addItem("Today's 929 Lesson (45 min)", 'runQuickActionTodays929LessonMenu')
+      .addItem("This Week's Parashah Lesson (45 min)", 'runQuickActionThisWeeksParashahLessonMenu');
+  }
+
+  addOnMenu
+      .addItem('Basic Search', 'basicHTML')
+      .addItem('Advanced Search', 'sefariaHTML')
+      .addItem('Voices on Sefaria', 'voicesHTML')
+      .addSubMenu(quickActionsMenu);
+
+  if (experimentalAiEnabled) {
+    addOnMenu.addSeparator().addItem('Generate Shiur Draft (experimental)', 'openAiLessonGenerator');
+  }
+  if (surpriseEnabled) {
+    addOnMenu.addSeparator().addItem('Surprise Me', 'surpriseMeHTML');
+  }
+
+  addOnMenu
+      .addSeparator()
+      .addItem('Preferences', 'preferencesPopup')
+      .addItem('Support', 'supportPopup')
+      .addToUi();
 }
 
-function sefariaHTML() {
-  onOpen();
-  let template = HtmlService.createTemplateFromFile('main');
-  let mainHTMLOutput = template.evaluate()
-    .setTitle('Find & Insert Source')
+function setSearchMode_(mode) {
+  const normalizedMode = (mode === 'advanced' || mode === 'voices') ? mode : 'basic';
+  PropertiesService.getUserProperties().setProperty('search_mode', normalizedMode);
+  return normalizedMode;
+}
+
+function getSearchMode_() {
+  const stored = PropertiesService.getUserProperties().getProperty('search_mode');
+  return (stored === 'advanced' || stored === 'voices') ? stored : 'basic';
+}
+
+function openSharedSidebar_(mode) {
+  const resolvedMode = setSearchMode_(mode || getSearchMode_());
+  const template = HtmlService.createTemplateFromFile('sidebar');
+  template.initialMode = resolvedMode;
+  let output = template.evaluate()
+    .setTitle(resolvedMode === 'voices' ? 'Voices on Sefaria' : (resolvedMode === 'advanced' ? 'Advanced Search' : 'Basic Search'))
     .setWidth(300);
-  DocumentApp.getUi().showSidebar(mainHTMLOutput);
+  DocumentApp.getUi().showSidebar(output);
   extendedGemaraPreference = PropertiesService.getUserProperties().getProperty("extended_gemara");
 }
 
-function supportAndFeatureRequestPopup() {
-  let html = HtmlService.createHtmlOutputFromFile('support-and-features')
-      .setWidth(600)
-      .setHeight(400);
-  DocumentApp.getUi().showModalDialog(html, 'Support and Features');
+function basicHTML() {
+  openSharedSidebar_('basic');
 }
 
-function preferencesPopup() {
-  let html = HtmlService.createHtmlOutputFromFile('preferences')
-      .setWidth(600)
-      .setHeight(400);
-  DocumentApp.getUi().showModalDialog(html, 'Preferences');
+function sefariaHTML() {
+  openSharedSidebar_('advanced');
+}
+
+function voicesHTML() {
+  openSharedSidebar_('voices');
+}
+
+function getSidebarBootstrapData(mode, sessionId) {
+  const accountPreferences = getAccountPreferences();
+  const resolvedMode = (mode === 'advanced' || mode === 'voices') ? mode : (mode === 'basic' ? 'basic' : getSearchMode_());
+  const resolvedSessionId = sessionId || generateSidebarSessionId_();
+  const sessionState = resolvedMode === 'advanced' ? getSidebarSessionState(resolvedSessionId) : {};
+  const effectivePreferences = Object.assign({}, accountPreferences, sessionState);
+  return {
+    mode: resolvedMode,
+    sessionId: resolvedSessionId,
+    accountPreferences: accountPreferences,
+    sessionState: sessionState,
+    effectivePreferences: effectivePreferences,
+    preferences: effectivePreferences
+  };
+}
+
+function supportPopup() {
+  let html = HtmlService.createHtmlOutputFromFile('support')
+      .setWidth(760)
+      .setHeight(860);
+  DocumentApp.getUi().showModalDialog(html, 'Support');
+}
+
+function howItWorksPopup() {
+  const html = HtmlService.createHtmlOutputFromFile('help')
+      .setWidth(760)
+      .setHeight(860);
+  DocumentApp.getUi().showModalDialog(html, 'User Guide');
+}
+
+function aboutPopup() {
+  const html = HtmlService.createHtmlOutputFromFile('support')
+      .setWidth(760)
+      .setHeight(860);
+  DocumentApp.getUi().showModalDialog(html, 'About');
 }
 
 //returns the user preference w.r.t. displaying the versioning dropdowns in the insertion module
@@ -238,8 +365,7 @@ function findReference(reference, versions=undefined, skipNormalization=false) {
   // patch for now; triggered when an invalid sefer name is sent
   try {
     let response = UrlFetchApp.fetch(url);
-    let json = response.getContentText();
-    let test_data = JSON.parse(json);
+    let data = JSON.parse(response.getContentText());
   
   /*although it might make more sense to put the filters (orthography, seamus) elsewhere, as it is text processing, 
   all representations of this data need to have these applied to them such that the preview is נאמן to what the actual
@@ -249,20 +375,8 @@ function findReference(reference, versions=undefined, skipNormalization=false) {
   // Narrowing the protected region would make failures easier to reason about.
 
     const userProperties = PropertiesService.getUserProperties();
-    // see https://unicode.org/charts/PDF/U0590.pdf for Hebrew unicode values
-    if (userProperties.getProperty("nekudot") == "false" || (userProperties.getProperty("nekudot_filter") == "tanakh" || test_data.type != "Tanakh")) {
-      json = json.replace(/[\u05B0-\u05BD]/g, "");
-      json = json.replace(/[\u05BF-\u05C7]/g, ""); //in order to keep the makafs in
-    }
-    json = (userProperties.getProperty("teamim") == "false") ? json.replace(/[\u0591-\u05AF]/g, "") : json;
-    // Technical debt: these Hebrew normalization regexes are broad and hard to maintain.
-    // Consolidate and document this logic so replacements remain predictable across niqqud/ta'amim variants.
-    let meforashReplacement = userProperties.getProperty("meforash_replacement");
-    json = (userProperties.getProperty("meforash_replace") == "true") ? json.replace(/י[\u0591-\u05C7]*ה[\u0591-\u05C7]*ו[\u0591-\u05C7]*ה[\u0591-\u05C7]*/g, meforashReplacement) : json;  
-    json = (userProperties.getProperty("yaw_replace") == "true") ? json.replace(/\bי[\u0591-\u05C7]*ה[\u0591-\u05C7]*\b/g, userProperties.getProperty("yaw_replacement")) : json;
-    json = (userProperties.getProperty("elodim_replace") == "true") ? json.replace(/א[\u0591-\u05C7]*ל[\u0591-\u05C7]*ו[\u0591-\u05C7]*ה[\u0591-\u05C7]*י[\u0591-\u05C7]*ם[\u0591-\u05C7]*/g, userProperties.getProperty("elodim_replacement")) : json;
-    
-    let data = JSON.parse(json);
+    data = applyHebrewDisplayPreferences(data, userProperties);
+    data = applyHebrewDivineNamePreferences(data, userProperties);
     applyEnglishDivineNamePreference(data, userProperties);
     return data;
 
@@ -272,6 +386,109 @@ function findReference(reference, versions=undefined, skipNormalization=false) {
     return; 
   }
 
+}
+
+function normalizeHebrewDisplayFilters_(userProperties) {
+  const nekudotEnabled = userProperties.getProperty("nekudot") != "false";
+  const rawNekudotFilter = String(userProperties.getProperty("nekudot_filter") || "always").toLowerCase();
+  const nekudotFilter = (rawNekudotFilter === "tanakh" || rawNekudotFilter === "never") ? rawNekudotFilter : "always";
+
+  const teamimEnabled = userProperties.getProperty("teamim") != "false";
+  const rawTeamimFilter = String(userProperties.getProperty("teamim_filter") || "available").toLowerCase();
+  const teamimFilter = (rawTeamimFilter === "tanakh" || rawTeamimFilter === "torah") ? "tanakh" : (rawTeamimFilter === "never" ? "never" : "available");
+
+  return {
+    nekudotEnabled,
+    nekudotFilter,
+    teamimEnabled,
+    teamimFilter
+  };
+}
+
+function applyHebrewTextDisplayPreferences(value, context, filters) {
+  if (Array.isArray(value)) {
+    return value.map(function(item) {
+      return applyHebrewTextDisplayPreferences(item, context, filters);
+    });
+  }
+  if (value === null || value === undefined || typeof value !== 'string') {
+    return value;
+  }
+
+  let output = value;
+  const shouldStripNekudot = !filters.nekudotEnabled || (filters.nekudotFilter === 'tanakh' && context !== 'Tanakh');
+  const shouldStripTeamim = !filters.teamimEnabled || (filters.teamimFilter === 'tanakh' && context !== 'Tanakh');
+
+  if (shouldStripTeamim) {
+    output = output.replace(/[֑-֯]/g, '');
+  }
+  if (shouldStripNekudot) {
+    output = output.replace(/[ְ-ֽ]/g, '');
+    output = output.replace(/[ֿ-ׇ]/g, '');
+  }
+
+  return output;
+}
+
+function applyHebrewDisplayPreferences(data, userProperties) {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+
+  const filters = normalizeHebrewDisplayFilters_(userProperties);
+  const context = data.type || '';
+  const clone = JSON.parse(JSON.stringify(data));
+
+  ['he', 'heRef'].forEach(function(field) {
+    if (Object.prototype.hasOwnProperty.call(clone, field)) {
+      clone[field] = applyHebrewTextDisplayPreferences(clone[field], context, filters);
+    }
+  });
+
+  return clone;
+}
+
+function applyHebrewDivineNamePreferences(data, userProperties) {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+
+  const meforashReplacement = userProperties.getProperty("meforash_replacement");
+  const replacements = [];
+
+  if (userProperties.getProperty("meforash_replace") == "true" && meforashReplacement) {
+    replacements.push({ pattern: /י[֑-ׇ]*ה[֑-ׇ]*ו[֑-ׇ]*ה[֑-ׇ]*/g, replacement: meforashReplacement });
+  }
+  if (userProperties.getProperty("yaw_replace") == "true") {
+    replacements.push({ pattern: /י[֑-ׇ]*ה[֑-ׇ]*/g, replacement: userProperties.getProperty("yaw_replacement") || '' });
+  }
+  if (userProperties.getProperty("elodim_replace") == "true") {
+    replacements.push({ pattern: /א[֑-ׇ]*ל[֑-ׇ]*ו[֑-ׇ]*ה[֑-ׇ]*י[֑-ׇ]*ם[֑-ׇ]*/g, replacement: userProperties.getProperty("elodim_replacement") || '' });
+  }
+
+  if (!replacements.length) {
+    return data;
+  }
+
+  const applyReplacements = function(node) {
+    if (Array.isArray(node)) {
+      return node.map(function(value) { return applyReplacements(value); });
+    }
+    if (typeof node === 'string') {
+      return replacements.reduce(function(current, rule) {
+        return current.replace(rule.pattern, rule.replacement);
+      }, node);
+    }
+    return node;
+  };
+
+  const clone = JSON.parse(JSON.stringify(data));
+  ['he', 'heRef'].forEach(function(field) {
+    if (Object.prototype.hasOwnProperty.call(clone, field)) {
+      clone[field] = applyReplacements(clone[field]);
+    }
+  });
+  return clone;
 }
 
 function applyEnglishDivineNamePreference(data, userProperties) {
@@ -296,15 +513,21 @@ function applyEnglishDivineNamePreference(data, userProperties) {
 function getTypographySettings() {
   const userProperties = PropertiesService.getUserProperties();
   return {
-    hebrewFont: userProperties.getProperty("hebrew_font") || "Noto Serif Hebrew",
-    hebrewFontSize: Number(userProperties.getProperty("hebrew_font_size") || 14),
+    hebrewFont: userProperties.getProperty("hebrew_font") || "Noto Sans Hebrew",
+    hebrewFontSize: Number(userProperties.getProperty("hebrew_font_size") || 18),
     hebrewFontStyle: userProperties.getProperty("hebrew_font_style") || "normal",
-    translationFont: userProperties.getProperty("translation_font") || "EB Garamond",
-    translationFontSize: Number(userProperties.getProperty("translation_font_size") || 11),
+    translationFont: userProperties.getProperty("translation_font") || "Noto Sans Hebrew",
+    translationFontSize: Number(userProperties.getProperty("translation_font_size") || 12),
     translationFontStyle: userProperties.getProperty("translation_font_style") || "normal",
-    transliterationFont: userProperties.getProperty("transliteration_font") || "EB Garamond",
-    transliterationFontSize: Number(userProperties.getProperty("transliteration_font_size") || 11),
-    transliterationFontStyle: userProperties.getProperty("transliteration_font_style") || "italic"
+    transliterationFont: userProperties.getProperty("transliteration_font") || "Noto Sans Hebrew",
+    transliterationFontSize: Number(userProperties.getProperty("transliteration_font_size") || 12),
+    transliterationFontStyle: userProperties.getProperty("transliteration_font_style") || "italic",
+    sourceTitleFont: userProperties.getProperty("source_title_font") || "Noto Sans Hebrew",
+    sourceTitleFontSize: Number(userProperties.getProperty("source_title_font_size") || 14),
+    sourceTitleFontStyle: userProperties.getProperty("source_title_font_style") || "normal",
+    sefariaLinkFont: userProperties.getProperty("sefaria_link_font") || "Noto Sans Hebrew",
+    sefariaLinkFontSize: Number(userProperties.getProperty("sefaria_link_font_size") || 14),
+    sefariaLinkFontStyle: userProperties.getProperty("sefaria_link_font_style") || "underline"
   };
 }
 
@@ -327,16 +550,18 @@ function applyTypographyToParagraph(paragraph, font, size, style) {
   }
 
   const fontStyle = String(style || "normal");
-  text.setBold(0, len - 1, fontStyle === "bold" || fontStyle === "bold_italic");
-  text.setItalic(0, len - 1, fontStyle === "italic" || fontStyle === "bold_italic");
+  const flags = fontStyle === "normal" ? [] : fontStyle.split(",");
+  text.setBold(0, len - 1, flags.indexOf("bold") >= 0);
+  text.setItalic(0, len - 1, flags.indexOf("italic") >= 0);
+  text.setUnderline(0, len - 1, flags.indexOf("underline") >= 0);
 }
 
-function applyHeaderStyleWithTypography(paragraph, isHebrew, typography) {
+function applyTitleTypography(paragraph, typography, insertSefariaLink) {
   applyTypographyToParagraph(
     paragraph,
-    isHebrew ? typography.hebrewFont : typography.translationFont,
-    isHebrew ? typography.hebrewFontSize : typography.translationFontSize,
-    isHebrew ? typography.hebrewFontStyle : typography.translationFontStyle
+    insertSefariaLink ? typography.sefariaLinkFont : typography.sourceTitleFont,
+    insertSefariaLink ? typography.sefariaLinkFontSize : typography.sourceTitleFontSize,
+    insertSefariaLink ? typography.sefariaLinkFontStyle : typography.sourceTitleFontStyle
   );
 }
 
@@ -362,6 +587,23 @@ function insertTransliterationIntoCell(cell, transliterationText, typography) {
 
 function testRef() {
   findReference("Shemot 12:2", {"en": "The Holy Scriptures: A New Translation (JPS 1917)", "he": "Yehoyesh's Yiddish Tanakh Translation [yi]"})
+}
+
+
+function normalizeTransliterationLineMarkersToGematria(text, startingVerse) {
+  if (!text) {
+    return text;
+  }
+  let verseNumber = Number(startingVerse) || 1;
+  return String(text).split('\n').map(function(line) {
+    if (!line || !line.trim()) return line;
+    if (/^\s*\([^)]*\)\s*/.test(line)) {
+      const marker = (typeof gematriya === 'function') ? gematriya(verseNumber, { punctuate: false }) : String(verseNumber);
+      verseNumber += 1;
+      return line.replace(/^\s*\([^)]*\)\s*/, "(" + marker + ") ");
+    }
+    return line;
+  }).join('\n');
 }
 
 function formatDataForPesukim(data, pesukim) {
@@ -492,7 +734,7 @@ function buildLinkedTitleText(baseTitle, data, singleLanguage) {
   return `${safeTitle} (${modeLabel} • ${versionLabel})`;
 }
 
-function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null, includeTranslationSourceInfo = false, bilingualLayout = "he-right", insertSefariaLink = false, includeTransliteration = false) {
+function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null, includeTranslationSourceInfo = false, bilingualLayout = "he-right", insertSefariaLink = false, includeTransliteration = false, insertCitationOnly = false) {
   if (!data || !data.ref) {
     throw new Error("Unable to insert source: no resolved reference.");
   }
@@ -582,9 +824,44 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
   let attributionLines = (shouldIncludeEnglishAttribution) ? getEnglishAttributionLines(data) : [];
   const typography = getTypographySettings();
   const currentPrefs = getPreferences();
-  const transliterationScheme = currentPrefs.transliteration_scheme || "simple_english";
-  const transliterationText = (includeTransliteration && data.he) ? transliterateHebrewHtmlPreservingBasicBreaks(data.he, transliterationScheme, { keepNiqqud: true }) : "";
+  const transliterationScheme = currentPrefs.transliteration_scheme || "traditional";
+  const transliterationDageshMode = currentPrefs.transliteration_biblical_dagesh_mode || "none";
+  const transliterationIsBiblical = currentPrefs.transliteration_is_biblical_hebrew !== "false";
+  const isBiblicalHebrewText = transliterationIsBiblical && data.type == "Tanakh";
+  const transliterationOverrides = (() => {
+    try {
+      return JSON.parse(currentPrefs.transliteration_overrides || '{}') || {};
+    } catch (error) {
+      return {};
+    }
+  })();
+  const transliterationTextRaw = (includeTransliteration && data.he)
+    ? transliterateHebrewHtmlPreservingBasicBreaks(data.he, transliterationScheme, {
+        keepNiqqud: true,
+        isBiblicalHebrew: isBiblicalHebrewText,
+        dageshMode: isBiblicalHebrewText ? transliterationDageshMode : "none",
+        overrideMap: transliterationOverrides
+      })
+    : "";
+  const transliterationText = (data.lineMarkersApplied && transliterationTextRaw)
+    ? normalizeTransliterationLineMarkersToGematria(transliterationTextRaw, (data.sections && data.sections[1]) ? data.sections[1] : 1)
+    : transliterationTextRaw;
   const sefariaUrl = `https://www.sefaria.org/${encodeURIComponent(data.ref || '').replace(/%20/g, '_')}`;
+
+
+  const shouldAppendCitation = (insertCitationOnly === true || insertCitationOnly === "true");
+
+  const appendCitationParagraph = (insertAtIndex, useHebrewCitation) => {
+    if (!shouldAppendCitation) return;
+    const citationText = useHebrewCitation ? (data.heRef || title) : title;
+    let citationParagraph = doc.insertParagraph(insertAtIndex, citationText)
+      .setAttributes(headerStyle)
+      .setLeftToRight(useHebrewCitation ? false : true);
+    applyTitleTypography(citationParagraph, typography, insertSefariaLink);
+    if (insertSefariaLink) {
+      citationParagraph.editAsText().setLinkUrl(sefariaUrl);
+    }
+  };
 
   let resolvedBilingualLayout = (singleLanguage) ? null : (bilingualLayout || "he-right");
   if (resolvedBilingualLayout !== "he-left" && resolvedBilingualLayout !== "he-top" && resolvedBilingualLayout !== "he-right") {
@@ -604,7 +881,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       .setAttributes(headerStyle)
       .setLeftToRight(ltr);
     let insertedTitle = doc.getChild(index).asParagraph();
-    applyHeaderStyleWithTypography(insertedTitle, singleLanguage == "he", typography);
+    applyTitleTypography(insertedTitle, typography, insertSefariaLink);
     if (insertSefariaLink) {
       insertedTitle.editAsText().setLinkUrl(sefariaUrl);
     }
@@ -628,10 +905,19 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       insertTransliterationParagraphAfter(doc, index + 2, transliterationText, typography, true);
     }
 
-    if (singleLanguage == "en" && attributionLines.length > 0) {
-      let attributionParagraph = doc.insertParagraph(index+2, "");
-      insertAttributionParagraph(attributionParagraph, attributionLines);
+    let singleLanguageNextIndex = index + 2;
+
+    if (singleLanguage == "he" && transliterationText) {
+      singleLanguageNextIndex += 1;
     }
+
+    if (singleLanguage == "en" && attributionLines.length > 0) {
+      let attributionParagraph = doc.insertParagraph(index + 2, "");
+      insertAttributionParagraph(attributionParagraph, attributionLines);
+      singleLanguageNextIndex += 1;
+    }
+
+    appendCitationParagraph(singleLanguageNextIndex, singleLanguage == "he");
 
   }
   else {
@@ -640,7 +926,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
         .setAttributes(headerStyle)
         .setLeftToRight(false);
       let hebTitleParagraph = doc.getChild(index).asParagraph();
-      applyHeaderStyleWithTypography(hebTitleParagraph, true, typography);
+      applyTitleTypography(hebTitleParagraph, typography, insertSefariaLink);
       if (insertSefariaLink) {
         hebTitleParagraph.editAsText().setLinkUrl(sefariaUrl);
       }
@@ -660,7 +946,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
         .setAttributes(headerStyle)
         .setLeftToRight(true);
       let enTitleParagraph = doc.getChild(index + (transliterationText ? 3 : 2)).asParagraph();
-      applyHeaderStyleWithTypography(enTitleParagraph, false, typography);
+      applyTitleTypography(enTitleParagraph, typography, insertSefariaLink);
       if (insertSefariaLink) {
         enTitleParagraph.editAsText().setLinkUrl(sefariaUrl);
       }
@@ -672,10 +958,15 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       engTextParagraph.setAttributes(noUnderline);
       applyTypographyToParagraph(engTextParagraph, typography.translationFont, typography.translationFontSize, typography.translationFontStyle);
 
+      let heTopNextIndex = index + (transliterationText ? 5 : 4);
+
       if (shouldIncludeEnglishAttribution && attributionLines.length > 0) {
-        let attributionParagraph = doc.insertParagraph(index + (transliterationText ? 5 : 4), "");
+        let attributionParagraph = doc.insertParagraph(heTopNextIndex, "");
         insertAttributionParagraph(attributionParagraph, attributionLines);
+        heTopNextIndex += 1;
       }
+
+      appendCitationParagraph(heTopNextIndex, false);
     } else {
       /* note: since Hebrew text needs to be inserted in RTL order, we first insert the table without 
       the Hebrew text and then add in the Hebrew text manually, with the correct text-direction */
@@ -698,7 +989,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       engTitle.setLeftToRight(true);
       insertRichTextFromHTML(engTitle, insertSefariaLink ? buildLinkedTitleText(title, data, 'en') : title);
       engTitle.setAttributes(headerStyle);
-      applyTypographyToParagraph(engTitle, typography.translationFont, typography.translationFontSize);
+      applyTitleTypography(engTitle, typography, insertSefariaLink);
       if (insertSefariaLink) {
         engTitle.editAsText().setLinkUrl(sefariaUrl);
       }
@@ -709,7 +1000,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       hebTitle.setLeftToRight(false);
       insertRichTextFromHTML(hebTitle, insertSefariaLink ? buildLinkedTitleText(data.heRef, data, 'he') : data.heRef);
       hebTitle.setAttributes(headerStyle);
-      applyTypographyToParagraph(hebTitle, typography.hebrewFont, typography.hebrewFontSize);
+      applyTitleTypography(hebTitle, typography, insertSefariaLink);
       if (insertSefariaLink) {
         hebTitle.editAsText().setLinkUrl(sefariaUrl);
       }
@@ -736,10 +1027,15 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
         insertTransliterationIntoCell(table.getCell(1, hebrewColumn), transliterationText, typography);
       }
 
+      let sideBySideNextIndex = index + 1;
+
       if (shouldIncludeEnglishAttribution && attributionLines.length > 0) {
         let attributionParagraph = doc.insertParagraph(index + 1, "");
         insertAttributionParagraph(attributionParagraph, attributionLines);
+        sideBySideNextIndex += 1;
       }
+
+      appendCitationParagraph(sideBySideNextIndex, false);
 
       /* the constraints of insertParagraph mean that there will always be an extra line break in table cells to which we dynamically add text. See https://stackoverflow.com/questions/39506414/remove-newline-from-google-doc-table-content.
       This solution was contributed by an expert in Google Apps Script, @tanaike. Thanks @tanaike! [https://stackoverflow.com/questions/76647915/extra-spaces-when-inserting-text-in-google-docs-tables-rich-text-version?noredirect=1#comment135153775_76647915] */ 
@@ -880,28 +1176,145 @@ function insertRichTextFromHTML(element, htmlString) {
   }
 }
 
-function getPreferences() {
-  let returnPrefs = {}
-  let preferences = PropertiesService.getUserProperties();
+
+function getDefaultPreferences() {
+  return {
+    apply_sheimot_on_insertion: false,
+    elodim_replace: false,
+    elodim_replacement: "אלוקים",
+    extended_gemara: false,
+    god_replace: false,
+    god_replacement: "G-d",
+    preferred_translation_language: "en",
+    hebrew_font: "Noto Sans Hebrew",
+    hebrew_font_size: 18,
+    hebrew_font_style: "normal",
+    include_translation_source_info: false,
+    include_transliteration_default: false,
+    insert_citation_default: false,
+    insert_sefaria_link_default: true,
+    link_texts_default: false,
+    show_line_markers_default: true,
+    output_mode_default: "both",
+    bilingual_layout_default: "he-right",
+    last_translation_languages: JSON.stringify(["en"]),
+    last_translation_only_filter: false,
+    last_search_sort_mode: "relevance",
+    last_search_relevance_sort: true,
+    meforash_replace: false,
+    meforash_replacement: "ה'",
+    nekudot: true,
+    nekudot_filter: "always",
+    popcorn_enabled: false,
+    teamim: true,
+    teamim_filter: "available",
+    translation_font: "Noto Sans Hebrew",
+    translation_font_size: 12,
+    translation_font_style: "normal",
+    transliteration_font: "Noto Sans Hebrew",
+    transliteration_font_size: 12,
+    transliteration_font_style: "italic",
+    transliteration_scheme: "traditional",
+    transliteration_overrides: "{}",
+    transliteration_is_biblical_hebrew: true,
+    transliteration_biblical_dagesh_mode: "none",
+    versioning: true,
+    yaw_replace: false,
+    yaw_replacement: "קה",
+    source_title_font: "Noto Sans Hebrew",
+    source_title_font_size: 14,
+    source_title_font_style: "normal",
+    sefaria_link_font: "Noto Sans Hebrew",
+    sefaria_link_font_size: 14,
+    sefaria_link_font_style: "underline",
+    search_mode: "basic",
+    experimental_ai_source_sheet_enabled: false,
+    ai_provider_default: "default",
+    ai_model_default: "",
+    ai_key_strategy_default: "auto",
+    ai_audience_default: "Adult learners",
+    ai_lesson_style_default: "Interactive shiur",
+    ai_duration_default: 45
+  };
+}
+
+function readUserPreferenceObject_() {
+  const defaults = getDefaultPreferences();
+  const preferences = PropertiesService.getUserProperties();
+  const out = {};
   for (let i = 0; i < SETTINGS.length; i++) {
-    returnPrefs[SETTINGS[i]] = preferences.getProperty(SETTINGS[i]);
+    const key = SETTINGS[i];
+    const storedValue = preferences.getProperty(key);
+    out[key] = (storedValue !== null && storedValue !== undefined) ? storedValue : defaults[key];
   }
-  return returnPrefs;
+  return out;
+}
+
+function generateSidebarSessionId_() {
+  return Utilities.getUuid();
+}
+
+function getSidebarSessionCacheKey_(sessionId) {
+  return 'sidebar_session_' + String(sessionId || 'default');
+}
+
+function getSidebarSessionState(sessionId) {
+  if (!sessionId) return {};
+  const raw = CacheService.getUserCache().get(getSidebarSessionCacheKey_(sessionId));
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return (parsed && typeof parsed === 'object') ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function setSidebarSessionState(sessionId, payload) {
+  if (!sessionId) throw new Error('Missing sidebar session id.');
+  const current = getSidebarSessionState(sessionId);
+  const merged = Object.assign({}, current, payload || {});
+  CacheService.getUserCache().put(getSidebarSessionCacheKey_(sessionId), JSON.stringify(merged), 21600);
+  return merged;
+}
+
+function clearSidebarSessionState(sessionId) {
+  if (sessionId) {
+    CacheService.getUserCache().remove(getSidebarSessionCacheKey_(sessionId));
+  }
+  return true;
+}
+
+function getAccountPreferences() {
+  return readUserPreferenceObject_();
+}
+
+function setAccountPreferences(preferenceObject) {
+  setPreferences(preferenceObject || {});
+  return getAccountPreferences();
+}
+
+function saveSidebarSessionAsAccountDefaults(sessionId) {
+  const sessionState = getSidebarSessionState(sessionId);
+  setPreferences(sessionState || {});
+  clearSidebarSessionState(sessionId);
+  return getAccountPreferences();
+}
+
+function getPreferences() {
+  return getAccountPreferences();
 }
 
 function setPreferences(preferenceObject) {
-  const userProperties = PropertiesService.getUserProperties();  
-  for (const property in preferenceObject) {
+  const userProperties = PropertiesService.getUserProperties();
+  for (const property in (preferenceObject || {})) {
     try {
-
       userProperties.setProperty(property, preferenceObject[property]);
-
-
     } catch (error) {
-
       Logger.log(`The system has made a mach'ah: ${error.message}`);
     }
   }
+  return getAccountPreferences();
 }
 
 function sefariaSearch() {
@@ -1066,50 +1479,1072 @@ function returnTitles() {
     return titleArray;
 }
 
-function findSearch(input, filters, pageRank) {
+function buildSearchWrapperPayload_(input, searchConfig) {
+  let normalizedConfig = {};
+  if (Array.isArray(searchConfig)) {
+    normalizedConfig.filters = searchConfig;
+  } else if (typeof searchConfig === 'boolean') {
+    normalizedConfig.relevanceSort = searchConfig;
+  } else if (searchConfig && typeof searchConfig === 'object') {
+    normalizedConfig = searchConfig;
+  }
 
-   let url = 'https://www.sefaria.org/api/search-wrapper';
-
-   //h/t to Russell Neiss for the filters demo code
-
-   let safeFilters = Array.isArray(filters) ? filters : [];
-   let filter_fields = Array(safeFilters.length).fill("path");
-
-   let searchOptions = {
+  let safeFilters = Array.isArray(normalizedConfig.filters) ? normalizedConfig.filters.filter(Boolean) : [];
+  let usePageRank = normalizedConfig.relevanceSort !== false;
+  let searchOptions = {
     'aggs': [],
     'field': 'naive_lemmatizer',
     'filters': safeFilters,
-    'filter_fields': filter_fields,
-    'query': input,
+    'filter_fields': Array(safeFilters.length).fill('path'),
+    'query': String(input || '').trim(),
     'size': 50,
     'slop': 10,
     'type': 'text',
     'source_proj': true
   };
 
-  if (pageRank) {
-    let pageRankOptions = {'sort_fields': [
-      'pagesheetrank'
-      ],
-      'sort_method': 'score',
-      'sort_reverse': false,
-      'sort_score_missing': 0.04,
+  if (usePageRank) {
+    searchOptions.sort_fields = ['pagesheetrank'];
+    searchOptions.sort_method = 'score';
+    searchOptions.sort_reverse = false;
+    searchOptions.sort_score_missing = 0.04;
+  }
+
+  return searchOptions;
+}
+
+
+function searchWrapperRequest_(payload) {
+  let url = 'https://www.sefaria.org/api/search-wrapper';
+  let postOptions = {
+    method: 'post',
+    payload: JSON.stringify(payload),
+    contentType: 'application/json',
+    muteHttpExceptions: true
+  };
+
+  let rawResponse = UrlFetchApp.fetch(url, postOptions);
+  let statusCode = rawResponse.getResponseCode ? rawResponse.getResponseCode() : 200;
+  let responseText = rawResponse.getContentText() || '{}';
+
+  if (statusCode >= 400) {
+    throw new Error('Search request failed with status ' + statusCode + '.');
+  }
+
+  return JSON.parse(responseText || '{}');
+}
+
+function normalizeSearchTranslationLanguages_(languages) {
+  const languageLUT = {
+    english: 'en', en: 'en', eng: 'en',
+    spanish: 'es', es: 'es', spa: 'es',
+    french: 'fr', fr: 'fr', fre: 'fr', fra: 'fr',
+    german: 'de', de: 'de', ger: 'de', deu: 'de',
+    russian: 'ru', ru: 'ru', rus: 'ru',
+    arabic: 'ar', ar: 'ar', ara: 'ar',
+    hebrew: 'he', he: 'he', heb: 'he'
+  };
+  return (Array.isArray(languages) ? languages : []).map(function(language) {
+    const raw = String(language || '').trim().toLowerCase();
+    return languageLUT[raw] || raw;
+  }).filter(Boolean);
+}
+
+function searchHitHasTranslation_(hit, desiredLanguages) {
+  let source = hit && hit._source ? hit._source : {};
+  let selectedLanguages = normalizeSearchTranslationLanguages_(desiredLanguages);
+  let availableLangs = [];
+  if (source && Array.isArray(source.availableLangs)) {
+    availableLangs = normalizeSearchTranslationLanguages_(source.availableLangs);
+  } else if (source && Array.isArray(source.versions)) {
+    availableLangs = normalizeSearchTranslationLanguages_(source.versions.map(function(version) {
+      return version && version.language;
+    }));
+  }
+  if (!selectedLanguages.length) {
+    if (availableLangs.length) {
+      return availableLangs.length > 0;
     }
-    searchOptions = {
-      ...searchOptions,
-      ...pageRankOptions
+    if (Object.prototype.hasOwnProperty.call(source, 'hasEn')) {
+      return source.hasEn !== false;
+    }
+    return true;
+  }
+  if (!availableLangs.length) {
+    return selectedLanguages.indexOf('en') >= 0 && source.hasEn !== false;
+  }
+  return selectedLanguages.some(function(language) {
+    return availableLangs.indexOf(language) >= 0;
+  });
+}
+
+function findSearchAdvanced(input, filters, relevanceSort, translationOnly) {
+  let searchConfig = (filters && typeof filters === 'object' && !Array.isArray(filters))
+    ? filters
+    : { filters: filters, relevanceSort: relevanceSort, translationOnly: translationOnly === true };
+
+  let attempts = [];
+  attempts.push(buildSearchWrapperPayload_(input, searchConfig));
+
+  if (Array.isArray(searchConfig.filters) && searchConfig.filters.length > 0) {
+    attempts.push(buildSearchWrapperPayload_(input, Object.assign({}, searchConfig, { filters: [] })));
+  }
+
+  if (searchConfig.relevanceSort !== false) {
+    attempts.push(buildSearchWrapperPayload_(input, Object.assign({}, searchConfig, { relevanceSort: false })));
+  }
+
+  attempts.push({
+    aggs: [],
+    field: 'naive_lemmatizer',
+    query: String(input || '').trim(),
+    size: 50,
+    slop: 10,
+    type: 'text',
+    source_proj: true
+  });
+
+  let lastError = null;
+  for (let i = 0; i < attempts.length; i++) {
+    try {
+      let responseJSON = searchWrapperRequest_(attempts[i]);
+      let hits = (((responseJSON || {}).hits || {}).hits || []);
+      if (searchConfig.translationOnly) {
+        hits = hits.filter(function(hit) {
+          return searchHitHasTranslation_(hit, searchConfig.translationLanguages);
+        });
+      }
+      return hits;
+    } catch (error) {
+      lastError = error;
+      Logger.log('Search attempt ' + (i + 1) + ' failed: ' + error.message);
     }
   }
 
-  let dataToSend = JSON.stringify(searchOptions);
-  let postOptions = {
-    "method":"post",
-    "payload" : dataToSend,
-    "contentType": "application/json"
-  };
-  let response = UrlFetchApp.fetch(url, postOptions).getContentText();
+  throw new Error(lastError && lastError.message ? lastError.message : 'Search is temporarily unavailable. Please try again.');
+}
 
-  let responseJSON = JSON.parse(response);
-  
-  return responseJSON["hits"]["hits"];
+function findSearch(input, filters, pageRank) {
+  return findSearchAdvanced(input, filters, pageRank, false);
+}
+
+function searchVoices(query, options) {
+  const safeQuery = String(query || '').trim();
+  if (!safeQuery) {
+    return [];
+  }
+
+  const payload = {
+    from: 0,
+    size: 24,
+    highlight: {
+      pre_tags: ['<b>'],
+      post_tags: ['</b>'],
+      fields: {
+        content: { fragment_size: 180 },
+        title: { fragment_size: 120 }
+      }
+    },
+    query: {
+      bool: {
+        should: [
+          { match_phrase: { title: { query: safeQuery, slop: 3 } } },
+          { match_phrase: { content: { query: safeQuery, slop: 8 } } }
+        ],
+        minimum_should_match: 1
+      }
+    }
+  };
+
+  const response = UrlFetchApp.fetch('https://www.sefaria.org/api/search/sheet/_search', {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+
+  const status = response.getResponseCode ? response.getResponseCode() : 200;
+  if (status >= 400) {
+    throw new Error('Voices search is temporarily unavailable.');
+  }
+
+  const json = JSON.parse(response.getContentText() || '{}');
+  const hits = (((json || {}).hits || {}).hits || []);
+  return hits.map(function(hit, index) {
+    const source = (hit && hit._source) || {};
+    const highlight = (hit && hit.highlight) || {};
+    const snippet = (highlight.content && highlight.content[0]) || source.summary || '';
+    const title = source.title || ('Sheet ' + (source.sheetId || index + 1));
+    const url = source.sheetId ? ('https://www.sefaria.org/sheets/' + encodeURIComponent(source.sheetId)) : '';
+    return {
+      key: 'sheet-' + String(source.sheetId || hit._id || index),
+      ref: 'sheet:' + String(source.sheetId || hit._id || index),
+      label: title,
+      subtitle: source.owner_name ? ('By ' + source.owner_name) : 'Source Sheet',
+      snippet: snippet,
+      summary: source.summary || '',
+      owner: source.owner_name || '',
+      ownerProfile: source.profile_url || '',
+      url: url,
+      sheetId: source.sheetId || null,
+      topics: source.topics_en || [],
+      typeLabel: 'Voices',
+      clusterLabel: 'Source Sheets',
+      kind: 'sheet',
+      hasTranslation: true,
+      availableLangs: ['en', 'he']
+    };
+  });
+}
+
+function insertSheetReference(sheetPayload) {
+  if (!sheetPayload || !sheetPayload.url) {
+    throw new Error('No sheet is selected.');
+  }
+
+  const document = DocumentApp.getActiveDocument();
+  if (!document) {
+    throw new Error('Open a Google Doc before inserting a sheet.');
+  }
+
+  const body = document.getBody();
+  let index = body.getNumChildren();
+  const cursor = document.getCursor();
+  if (cursor) {
+    const currentElement = cursor.getElement();
+    if (currentElement && currentElement.getParent()) {
+      index = currentElement.getParent().getChildIndex(currentElement) + 1;
+    }
+  }
+
+  const title = String(sheetPayload.label || 'Sefaria Source Sheet').trim();
+  const summary = String(sheetPayload.summary || '').trim();
+  const owner = String(sheetPayload.owner || '').trim();
+  const url = String(sheetPayload.url || '').trim();
+  const topics = Array.isArray(sheetPayload.topics) ? sheetPayload.topics.filter(Boolean) : [];
+  const typography = getTypographySettings();
+
+  const titleParagraph = body.insertParagraph(index, title);
+  titleParagraph.setHeading(DocumentApp.ParagraphHeading.HEADING2);
+  titleParagraph.editAsText().setLinkUrl(url);
+  applyTitleTypography(titleParagraph, typography, true);
+
+  if (summary) {
+    const summaryParagraph = body.insertParagraph(index + 1, summary);
+    summaryParagraph.setLeftToRight(true);
+    applyTypographyToParagraph(summaryParagraph, typography.translationFont, typography.translationFontSize, typography.translationFontStyle);
+  }
+
+  const metaBits = [];
+  if (owner) metaBits.push('Curated by ' + owner);
+  if (topics.length) metaBits.push('Topics: ' + topics.slice(0, 5).join(', '));
+  metaBits.push(url);
+  const metaParagraph = body.insertParagraph(index + (summary ? 2 : 1), metaBits.join(' • '));
+  metaParagraph.setLeftToRight(true);
+  applyTypographyToParagraph(metaParagraph, typography.sefariaLinkFont, Math.max(10, typography.sefariaLinkFontSize - 1), typography.sefariaLinkFontStyle);
+  metaParagraph.editAsText().setLinkUrl(url);
+}
+
+
+function openAiLessonGenerator() {
+  const template = HtmlService.createTemplateFromFile('ai_lesson');
+  const output = template.evaluate()
+    .setWidth(460)
+    .setHeight(720);
+  DocumentApp.getUi().showModalDialog(output, 'AI Lesson Generator (experimental)');
+}
+
+
+const AI_PROVIDER_OPTIONS_ = {
+  openai: {
+    label: 'ChatGPT',
+    managedKeyProperties: ['OPENAI_API_KEY', 'AI_OPENAI_API_KEY'],
+    defaultModel: 'gpt-5-mini',
+    models: ['gpt-5', 'gpt-5-mini']
+  },
+  anthropic: {
+    label: 'Claude',
+    managedKeyProperties: ['ANTHROPIC_API_KEY', 'AI_ANTHROPIC_API_KEY'],
+    defaultModel: 'claude-sonnet-4-20250514',
+    models: ['claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022']
+  },
+  gemini: {
+    label: 'Gemini',
+    managedKeyProperties: ['GEMINI_API_KEY', 'AI_GEMINI_API_KEY'],
+    defaultModel: 'gemini-2.5-flash',
+    models: ['gemini-2.5-flash', 'gemini-2.5-pro']
+  }
+};
+
+function legacy_getAiLessonBootstrapData_() {
+  const prefs = getPreferences();
+  const userProperties = PropertiesService.getUserProperties();
+  const defaults = getDefaultPreferences();
+  const provider = normalizeAiProvider_(prefs.ai_provider_default || defaults.ai_provider_default);
+  const model = String(prefs.ai_model_default || defaults.ai_model_default || '');
+  const keyStrategy = String(prefs.ai_key_strategy_default || defaults.ai_key_strategy_default || 'auto');
+  const providers = Object.keys(AI_PROVIDER_OPTIONS_).map(function(key) {
+    return {
+      key: key,
+      label: AI_PROVIDER_OPTIONS_[key].label,
+      models: AI_PROVIDER_OPTIONS_[key].models,
+      defaultModel: AI_PROVIDER_OPTIONS_[key].defaultModel,
+      managedKeyAvailable: hasManagedAiKey_(key),
+      savedKeyAvailable: hasSavedAiKey_(key)
+    };
+  });
+
+  return {
+    enabled: prefs.experimental_ai_source_sheet_enabled == 'true',
+    defaults: {
+      provider: provider,
+      model: model || '',
+      keyStrategy: keyStrategy,
+      duration: 45,
+      audience: 'Adult learners',
+      lessonStyle: 'Interactive shiur',
+      includeOriginal: true,
+      includeTranslation: true,
+      includeEducatorNotes: true,
+      includeDiscussionPrompts: true
+    },
+    providers: providers,
+    managedKeyPolicy: {
+      cooldownSeconds: getManagedAiCooldownSeconds_()
+    },
+    savedDefaults: {
+      audience: userProperties.getProperty('ai_audience_default') || 'Adult learners',
+      lessonStyle: userProperties.getProperty('ai_lesson_style_default') || 'Interactive shiur',
+      duration: Number(userProperties.getProperty('ai_duration_default') || 45)
+    }
+  };
+}
+
+function saveAiLessonDefaults_(payload) {
+  const userProperties = PropertiesService.getUserProperties();
+  const requestedProvider = String(payload && payload.provider || '').toLowerCase().trim();
+  const provider = requestedProvider === 'default' ? 'default' : normalizeAiProvider_(requestedProvider);
+  const model = provider === 'default' ? '' : sanitizeAiModel_(provider, payload && payload.model);
+  userProperties.setProperty('ai_provider_default', provider);
+  userProperties.setProperty('ai_model_default', model);
+  userProperties.setProperty('ai_key_strategy_default', normalizeAiKeyStrategy_(payload && payload.keyStrategy));
+  if (payload && payload.audience) {
+    userProperties.setProperty('ai_audience_default', String(payload.audience).trim());
+  }
+  if (payload && payload.lessonStyle) {
+    userProperties.setProperty('ai_lesson_style_default', String(payload.lessonStyle).trim());
+  }
+  if (payload && payload.duration) {
+    userProperties.setProperty('ai_duration_default', String(Math.max(10, Math.min(120, Number(payload.duration) || 45))));
+  }
+  return true;
+}
+
+function clearSavedAiKey(provider) {
+  const safeProvider = normalizeAiProvider_(provider);
+  PropertiesService.getUserProperties().deleteProperty(getSavedAiKeyPropertyName_(safeProvider));
+  return { provider: safeProvider, cleared: true };
+}
+
+function getSavedAiKeyPreview(provider) {
+  const safeProvider = normalizeAiProvider_(provider);
+  const value = PropertiesService.getUserProperties().getProperty(getSavedAiKeyPropertyName_(safeProvider)) || '';
+  return { provider: safeProvider, masked: maskApiKey_(value) };
+}
+
+function saveAiKeyFromPreferences(provider, apiKey) {
+  const safeProvider = normalizeAiProvider_(provider);
+  const key = String(apiKey || '').trim();
+  if (!key) throw new Error('Enter an API key before saving.');
+  PropertiesService.getUserProperties().setProperty(getSavedAiKeyPropertyName_(safeProvider), key);
+  return getSavedAiKeyPreview(safeProvider);
+}
+
+function maskApiKey_(value) {
+  const raw = String(value || '');
+  if (!raw) return '';
+  if (raw.length <= 8) return '••••••••';
+  return raw.slice(0, 4) + '••••••••' + raw.slice(-4);
+}
+
+function legacy_generateAiLessonDraft_(payload) {
+  assertExperimentalAiEnabled_();
+
+  const request = normalizeAiLessonRequest_(payload || {});
+  saveAiLessonDefaults_(request);
+  persistUserAiKeyIfRequested_(request);
+  const keyInfo = resolveAiCredential_(request);
+  const lesson = generateLessonDraftViaProvider_(request, keyInfo);
+  const enrichedLesson = enrichLessonWithSefariaTexts_(lesson, request);
+  const insertion = insertGeneratedLessonIntoDoc_(enrichedLesson, request);
+
+  return {
+    ok: true,
+    title: enrichedLesson.lessonTitle,
+    sourceCount: (enrichedLesson.sources || []).length,
+    insertedAt: insertion.insertedAt,
+    provider: AI_PROVIDER_OPTIONS_[request.provider].label,
+    model: request.model,
+    keySource: keyInfo.source,
+    warnings: enrichedLesson.warnings || []
+  };
+}
+
+function legacy_runQuickActionLearningCycleByType_(kind) {
+  assertExperimentalAiEnabled_();
+  const context = buildTodaysLearningCycleContext_();
+  const provider = pickAvailableAiProvider_();
+  if (!provider) {
+    throw new Error('No AI provider is ready yet. Open “Generate Shiur Draft (experimental)” and either paste your API key or ask an admin to configure a managed key.');
+  }
+  const normalizedKind = String(kind || '').toLowerCase();
+  const filteredItems = context.items.filter(function(item){
+    if (normalizedKind === 'daf') return /daf yomi/i.test(item.label);
+    if (normalizedKind === '929') return /929/.test(item.label);
+    if (normalizedKind === 'parashah') return /parash/i.test(item.label);
+    return true;
+  });
+  if (!filteredItems.length) throw new Error('That learning-cycle item is unavailable today.');
+  const defaultModel = PropertiesService.getUserProperties().getProperty('ai_model_default');
+  return generateAiLessonDraft({
+    provider: provider,
+    model: sanitizeAiModel_(provider, defaultModel),
+    keyStrategy: 'auto',
+    topic: filteredItems.map(function(item){ return item.label + ': ' + item.ref; }).join(' | '),
+    audience: String(getPreferences().ai_audience_default || 'Adult learners'),
+    duration: Math.max(10, Math.min(120, Number(getPreferences().ai_duration_default || 45))),
+    lessonStyle: String(getPreferences().ai_lesson_style_default || 'Interactive shiur'),
+    additionalInstructions: 'Create a teachable 45-minute lesson grounded in this current learning-cycle text. Keep the flow practical and suitable for live teaching. Review before sharing.',
+    includeOriginal: true,
+    includeTranslation: true,
+    includeEducatorNotes: true,
+    includeDiscussionPrompts: true,
+    contextMode: 'learning_cycle',
+    learningCycleContext: { items: filteredItems, topicLine: filteredItems.map(function(item){ return item.label + ': ' + item.ref; }).join(' | ') }
+  });
+}
+
+function legacy_runQuickActionTodaysDafLessonMenu_(){ return runQuickActionLearningCycleMenu_('daf', "today's Daf lesson"); }
+function legacy_runQuickActionTodays929LessonMenu_(){ return runQuickActionLearningCycleMenu_('929', "today's 929 lesson"); }
+function legacy_runQuickActionThisWeeksParashahLessonMenu_(){ return runQuickActionLearningCycleMenu_('parashah', "this week's Parashah lesson"); }
+function legacy_runQuickActionLearningCycleMenu_(kind, label) {
+  try {
+    const result = runQuickActionLearningCycleByType(kind);
+    DocumentApp.getUi().alert('Generated and inserted: ' + result.title);
+    return result;
+  } catch (error) {
+    DocumentApp.getUi().alert(error && error.message ? error.message : ('Unable to generate ' + label + '.'));
+    throw error;
+  }
+}
+
+function assertExperimentalAiEnabled_() {
+  const prefs = getPreferences();
+  if (prefs.experimental_ai_source_sheet_enabled != 'true') {
+    throw new Error('Enable the experimental AI lesson generator in Preferences before using this feature.');
+  }
+}
+
+function normalizeAiProvider_(provider) {
+  const safe = String(provider || '').toLowerCase().trim();
+  return AI_PROVIDER_OPTIONS_[safe] ? safe : 'openai';
+}
+
+function normalizeAiKeyStrategy_(strategy) {
+  const safe = String(strategy || '').toLowerCase().trim();
+  return ['auto', 'managed', 'saved', 'manual'].indexOf(safe) >= 0 ? safe : 'auto';
+}
+
+function sanitizeAiModel_(provider, model) {
+  const safeProvider = normalizeAiProvider_(provider);
+  const providerConfig = AI_PROVIDER_OPTIONS_[safeProvider];
+  const safeModel = String(model || '').trim();
+  if (!safeModel) return providerConfig.defaultModel;
+  if (providerConfig.models.indexOf(safeModel) >= 0) {
+    return safeModel;
+  }
+  return providerConfig.defaultModel;
+}
+
+function hasManagedAiKey_(provider) {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const config = AI_PROVIDER_OPTIONS_[normalizeAiProvider_(provider)];
+  return config.managedKeyProperties.some(function(propertyName) {
+    return !!scriptProperties.getProperty(propertyName);
+  });
+}
+
+function hasSavedAiKey_(provider) {
+  return !!PropertiesService.getUserProperties().getProperty(getSavedAiKeyPropertyName_(provider));
+}
+
+function getSavedAiKeyPropertyName_(provider) {
+  return 'ai_user_key_' + normalizeAiProvider_(provider);
+}
+
+function getManagedAiCooldownSeconds_() {
+  const raw = PropertiesService.getScriptProperties().getProperty('AI_MANAGED_COOLDOWN_SECONDS');
+  const parsed = Number(raw || 600);
+  return isNaN(parsed) || parsed < 0 ? 600 : parsed;
+}
+
+function enforceManagedAiCooldown_(provider) {
+  const userProperties = PropertiesService.getUserProperties();
+  const cooldownSeconds = getManagedAiCooldownSeconds_();
+  const key = 'ai_managed_last_used_at_' + normalizeAiProvider_(provider);
+  const lastUsed = Number(userProperties.getProperty(key) || 0);
+  const now = Date.now();
+  if (cooldownSeconds > 0 && lastUsed && (now - lastUsed) < cooldownSeconds * 1000) {
+    const remainingSeconds = Math.ceil((cooldownSeconds * 1000 - (now - lastUsed)) / 1000);
+    const remainingMinutes = Math.ceil(remainingSeconds / 60);
+    throw new Error('Please wait about ' + remainingMinutes + ' more minute' + (remainingMinutes === 1 ? '' : 's') + ' before using the add-on managed ' + AI_PROVIDER_OPTIONS_[provider].label + ' key again.');
+  }
+  userProperties.setProperty(key, String(now));
+}
+
+function resolveAiCredential_(request) {
+  const provider = request.provider;
+  const strategy = normalizeAiKeyStrategy_(request.keyStrategy);
+  const userProperties = PropertiesService.getUserProperties();
+  const manualKey = String(request.apiKey || '').trim();
+  const savedKey = String(userProperties.getProperty(getSavedAiKeyPropertyName_(provider)) || '').trim();
+  let managedKey = '';
+  const scriptProperties = PropertiesService.getScriptProperties();
+  AI_PROVIDER_OPTIONS_[provider].managedKeyProperties.some(function(propertyName) {
+    const candidate = String(scriptProperties.getProperty(propertyName) || '').trim();
+    if (candidate) {
+      managedKey = candidate;
+      return true;
+    }
+    return false;
+  });
+
+  if (strategy === 'manual') {
+    if (!manualKey) {
+      throw new Error('Paste an API key for ' + AI_PROVIDER_OPTIONS_[provider].label + ' or switch to a different key source.');
+    }
+    return { apiKey: manualKey, source: request.saveApiKey ? 'manual-saved' : 'manual' };
+  }
+
+  if (strategy === 'saved') {
+    if (!savedKey) {
+      throw new Error('No saved ' + AI_PROVIDER_OPTIONS_[provider].label + ' key was found for your account.');
+    }
+    return { apiKey: savedKey, source: 'saved' };
+  }
+
+  if (strategy === 'managed') {
+    if (!managedKey) {
+      throw new Error('This add-on does not currently have a managed ' + AI_PROVIDER_OPTIONS_[provider].label + ' key configured.');
+    }
+    enforceManagedAiCooldown_(provider);
+    return { apiKey: managedKey, source: 'managed' };
+  }
+
+  if (manualKey) {
+    return { apiKey: manualKey, source: request.saveApiKey ? 'manual-saved' : 'manual' };
+  }
+  if (savedKey) {
+    return { apiKey: savedKey, source: 'saved' };
+  }
+  if (managedKey) {
+    enforceManagedAiCooldown_(provider);
+    return { apiKey: managedKey, source: 'managed' };
+  }
+
+  throw new Error('No API key is available for ' + AI_PROVIDER_OPTIONS_[provider].label + '. Paste your own key, use a saved key, or ask an admin to configure a managed key.');
+}
+
+function persistUserAiKeyIfRequested_(request) {
+  if (request.saveApiKey && String(request.apiKey || '').trim()) {
+    PropertiesService.getUserProperties().setProperty(getSavedAiKeyPropertyName_(request.provider), String(request.apiKey).trim());
+  }
+}
+
+function normalizeAiLessonRequest_(payload) {
+  const prefs = getPreferences();
+  const provider = normalizeAiProvider_(payload.provider || prefs.ai_provider_default);
+  const request = {
+    provider: provider,
+    model: sanitizeAiModel_(provider, payload.model || prefs.ai_model_default),
+    keyStrategy: normalizeAiKeyStrategy_(payload.keyStrategy || prefs.ai_key_strategy_default),
+    apiKey: String(payload.apiKey || '').trim(),
+    saveApiKey: payload.saveApiKey === true,
+    topic: String(payload.topic || '').trim(),
+    audience: String(payload.audience || 'Adult learners').trim(),
+    duration: Math.max(10, Math.min(120, Number(payload.duration || 45))),
+    lessonStyle: String(payload.lessonStyle || 'Interactive shiur').trim(),
+    includeTransliteration: payload.includeTransliteration === true,
+    additionalInstructions: String(payload.additionalInstructions || '').trim(),
+    includeOriginal: payload.includeOriginal !== false,
+    includeTranslation: payload.includeTranslation !== false,
+    includeEducatorNotes: payload.includeEducatorNotes !== false,
+    includeDiscussionPrompts: payload.includeDiscussionPrompts !== false,
+    contextMode: String(payload.contextMode || 'topic').trim(),
+    learningCycleContext: payload.learningCycleContext || null
+  };
+
+  if (request.contextMode !== 'learning_cycle' && !request.topic) {
+    throw new Error('Add a topic before generating a lesson draft.');
+  }
+  return request;
+}
+
+function pickAvailableAiProvider_() {
+  const preferred = normalizeAiProvider_(PropertiesService.getUserProperties().getProperty('ai_provider_default'));
+  const ordered = [preferred].concat(Object.keys(AI_PROVIDER_OPTIONS_).filter(function(provider) {
+    return provider !== preferred;
+  }));
+  for (let i = 0; i < ordered.length; i++) {
+    if (hasSavedAiKey_(ordered[i]) || hasManagedAiKey_(ordered[i])) {
+      return ordered[i];
+    }
+  }
+  return '';
+}
+
+function buildTodaysLearningCycleContext_() {
+  const response = UrlFetchApp.fetch('https://www.sefaria.org/api/calendars', { muteHttpExceptions: true });
+  const status = response.getResponseCode ? response.getResponseCode() : 200;
+  if (status >= 400) {
+    throw new Error('Could not retrieve today’s learning cycle from Sefaria right now.');
+  }
+
+  const raw = JSON.parse(response.getContentText() || '[]');
+  const items = Array.isArray(raw) ? raw : (raw.calendar_items || raw.items || []);
+  if (!Array.isArray(items) || !items.length) {
+    throw new Error('Sefaria returned an empty learning cycle feed.');
+  }
+
+  const daf = pickCalendarItem_(items, ['daf yomi']);
+  const chapter929 = pickCalendarItem_(items, ['929']);
+  const parashah = pickCalendarItem_(items, ['parash', 'hashavua']);
+
+  const contexts = [daf, chapter929, parashah].filter(Boolean);
+  if (!contexts.length) {
+    throw new Error('Could not identify Daf Yomi, 929, or Parashah in today’s Sefaria calendar feed.');
+  }
+
+  return {
+    topicLine: contexts.map(function(item) { return item.label + ': ' + item.ref; }).join(' | '),
+    summary: contexts.map(function(item) { return item.label + ' — ' + item.ref; }).join('\n'),
+    items: contexts
+  };
+}
+
+function pickCalendarItem_(items, patterns) {
+  const tests = (patterns || []).map(function(value) {
+    return String(value || '').toLowerCase();
+  });
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i] || {};
+    const haystack = [
+      item.title && item.title.en,
+      item.title && item.title.he,
+      item.displayValue && item.displayValue.en,
+      item.displayValue && item.displayValue.he,
+      item.category,
+      item.en,
+      item.he,
+      item.name
+    ].filter(Boolean).join(' | ').toLowerCase();
+
+    const matched = tests.some(function(testValue) {
+      return haystack.indexOf(testValue) >= 0;
+    });
+    if (!matched) {
+      continue;
+    }
+
+    const ref = String(item.ref || item.displayValue && item.displayValue.en || item.en || '').trim();
+    if (!ref) {
+      continue;
+    }
+
+    const label = String(item.title && item.title.en || item.name || item.category || 'Learning Cycle').trim();
+    return {
+      label: label,
+      ref: ref
+    };
+  }
+
+  return null;
+}
+
+function generateLessonDraftViaProvider_(request, keyInfo) {
+  const prompt = buildLessonGenerationPrompt_(request);
+  switch (request.provider) {
+    case 'anthropic':
+      return parseAiLessonJson_(callAnthropicForLesson_(request.model, keyInfo.apiKey, prompt));
+    case 'gemini':
+      return parseAiLessonJson_(callGeminiForLesson_(request.model, keyInfo.apiKey, prompt));
+    case 'openai':
+    default:
+      return parseAiLessonJson_(callOpenAiForLesson_(request.model, keyInfo.apiKey, prompt));
+  }
+}
+
+function buildLessonGenerationPrompt_(request) {
+  const sourceInstructions = request.contextMode === 'learning_cycle'
+    ? 'Prioritize the supplied learning-cycle references as the backbone of the lesson. You may add at most two supplementary classic references if they genuinely improve the teaching flow.'
+    : 'Suggest 4 to 6 references that are likely to be accessible on Sefaria and relevant for a Jewish source-sheet or shiur format.';
+
+  const contextBlock = request.contextMode === 'learning_cycle' && request.learningCycleContext
+    ? 'Learning-cycle context:\n' + request.learningCycleContext.items.map(function(item) {
+        return '- ' + item.label + ': ' + item.ref;
+      }).join('\n')
+    : 'Topic: ' + request.topic;
+
+  return [
+    'You are generating a structured Jewish lesson draft for insertion into Google Docs.',
+    'Write practical, modest, editable teaching content. Do not use markdown fences.',
+    'Return valid JSON only, with no commentary before or after it.',
+    'Schema:',
+    '{',
+    '  "lessonTitle": string,',
+    '  "framingQuestion": string,',
+    '  "overview": string,',
+    '  "learningGoals": [string],',
+    '  "teachingFlow": [string],',
+    '  "sources": [',
+    '    {',
+    '      "citation": string,',
+    '      "whyItMatters": string,',
+    '      "discussionPrompt": string',
+    '    }',
+    '  ]',
+    '}',
+    '',
+    contextBlock,
+    'Audience: ' + request.audience,
+    'Duration minutes: ' + request.duration,
+    'Lesson style: ' + request.lessonStyle,
+    'Additional instructions: ' + (request.additionalInstructions || 'None provided.'),
+    request.contextMode === 'text_ref' ? 'Treat the supplied topic line as the primary text or reference to anchor the lesson.' : '',
+    sourceInstructions,
+    'Keep the source list short enough to fit a real ' + request.duration + '-minute session.',
+    'Review before sharing. Avoid grandiose claims.'
+  ].join('\n');
+}
+
+function callOpenAiForLesson_(model, apiKey, prompt) {
+  const payload = {
+    model: model,
+    input: prompt
+  };
+  const response = UrlFetchApp.fetch('https://api.openai.com/v1/responses', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: {
+      Authorization: 'Bearer ' + apiKey
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  return extractOpenAiTextResponse_(response);
+}
+
+function extractOpenAiTextResponse_(response) {
+  const status = response.getResponseCode ? response.getResponseCode() : 200;
+  const body = JSON.parse(response.getContentText() || '{}');
+  if (status >= 400) {
+    throw new Error(formatOpenAiError_(status, body));
+  }
+  if (body.output_text) {
+    return body.output_text;
+  }
+  const outputs = Array.isArray(body.output) ? body.output : [];
+  for (let i = 0; i < outputs.length; i++) {
+    const content = Array.isArray(outputs[i].content) ? outputs[i].content : [];
+    for (let j = 0; j < content.length; j++) {
+      if (content[j] && typeof content[j].text === 'string') {
+        return content[j].text;
+      }
+    }
+  }
+  throw new Error('OpenAI returned an empty response.');
+}
+
+function formatOpenAiError_(status, body) {
+  const message = body && body.error && body.error.message ? body.error.message : 'OpenAI request failed.';
+  if (status === 401) return 'OpenAI rejected the API key. Check the key and try again.';
+  if (status === 429) return 'OpenAI rate-limited this request. Please wait a moment and try again.';
+  return 'OpenAI error (' + status + '): ' + message;
+}
+
+function callAnthropicForLesson_(model, apiKey, prompt) {
+  const payload = {
+    model: model,
+    max_tokens: 2500,
+    messages: [{ role: 'user', content: prompt }]
+  };
+  const response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  return extractAnthropicTextResponse_(response);
+}
+
+function extractAnthropicTextResponse_(response) {
+  const status = response.getResponseCode ? response.getResponseCode() : 200;
+  const body = JSON.parse(response.getContentText() || '{}');
+  if (status >= 400) {
+    throw new Error(formatAnthropicError_(status, body));
+  }
+  const content = Array.isArray(body.content) ? body.content : [];
+  const textParts = content.filter(function(part) {
+    return part && part.type === 'text' && typeof part.text === 'string';
+  }).map(function(part) { return part.text; });
+  if (textParts.length) {
+    return textParts.join('\n');
+  }
+  throw new Error('Anthropic returned an empty response.');
+}
+
+function formatAnthropicError_(status, body) {
+  const errorObj = body && body.error ? body.error : {};
+  const message = errorObj.message || 'Anthropic request failed.';
+  if (status === 401) return 'Anthropic rejected the API key. Check the key and try again.';
+  if (status === 429) return 'Anthropic rate-limited this request. Please wait a moment and try again.';
+  return 'Anthropic error (' + status + '): ' + message;
+}
+
+function callGeminiForLesson_(model, apiKey, prompt) {
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }]
+  };
+  const response = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: {
+      'x-goog-api-key': apiKey
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  return extractGeminiTextResponse_(response);
+}
+
+function extractGeminiTextResponse_(response) {
+  const status = response.getResponseCode ? response.getResponseCode() : 200;
+  const body = JSON.parse(response.getContentText() || '{}');
+  if (status >= 400) {
+    throw new Error(formatGeminiError_(status, body));
+  }
+  const candidates = Array.isArray(body.candidates) ? body.candidates : [];
+  for (let i = 0; i < candidates.length; i++) {
+    const content = candidates[i] && candidates[i].content;
+    const parts = content && Array.isArray(content.parts) ? content.parts : [];
+    for (let j = 0; j < parts.length; j++) {
+      if (parts[j] && typeof parts[j].text === 'string') {
+        return parts[j].text;
+      }
+    }
+  }
+  throw new Error('Gemini returned an empty response.');
+}
+
+function formatGeminiError_(status, body) {
+  const errorObj = body && body.error ? body.error : {};
+  const message = errorObj.message || 'Gemini request failed.';
+  if (status === 400) return 'Gemini rejected the request. ' + message;
+  if (status === 401 || status === 403) return 'Gemini rejected the API key. Check the key and try again.';
+  if (status === 429) return 'Gemini rate-limited this request. Please wait a moment and try again.';
+  return 'Gemini error (' + status + '): ' + message;
+}
+
+function parseAiLessonJson_(rawText) {
+  const safeText = String(rawText || '').trim();
+  const candidates = [];
+  candidates.push(safeText);
+  const fenced = safeText.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced && fenced[1]) {
+    candidates.push(fenced[1].trim());
+  }
+  const firstBrace = safeText.indexOf('{');
+  const lastBrace = safeText.lastIndexOf('}');
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    candidates.push(safeText.slice(firstBrace, lastBrace + 1));
+  }
+
+  let parsed = null;
+  for (let i = 0; i < candidates.length; i++) {
+    try {
+      parsed = JSON.parse(candidates[i]);
+      break;
+    } catch (error) {}
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('The AI provider returned an unreadable draft. Please try again or switch providers.');
+  }
+
+  return {
+    lessonTitle: String(parsed.lessonTitle || parsed.title || 'Untitled Lesson Draft').trim(),
+    framingQuestion: String(parsed.framingQuestion || parsed.essentialQuestion || '').trim(),
+    overview: String(parsed.overview || '').trim(),
+    learningGoals: Array.isArray(parsed.learningGoals) ? parsed.learningGoals.map(function(item) { return String(item || '').trim(); }).filter(Boolean) : [],
+    teachingFlow: Array.isArray(parsed.teachingFlow) ? parsed.teachingFlow.map(function(item) { return String(item || '').trim(); }).filter(Boolean) : [],
+    sources: Array.isArray(parsed.sources) ? parsed.sources.map(function(item) {
+      return {
+        citation: String(item && (item.citation || item.ref) || '').trim(),
+        whyItMatters: String(item && (item.whyItMatters || item.note) || '').trim(),
+        discussionPrompt: String(item && (item.discussionPrompt || item.prompt) || '').trim()
+      };
+    }).filter(function(item) { return item.citation; }) : [],
+    warnings: []
+  };
+}
+
+function enrichLessonWithSefariaTexts_(lesson, request) {
+  const enriched = JSON.parse(JSON.stringify(lesson || {}));
+  const warnings = Array.isArray(enriched.warnings) ? enriched.warnings.slice() : [];
+  enriched.sources = (enriched.sources || []).slice(0, 8).map(function(source) {
+    const entry = JSON.parse(JSON.stringify(source));
+    try {
+      const resolved = findReference(entry.citation, undefined, false);
+      if (resolved && resolved.ref) {
+        entry.citation = resolved.ref;
+        entry.hebrewCitation = resolved.heRef || '';
+        if (request.includeOriginal) {
+          entry.originalText = summarizeSefariaTextForLesson_(resolved.he);
+        }
+        if (request.includeTranslation) {
+          entry.translationText = summarizeSefariaTextForLesson_(resolved.text);
+        }
+      } else {
+        warnings.push('Could not resolve source: ' + entry.citation);
+      }
+    } catch (error) {
+      warnings.push('Could not resolve source: ' + entry.citation);
+    }
+    return entry;
+  });
+  enriched.warnings = warnings;
+  return enriched;
+}
+
+function summarizeSefariaTextForLesson_(value) {
+  const flattened = flattenSefariaText_(value).trim();
+  if (!flattened) {
+    return '';
+  }
+  if (flattened.length > 1200) {
+    return flattened.slice(0, 1197) + '...';
+  }
+  return flattened;
+}
+
+function flattenSefariaText_(value) {
+  if (Array.isArray(value)) {
+    return value.map(function(item) { return flattenSefariaText_(item); }).filter(Boolean).join('\n');
+  }
+  if (value === null || value === undefined) {
+    return '';
+  }
+  return String(value).replace(/<[^>]+>/g, '').replace(/\s+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function insertGeneratedLessonIntoDoc_(lesson, request) {
+  const document = DocumentApp.getActiveDocument();
+  if (!document) {
+    throw new Error('Open a Google Doc before generating a lesson draft.');
+  }
+
+  const body = document.getBody();
+  const typography = getTypographySettings();
+  let index = body.getNumChildren();
+  const cursor = document.getCursor();
+  if (cursor) {
+    const currentElement = cursor.getElement();
+    if (currentElement && currentElement.getParent()) {
+      index = currentElement.getParent().getChildIndex(currentElement) + 1;
+    }
+  }
+
+  const insertParagraph_ = function(text, heading, font, size, style, rtl) {
+    const paragraph = body.insertParagraph(index++, text);
+    if (heading) {
+      paragraph.setHeading(heading);
+    }
+    if (heading === DocumentApp.ParagraphHeading.HEADING1) {
+      applyTitleTypography(paragraph, typography, false);
+    } else if (heading === DocumentApp.ParagraphHeading.HEADING2) {
+      applyTitleTypography(paragraph, typography, true);
+    } else {
+      paragraph.setLeftToRight(rtl ? false : true);
+      applyTypographyToParagraph(paragraph, font || typography.translationFont, size || typography.translationFontSize, style || typography.translationFontStyle);
+    }
+    return paragraph;
+  };
+
+  insertParagraph_(lesson.lessonTitle || 'Lesson Draft', DocumentApp.ParagraphHeading.HEADING1);
+
+  if (lesson.framingQuestion) {
+    insertParagraph_('Framing Question: ' + lesson.framingQuestion, null);
+  }
+  if (lesson.overview) {
+    insertParagraph_(lesson.overview, null);
+  }
+  if (Array.isArray(lesson.learningGoals) && lesson.learningGoals.length) {
+    insertParagraph_('Learning Goals', DocumentApp.ParagraphHeading.HEADING3, typography.sourceTitleFont, typography.sourceTitleFontSize, typography.sourceTitleFontStyle);
+    lesson.learningGoals.forEach(function(item) {
+      const bullet = body.insertListItem(index++, item);
+      applyTypographyToParagraph(bullet, typography.translationFont, typography.translationFontSize, typography.translationFontStyle);
+    });
+  }
+  if (Array.isArray(lesson.teachingFlow) && lesson.teachingFlow.length) {
+    insertParagraph_('Teaching Flow', DocumentApp.ParagraphHeading.HEADING3, typography.sourceTitleFont, typography.sourceTitleFontSize, typography.sourceTitleFontStyle);
+    lesson.teachingFlow.forEach(function(item) {
+      const bullet = body.insertListItem(index++, item);
+      applyTypographyToParagraph(bullet, typography.translationFont, typography.translationFontSize, typography.translationFontStyle);
+    });
+  }
+
+  insertParagraph_('Experimental draft — review, fact-check, and edit before sharing.', null);
+
+  (lesson.sources || []).forEach(function(source) {
+    insertParagraph_(source.citation || 'Source', DocumentApp.ParagraphHeading.HEADING2);
+
+    if (request.includeOriginal && source.originalText) {
+      insertParagraph_('Hebrew / Original: ' + source.originalText, null, typography.hebrewFont, typography.hebrewFontSize, typography.hebrewFontStyle, true);
+    }
+    if (request.includeTranslation && source.translationText) {
+      insertParagraph_('Translation: ' + source.translationText, null, typography.translationFont, typography.translationFontSize, typography.translationFontStyle, false);
+    }
+    if (request.includeEducatorNotes && source.whyItMatters) {
+      insertParagraph_('Educator Note: ' + source.whyItMatters, null);
+    }
+    if (request.includeDiscussionPrompts && source.discussionPrompt) {
+      insertParagraph_('Discussion Prompt: ' + source.discussionPrompt, null);
+    }
+  });
+
+  return {
+    insertedAt: new Date().toISOString()
+  };
+}
+
+
+function preferencesPopup() {
+  const template = HtmlService.createTemplateFromFile('preferences');
+  const output = template.evaluate()
+    .setTitle('Preferences')
+    .setWidth(600)
+    .setHeight(760);
+  DocumentApp.getUi().showModalDialog(output, 'Preferences');
+}
+
+function divineNamePopup() {
+  transformDivineNames();
+}
+
+function linkerHTML() {
+  linkTextsWithSefaria();
 }

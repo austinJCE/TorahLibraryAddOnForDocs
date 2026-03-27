@@ -1,0 +1,278 @@
+var palette = {
+    "Commentary": "var(--commentary-blue)",
+    "Tanakh": "var(--tanakh-teal)",
+    "Midrash": "var(--midrash-green)",
+    "Mishnah": "var(--mishnah-blue)",
+    "Talmud": "var(--talmud-gold)",
+    "Halakhah": "var(--halakhah-red)",
+    "Kabbalah": "var(--kabbalah-purple)",
+    "Jewish Thought": "var(--philosophy-purple)",
+    "Liturgy": "var(--liturgy-rose)",
+    "Tosefta": "var(--tanaitic-green)",
+    "Chasidut": "var(--chasidut-green)",
+    "Musar": "var(--mussar-purple)",
+    "Responsa": "var(--responsa-red)",
+    "Second Temple": "var(--apocrypha-pink)",
+    "Reference": "var(--reference-orange)",
+    "Modern Commentary": "var(--modern-works-blue)",
+    "System": "var(--sefaria-blue)"
+  };
+
+  var titles = {};
+  var preferences = {};
+  var currentPreviewData = null;
+  var preferredTranslationByBook = {};
+  var debounceState = null;
+  var debounceDuration = 300;
+
+  function fetchIndexTitles() {
+    fetch('https://www.sefaria.org/api/index').then(function(response){ return response.json(); }).then(parseArray).catch(function(){});
+  }
+  function parseArray(json) { (json || []).forEach(getContents); }
+  function getContents(json) {
+    if (!json) return;
+    if (json.contents) getContents(json.contents);
+    else if (Array.isArray(json)) parseArray(json);
+    else if (json.title) titles[json.title] = json;
+  }
+  function isHebrew(text) {
+    var heCount = 0; var enCount = 0; var punctuationRE = /[0-9 .,'"?!;:\-=@#$%^&*()/<>]/;
+    text = String(text || '');
+    for (var i = 0; i < Math.min(200, text.length); i++) {
+      if (punctuationRE.test(text[i])) continue;
+      if (text.charCodeAt(i) > 0x590 && text.charCodeAt(i) < 0x5ff) heCount++; else enCount++;
+    }
+    return heCount > enCount;
+  }
+  function getWidthOfInput() {
+    var inputEl = document.getElementById('inputBox');
+    var tmp = document.createElement('div');
+    var styles = window.getComputedStyle(inputEl);
+    var cssText = Array.prototype.slice.call(styles).reduce(function(css, propertyName) { return css + propertyName + ':' + styles.getPropertyValue(propertyName) + ';'; }, '');
+    tmp.style.cssText = cssText; tmp.style.removeProperty('width'); tmp.style.removeProperty('min-width'); tmp.style.removeProperty('min-inline-size'); tmp.style.removeProperty('inline-size');
+    tmp.innerHTML = (inputEl.value || '').trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    document.body.appendChild(tmp);
+    var width = tmp.getBoundingClientRect().width; document.body.removeChild(tmp);
+    return width;
+  }
+  function updateHelperPromptText(text) {
+    var helper = document.getElementById('helperCompletionText');
+    helper.innerHTML = text || '';
+    helper.style.insetInlineStart = getWidthOfInput() + 'px';
+  }
+  function generateHelperText(d) {
+    var text = document.getElementById('inputBox').value;
+    if (d && d.sections && d.addressExamples) {
+      var separator = isHebrew(text) ? ' ' : ':';
+      var remaining = isHebrew(text) ? d.heAddressExamples.slice(d.sections.length).join(separator) : d.addressExamples.slice(d.sections.length).join(separator);
+      if (d.sections.length > 0 && !(/[:-]$/.test(text))) remaining = separator + remaining;
+      return remaining;
+    }
+    return '';
+  }
+  function pad(arr, len, filler) { return Array.from({ length: len }, function(_, index) { return arr[index] !== undefined ? arr[index] : filler; }); }
+  function intToDaf(i) { i += 1; var daf = Math.ceil(i / 2); return daf + (i % 2 ? 'a' : 'b'); }
+  function dafToInt(daf) { var amud = daf.slice(-1); var index = parseInt(daf.slice(0, -1), 10) - 1; return amud === 'a' ? index * 2 : index * 2 + 1; }
+  function getOffsets(data, length) {
+    var offsets = data && data.index_offsets_by_depth && data.index_offsets_by_depth[data.textDepth];
+    if (offsets === undefined) return Array(length).fill(0);
+    if (typeof offsets === 'number') return [offsets];
+    return offsets.flat ? offsets.flat() : offsets;
+  }
+  function flattenSegmentText(value) { return Array.isArray(value) ? value.flat(Infinity).join(' ') : (value || ''); }
+  function makeSegments(data) {
+    if (!data || data.error) return [];
+    var segments = [];
+    var highlight = data.sections.length === data.textDepth;
+    var wrapEn = typeof data.text === 'string';
+    var wrapHe = typeof data.he === 'string';
+    var en = wrapEn ? [data.text] : (data.text || []);
+    var he = wrapHe ? [data.he] : (data.he || []);
+    var topLength = Math.max(en.length, he.length);
+    en = pad(en, topLength, ''); he = pad(he, topLength, '');
+    var offsets = getOffsets(data, topLength); var start = (data.textDepth === data.sections.length) ? data.sections.slice(-1)[0] : 1 + offsets[0];
+    if (!data.isSpanning) {
+      for (var i = 0; i < topLength; i++) {
+        var number = i + start; var delim = data.textDepth === 1 ? ' ' : ':';
+        segments.push({ ref: (data.sectionRef || data.ref || '') + delim + number, en: flattenSegmentText(en[i]), he: flattenSegmentText(he[i]), number: number, highlight: highlight && number >= data.sections.slice(-1)[0] && number <= data.toSections.slice(-1)[0] });
+      }
+      return segments;
+    }
+    for (var n = 0; n < topLength; n++) {
+      var en2 = typeof en[n] === 'string' ? [en[n]] : en[n]; var he2 = typeof he[n] === 'string' ? [he[n]] : he[n]; var length = Math.max(en2.length, he2.length);
+      en2 = pad(en2, length, ''); he2 = pad(he2, length, '');
+      var baseSection = data.sections.slice(0, -2).join(':'); var baseRef = baseSection ? data.book + ' ' + baseSection : data.book; var delim2 = baseSection ? ':' : ' ';
+      start = n === 0 ? start : 1 + (offsets[n] || 0);
+      for (var j = 0; j < length; j++) {
+        var startSection = data.sections.slice(-2)[0]; var section = typeof startSection === 'string' ? intToDaf(n + dafToInt(startSection)) : n + startSection; var num = j + start;
+        segments.push({ ref: baseRef + delim2 + section + ':' + num, en: flattenSegmentText(en2[j]), he: flattenSegmentText(he2[j]), number: num, highlight: highlight && ((n === 0 && num >= data.sections.slice(-1)[0]) || (n === topLength - 1 && num <= data.toSections.slice(-1)[0]) || (n > 0 && n < topLength - 1)) });
+      }
+    }
+    if (!segments.length) segments.push({ ref: data.ref, en: flattenSegmentText(data.text), he: flattenSegmentText(data.he), number: 1, highlight: true });
+    return segments;
+  }
+
+  function syncDisplayModeCards() {
+    var mode = document.querySelector('.output-mode-selection').value;
+    Array.prototype.forEach.call(document.querySelectorAll('.mode-card'), function(button) {
+      var selected = button.getAttribute('data-mode') === mode;
+      button.setAttribute('aria-checked', selected ? 'true' : 'false');
+      button.classList.toggle('selected', selected);
+    });
+  }
+  function syncLayoutCards() {
+    var layout = document.querySelector('.bilingual-layout-selection').value;
+    Array.prototype.forEach.call(document.querySelectorAll('.layout-option'), function(button) {
+      var selected = button.getAttribute('data-layout') === layout;
+      button.setAttribute('aria-checked', selected ? 'true' : 'false');
+      button.classList.toggle('selected', selected);
+    });
+  }
+  function updateBilingualLayoutVisibility() {
+    var outputMode = document.querySelector('.output-mode-selection').value;
+    Array.prototype.forEach.call(document.querySelectorAll('.bilingual-layout-wrapper'), function(el) { el.style.display = outputMode === 'both' ? '' : 'none'; });
+  }
+
+  function renderPreview(data) {
+    currentPreviewData = data;
+    var container = document.querySelector('#previewContainer .textContainer');
+    container.innerHTML = '';
+    var segments = makeSegments(data);
+    segments.forEach(function(segment) {
+      var wrapper = document.createElement('div');
+      var heClass = 'segment he' + (segment.highlight ? ' highlight' : '');
+      var enClass = 'segment en' + (segment.highlight ? ' highlight' : '');
+      wrapper.innerHTML = '<span class="' + heClass + '">' + segment.number + '. ' + (segment.he || '') + '</span>' + '<span class="' + enClass + '">' + (segment.en || '') + '</span>';
+      container.appendChild(wrapper);
+    });
+    document.getElementById('insert-source').disabled = false;
+    document.getElementById('open-on-sefaria').disabled = false;
+    document.querySelector('.display-layout-wrapper').style.display = '';
+    document.querySelector('.preview-accordion').open = true;
+  }
+
+  function applyLayoutClass() {
+    var outputMode = document.querySelector('.output-mode-selection').value;
+    var layoutMode = document.querySelector('.bilingual-layout-selection').value;
+    var preview = document.getElementById('previewContainer');
+    preview.classList.remove('en', 'he', 'bi', 'stack', 'sbs');
+    if (outputMode === 'en') preview.classList.add('en');
+    else if (outputMode === 'he') preview.classList.add('he');
+    else { preview.classList.add('bi'); preview.classList.add(layoutMode === 'he-top' ? 'stack' : 'sbs'); }
+    updateBilingualLayoutVisibility(); syncDisplayModeCards(); syncLayoutCards();
+  }
+
+  function populateTranslationOptions(data, preferredValue) {
+    var translations = ((data && data.versions) || []).filter(function(version) { return version.language === 'en'; });
+    var html = '<label class="version-label" for="translationSetter">Translation version</label><select id="translationSetter" class="translation-version-select" aria-label="Translation version">';
+    translations.forEach(function(version) { html += '<option value="' + version.versionTitle.replace(/"/g, '&quot;') + '">' + version.versionTitle + '</option>'; });
+    if (!translations.length) html += '<option value="">No translation options available</option>';
+    html += '</select>';
+    document.querySelector('.translation-version-control').innerHTML = html;
+    var select = document.getElementById('translationSetter');
+    select.disabled = !translations.length;
+    if (preferredValue) select.value = preferredValue;
+    if (!select.value && translations.length) select.value = translations[0].versionTitle;
+    select.style.display = document.querySelector('.output-mode-selection').value === 'he' ? 'none' : 'block';
+    select.addEventListener('change', function() { var ref = (document.getElementById('inputBox').value || '').trim(); if (ref) loadPreview(ref, getSelectedTranslation()); });
+  }
+  function getSelectedTranslation() { var select = document.getElementById('translationSetter'); return select && !select.disabled ? select.value : ''; }
+
+  function loadPreview(ref, explicitTranslation) {
+    if (!ref) return;
+    var translation = explicitTranslation || '';
+    var params = new URLSearchParams({ ven: translation, stripItags: 1, context: 1, commentary: 0 });
+    document.querySelector('.hide').style.display = 'flex';
+    fetch('https://www.sefaria.org/api/texts/' + encodeURIComponent(ref) + '?' + params.toString())
+      .then(function(response) { return response.json(); })
+      .then(function(data) {
+        document.querySelector('.hide').style.display = 'none';
+        if (data && data.book && getSelectedTranslation()) preferredTranslationByBook[data.book] = getSelectedTranslation();
+        populateTranslationOptions(data, explicitTranslation || preferredTranslationByBook[data.book] || '');
+        renderPreview(data); applyLayoutClass();
+        document.getElementById('suggestionBox').style.display = 'none';
+      })
+      .catch(function() { document.querySelector('.hide').style.display = 'none'; });
+  }
+
+  function mapResults(results) {
+    var selectBox = document.getElementById('suggestionBox'); selectBox.options.length = 0;
+    (results || []).forEach(function(result) {
+      var option = document.createElement('option'); option.classList.add('suggestion'); option.value = result.name; option.textContent = result.name; option.style.borderInlineStartColor = result.borderColor || 'var(--sefaria-blue)'; selectBox.appendChild(option);
+    });
+    selectBox.style.display = results && results.length ? 'block' : 'none';
+  }
+  function setInputBoxValue() { var value = document.getElementById('suggestionBox').value; document.getElementById('inputBox').value = value + ' '; handleAutocomplete(); }
+
+  function handleAutocomplete() {
+    var input = document.getElementById('inputBox'); var currentValue = input.value || ''; var text = /[:-]$/.test(currentValue) ? currentValue.slice(0, -1) : currentValue;
+    var direction = isHebrew(text) ? 'rtl' : 'ltr';
+    document.querySelector('.inputContainer').style.direction = direction;
+    document.querySelector('.suggestionBoxContainer').style.direction = direction;
+    if (!text.trim()) {
+      document.getElementById('suggestionBox').style.display = 'none';
+      document.querySelector('#previewContainer .textContainer').innerHTML = '<b>Please enter the title of a text or a source to insert.</b>';
+      document.querySelector('.display-layout-wrapper').style.display = 'none';
+      updateHelperPromptText('');
+      document.getElementById('insert-source').disabled = true;
+      document.getElementById('open-on-sefaria').disabled = true;
+      currentPreviewData = null;
+      return;
+    }
+    fetch('https://www.sefaria.org/api/name/' + encodeURIComponent(text) + '?ref_only=1&limit=5')
+      .then(function(response) { return response.json(); })
+      .then(function(data) {
+        updateHelperPromptText(generateHelperText(data));
+        if (data.is_section || data.is_segment) { loadPreview(text, getSelectedTranslation()); return; }
+        document.getElementById('insert-source').disabled = true; document.getElementById('open-on-sefaria').disabled = true; currentPreviewData = null;
+        var results = (data.completion_objects || []).map(function(suggestion) { var title = titles[suggestion.key] || {}; return { name: suggestion.title, borderColor: palette[title.primary_category] || 'var(--sefaria-blue)' }; });
+        mapResults(results);
+      }).catch(function(){});
+  }
+  function onAutocompleteKeyDown() { if (debounceState) clearTimeout(debounceState); debounceState = setTimeout(handleAutocomplete, debounceDuration); }
+
+  function getInsertionOptions() {
+    var outputMode = document.querySelector('.output-mode-selection').value;
+    var singleLanguage = null;
+    var bilingualLayout = document.querySelector('.bilingual-layout-selection').value || preferences.bilingual_layout_default || 'he-right';
+    if (outputMode === 'en' || outputMode === 'he') singleLanguage = outputMode;
+    return {
+      singleLanguage: singleLanguage, bilingualLayout: bilingualLayout,
+      includeTranslationSourceInfo: String(preferences.include_translation_source_info) === 'true',
+      includeTransliteration: String(preferences.include_transliteration_default) === 'true',
+      insertSefariaLink: String(preferences.insert_sefaria_link_default) !== 'false',
+      showLineMarkers: String(preferences.show_line_markers_default) !== 'false',
+      insertCitationOnly: String(preferences.insert_citation_default) === 'true'
+    };
+  }
+  function insertSource() {
+    var ref = (document.getElementById('inputBox').value || '').trim(); if (!ref) return;
+    var versions = { en: getSelectedTranslation(), he: '' }; var options = getInsertionOptions();
+    document.querySelector('.hide').style.display = 'flex';
+    google.script.run.withSuccessHandler(function(resolved) {
+      google.script.run.withSuccessHandler(function() { document.querySelector('.hide').style.display = 'none'; })
+      .withFailureHandler(function(error) { document.querySelector('.hide').style.display = 'none'; alert((error && error.message) || 'Could not insert this source.'); })
+      .insertReference(resolved, options.singleLanguage, options.showLineMarkers, ref, options.includeTranslationSourceInfo, options.bilingualLayout, options.insertSefariaLink, options.includeTransliteration, options.insertCitationOnly);
+    }).withFailureHandler(function(error) { document.querySelector('.hide').style.display = 'none'; alert((error && error.message) || 'Could not resolve this source.'); }).findReference(ref, versions);
+  }
+
+  document.getElementById('inputBox').addEventListener('keyup', onAutocompleteKeyDown);
+  document.getElementById('run-basic-search').addEventListener('click', handleAutocomplete);
+  document.getElementById('insert-source').addEventListener('click', insertSource);
+  document.getElementById('open-on-sefaria').addEventListener('click', function() {
+    var ref = (document.getElementById('inputBox').value || '').trim(); if (!ref) return;
+    window.open('https://www.sefaria.org/' + encodeURIComponent(ref).replace(/%20/g, '_'), '_blank');
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.mode-card'), function(button) { button.addEventListener('click', function() { document.querySelector('.output-mode-selection').value = button.getAttribute('data-mode'); applyLayoutClass(); }); });
+  Array.prototype.forEach.call(document.querySelectorAll('.layout-option'), function(button) { button.addEventListener('click', function() { document.querySelector('.bilingual-layout-selection').value = button.getAttribute('data-layout'); applyLayoutClass(); }); });
+  document.querySelector('.open-preferences-tool').addEventListener('click', function() { google.script.run.preferencesPopup(); });
+  document.querySelector('.open-linker-tool').addEventListener('click', function() { google.script.run.linkTextsWithSefaria(); });
+  document.querySelector('.open-divine-names-tool').addEventListener('click', function() { google.script.run.transformDivineNames(); });
+
+  google.script.run.withSuccessHandler(function(receivedPreferences) {
+    preferences = receivedPreferences || {};
+    document.querySelector('.output-mode-selection').value = preferences.output_mode_default || 'both';
+    document.querySelector('.bilingual-layout-selection').value = preferences.bilingual_layout_default || 'he-right';
+    applyLayoutClass();
+  }).getPreferences();
+  fetchIndexTitles();

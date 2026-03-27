@@ -1,0 +1,421 @@
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;700&family=Frank+Ruhl+Libre:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap");
+
+  :root {
+    --inline-link-blue: #4871bf;
+    --sefaria-blue: #18345d;
+    --highlight-blue: #ddeeff;
+    --highlight-blue-light: #f0f7ff;
+    --dark-grey: #666666;
+    --medium-grey: #999999;
+    --light-grey: #cccccc;
+    --lighter-grey: #ededec;
+    --lightest-grey: #fbfbfa;
+    --commentary-blue: #4b71b7;
+    --tanakh-teal: #004e5f;
+    --mishnah-blue: #5a99b7;
+    --talmud-gold: #ccb479;
+    --midrash-green: #5d956f;
+    --halakhah-red: #802f3e;
+    --kabbalah-purple: #594176;
+    --liturgy-rose: #ab4e66;
+    --philosophy-purple: #7f85a9;
+    --tanaitic-green: #00827f;
+    --chasidut-green: #97b386;
+    --mussar-purple: #7c416f;
+    --responsa-red: #cb6158;
+    --apocrypha-pink: #c6a7b4;
+    --modern-works-blue: #b8d4d3;
+    --reference-orange: #d4896c;
+    --miscelaneous-green: #3b5849;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    background: var(--lightest-grey);
+    color: #222;
+    display: flex;
+    flex-direction: column;
+    font-family: "Roboto", sans-serif;
+    margin: 0;
+  }
+
+  .hide {
+    align-items: center;
+    background: rgba(255,255,255,0.72);
+    display: none;
+    inset: 0;
+    justify-content: center;
+    position: fixed;
+    z-index: 20;
+  }
+
+  .basic-shell {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 12px 12px 0;
+  }
+
+  .brand-header {
+    background: #fff;
+    border: 1px solid var(--lighter-grey);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+  }
+
+  .brand-eyebrow {
+    color: var(--sefaria-blue);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .brand-title {
+    color: var(--sefaria-blue);
+    font-family: "Frank Ruhl Libre", serif;
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .brand-subtitle {
+    color: var(--dark-grey);
+    font-size: 12px;
+    line-height: 1.45;
+    margin: 6px 0 0;
+  }
+
+  .search-panel,
+  .display-panel,
+  .addon-action-bar {
+    background: #fff;
+    border: 1px solid var(--lighter-grey);
+    border-radius: 14px;
+    padding: 10px;
+  }
+
+  .display-panel {
+    display: none;
+    gap: 10px;
+  }
+
+  .display-panel.active {
+    display: grid;
+  }
+
+  .inputContainer,
+  .suggestionBoxContainer {
+    position: relative;
+  }
+
+  #inputBox,
+  #suggestionBox,
+  #addFormat,
+  #translationSetter {
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  #inputBox {
+    background: url("https://www.sefaria.org/static/icons/iconmonstr-magnifier-2-240.svg") no-repeat scroll left 12px top 12px;
+    background-color: var(--lighter-grey);
+    border: none;
+    border-radius: 999px;
+    font-family: "EB Garamond", Georgia, serif;
+    font-size: 22px;
+    height: 46px;
+    padding-inline-end: 18px;
+    padding-inline-start: 42px;
+  }
+
+  #helperCompletionText {
+    color: var(--medium-grey);
+    font-family: "EB Garamond", Georgia, serif;
+    font-size: 22px;
+    inset-inline-start: 0;
+    margin-top: 8px;
+    position: absolute;
+    top: 0;
+  }
+
+  #suggestionBox {
+    appearance: none;
+    background: #fff;
+    border: 1px solid var(--light-grey);
+    border-radius: 10px;
+    display: none;
+    font-family: "Roboto", sans-serif;
+    font-size: 14px;
+    margin-top: 8px;
+    min-height: 142px;
+    padding: 4px 0;
+  }
+
+  #suggestionBox .suggestion {
+    border-inline-start: 4px solid transparent;
+    overflow: hidden;
+    padding: 9px 14px 9px 22px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #addFormat,
+  #translationSetter {
+    appearance: none;
+    background-color: #fff;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAUCAMAAACtdX32AAAAdVBMVEUAAAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhMdQaAAAAJ3RSTlMAAAECAwQGBwsOFBwkJTg5RUZ4eYCHkJefpaytrsXGy8zW3+Do8vNn0bsyAAAAYElEQVR42tXROwJDQAAA0Ymw1p9kiT+L5P5HVEi3qJn2lcPjtIuzUIJ/rhIGy762N3XaThqMN1ZPALsZPEzG1x8LrFL77DHBnEMxBewz0fJ6LyFHTPL7xhwzWYrJ9z22AqmQBV757MHfAAAAAElFTkSuQmCC);
+    background-position: right 10px center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+    border: 1px solid var(--light-grey);
+    border-radius: 10px;
+    font-size: 14px;
+    min-height: 40px;
+    padding: 8px 34px 8px 12px;
+  }
+
+  #previewContainer {
+    background: #fff;
+    border: 1px solid var(--lighter-grey);
+    border-radius: 14px;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 14px 16px;
+  }
+
+  #previewContainer .textContainer {
+    direction: rtl;
+    font-family: "Frank Ruhl Libre", serif;
+    font-size: 21px;
+    line-height: 1.65;
+  }
+
+  .segment {
+    display: block;
+  }
+
+  .segment.en {
+    color: var(--dark-grey);
+    direction: ltr;
+    font-family: "EB Garamond", Georgia, serif;
+    font-size: 17px;
+    padding-top: 6px;
+  }
+
+  .segment.he {
+    direction: rtl;
+  }
+
+  .highlight {
+    background: var(--highlight-blue);
+    border-radius: 6px;
+    padding: 0 1px;
+  }
+
+  #previewContainer.en .segment.he,
+  #previewContainer.he .segment.en {
+    display: none;
+  }
+
+  #previewContainer.en .textContainer {
+    direction: ltr;
+  }
+
+  #previewContainer.en .segment.en {
+    display: inline;
+  }
+
+  #previewContainer.he .segment.he {
+    display: inline;
+  }
+
+  #previewContainer.bi.stack .segment.en,
+  #previewContainer.bi.stack .segment.he {
+    display: block;
+  }
+
+  #previewContainer.bi.sbs .textContainer {
+    direction: ltr;
+  }
+
+  #previewContainer.bi.sbs .segment {
+    box-sizing: border-box;
+    display: inline-block;
+    vertical-align: top;
+    width: 50%;
+  }
+
+  #previewContainer.bi.sbs .segment.he {
+    direction: rtl;
+    padding-inline-start: 10px;
+  }
+
+  #previewContainer.bi.sbs .segment.en {
+    padding-inline-end: 10px;
+  }
+
+  .addon-action-bar {
+    padding-top: 12px;
+  }
+
+  .addon-action-row {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 8px;
+  }
+
+  button.blue,
+  button.utility {
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    min-height: 42px;
+  }
+
+  button.blue.primary {
+    background: var(--sefaria-blue);
+    color: #fff;
+    font-weight: 700;
+    width: 100%;
+  }
+
+  button.blue.primary:disabled {
+    opacity: 0.55;
+  }
+
+  button.utility {
+    background: var(--lightest-grey);
+    color: var(--sefaria-blue);
+    font-weight: 600;
+  }
+
+  .footer {
+    align-items: center;
+    background: var(--lighter-grey);
+    color: var(--dark-grey);
+    display: flex;
+    justify-content: space-between;
+    min-height: 60px;
+    padding: 0 16px;
+  }
+
+  .footerContainer {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+  }
+
+  .footer a {
+    color: var(--dark-grey);
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .footer a:hover {
+    text-decoration: underline;
+  }
+
+  .footer img {
+    height: 20px;
+  }
+
+  .unified-search-panel {
+    align-items: stretch;
+    background: #fff;
+    border: 1px solid var(--lighter-grey, var(--border));
+    border-radius: 14px;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 1fr auto;
+    margin-bottom: 10px;
+    padding: 10px;
+  }
+  .display-layout-wrapper { margin-bottom: 10px; }
+  .display-layout-wrapper[style*="display:none"] + .preview-section { margin-top: 0; }
+  .display-layout-section { margin-top: 0 !important; }
+  .compact-corpus-filter {
+    background: #fff;
+    border: 1px solid var(--border, var(--light-grey));
+    border-radius: 8px;
+    color: var(--sefaria-blue);
+    font-size: 12px;
+    max-width: 145px;
+    min-height: 30px;
+    padding: 4px 28px 4px 8px;
+  }
+  .sidebar-footer {
+    background: #fff;
+    border-top: 1px solid var(--border, var(--lighter-grey));
+    flex: 0 0 auto;
+    padding: 8px 12px 10px;
+  }
+  .primary-actions { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; margin-bottom: 6px; }
+  .sidebar-footer-tools { margin-top: 0 !important; }
+  .sefaria-footer-compact {
+    align-items: center;
+    border-top: 1px solid var(--border, var(--lighter-grey));
+    color: var(--dark-grey, var(--muted));
+    display: flex;
+    justify-content: space-between;
+    min-height: 32px;
+    padding-top: 6px;
+  }
+  .sefaria-footer-links { display: flex; gap: 10px; }
+  .sefaria-footer-compact a { color: var(--dark-grey, var(--muted)); font-size: 11px; text-decoration: none; }
+  .sefaria-footer-compact a:hover { text-decoration: underline; }
+  .sefaria-footer-logo img { height: 14px; }
+  .preview-section { margin-top: 0 !important; }
+
+
+  .sidebar-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-bottom: 12px; }
+  .suggestion-panel { margin-bottom: 10px; }
+  .sidebar-accordion { background: #fff; border: 1px solid var(--lighter-grey); border-radius: 14px; overflow: hidden; }
+  .accordion-summary { cursor: pointer; list-style: none; margin: 0; padding: 12px 14px; }
+  .accordion-summary::-webkit-details-marker { display: none; }
+  .accordion-panel { border-top: 1px solid var(--lighter-grey); padding: 10px; }
+  .section-label { color: #444; font-size: 13px; font-weight: 600; margin: 0 0 8px; }
+  .compact-section-label { margin-top: 0; }
+  .mode-card-group, .layout-option-group { display: grid; gap: 8px; }
+  .mode-card-group { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 10px; }
+  .layout-option-group { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mode-card, .layout-option { align-items: center; background: #fff; border: 1px solid var(--light-grey); border-radius: 10px; cursor: pointer; display: flex; justify-content: center; min-height: 44px; padding: 0; }
+  .mode-card.selected, .layout-option.selected { background: var(--highlight-blue-light); border-color: var(--sefaria-blue); }
+  .mode-card-content { display: inline-flex; gap: 5px; align-items: center; }
+  .mode-card-symbol { font-family: "Frank Ruhl Libre", serif; font-size: 20px; }
+  .mode-card-symbol.latin, .mode-card-plus { font-family: "Roboto", sans-serif; }
+  .layout-icon { border: 2px solid var(--sefaria-blue); border-radius: 4px; display: block; height: 20px; position: relative; width: 24px; }
+  .layout-icon-top::before, .layout-icon-left::before, .layout-icon-right::before { background: var(--highlight-blue); content: ""; position: absolute; }
+  .layout-icon-top::before { height: 7px; left: 2px; right: 2px; top: 2px; }
+  .layout-icon-left::before { bottom: 2px; left: 2px; top: 2px; width: 8px; }
+  .layout-icon-right::before { bottom: 2px; right: 2px; top: 2px; width: 8px; }
+  .version-control { background: #fff; border: 1px solid var(--lighter-grey); border-radius: 10px; padding: 8px; }
+  .version-label { color: var(--dark-grey); display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+  .translation-version-select { appearance: none; background: #fff; border: 1px solid var(--light-grey); border-radius: 10px; box-sizing: border-box; font-size: 13px; min-height: 38px; padding: 8px 10px; width: 100%; }
+  .preview-section { margin-top: 0; }
+  .preview-panel { background: #fff; }
+  .primary-actions { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; margin-bottom: 6px; }
+  .primary-action-button, .secondary-action-button { min-height: 42px; width: 100%; }
+  #open-on-sefaria { background: #fff; border: 1px solid #7f97bb; color: #5b7094; }
+  .sidebar-footer-tools { background: #fff; border: 1px solid var(--lighter-grey); border-radius: 12px; display: grid; gap: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 6px; overflow: hidden; }
+  .footer-tool-button { align-items: center; background: #fff; border: 0; color: var(--sefaria-blue); cursor: pointer; display: inline-flex; font-size: 20px; justify-content: center; min-height: 42px; padding: 0 6px; }
+  .footer-tool-button + .footer-tool-button { border-left: 1px solid var(--lighter-grey); }
+  .tool-icon-stack { align-items: center; display: inline-flex; gap: 4px; }
+  .samekh-sized, .sefaria-badge.samekh, .footer-gear-icon { font-size: 22px; font-weight: 700; line-height: 1; }
+  .tool-arrow { font-size: 12px; }
+  .open-sefaria-label { align-items: center; display: inline-flex; gap: 6px; }
+  .external-link-icon { font-size: 12px; }
+  .sefaria-badge.samekh { font-family: "Frank Ruhl Libre", serif; }
+
+</style>

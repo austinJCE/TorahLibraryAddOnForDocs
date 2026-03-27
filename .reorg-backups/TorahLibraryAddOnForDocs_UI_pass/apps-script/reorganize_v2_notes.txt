@@ -1,0 +1,53 @@
+What this v2 script does
+
+- splits main.html into main-css.html and main-js.html
+- adds a transliteration checkbox to the sidebar
+- rebuilds preferences.html with:
+  - Source / Translation / Transliteration typography rows
+  - Font / Size / Style side by side
+  - Transliteration defaults section
+- stages transliteration in apps-script/transliteration.gs
+- extracts popcorn into popcorn.gs
+- extracts gematriya into gematriya.gs
+- patches Code.gs to add transliteration preferences and insertion hooks
+
+Please test:
+1. Sidebar opens
+2. Find/autocomplete/search work
+3. Preferences opens and saves
+4. Source insertion with transliteration enabled
+5. Source + Translation insertion with transliteration enabled
+6. Popcorn still works when enabled
+
+
+Transliteration engine notes
+
+This starter keeps transliteration out of main.html and stages it as a separate server-side file:
+- apps-script/transliteration.js
+
+What it currently includes
+- 3 starter schemes:
+  - simple_english
+  - academic_lite
+  - modern_israeli
+- helpers:
+  - stripCantillationMarks_
+  - transliterateHebrewText
+  - transliterateHebrewHtmlPreservingBasicBreaks
+
+Recommended next wiring
+1. Preferences
+- include_transliteration_default
+- transliteration_scheme
+
+2. Sidebar
+- show "Include transliteration" only when output mode includes Hebrew
+
+3. Insertion flow
+- transliterate the Hebrew text immediately before insertion/rendering
+- place transliteration beneath Hebrew in Source mode
+- place transliteration beneath the Hebrew column/block in Source + Translation mode
+
+Caution
+- This is intentionally a starter engine, not a full scholarly transliteration system.
+- Final forms, dagesh handling, mater lectionis behavior, and sheva rules can be expanded later.

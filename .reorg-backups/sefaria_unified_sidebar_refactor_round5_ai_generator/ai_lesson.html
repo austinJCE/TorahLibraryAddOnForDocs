@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <style>
+      body { margin: 0; font-family: Arial, sans-serif; background: #f7f6f2; color: #203047; }
+      .wrap { padding: 18px; }
+      .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6b7280; margin-bottom: 6px; }
+      h1 { margin: 0 0 10px; font-family: Georgia, serif; font-size: 24px; color: #18345d; }
+      .lede { font-size: 13px; line-height: 1.5; margin: 0 0 14px; color: #435066; }
+      .card { background: #fff; border: 1px solid #ddd8cf; border-radius: 14px; padding: 14px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+      .grid { display: grid; gap: 12px; }
+      .grid.two { grid-template-columns: 1fr 1fr; }
+      label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 5px; color: #324055; }
+      input[type="text"], input[type="password"], input[type="number"], select, textarea {
+        width: 100%; box-sizing: border-box; border: 1px solid #cfc8bb; border-radius: 10px; padding: 9px 10px;
+        font-size: 13px; background: #fff; color: #1f2937;
+      }
+      textarea { min-height: 88px; resize: vertical; }
+      .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin-top: 6px; }
+      .toggle { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #324055; }
+      .toggle input { margin: 0; }
+      .hint, .status { font-size: 12px; line-height: 1.45; color: #5a6472; }
+      .status { min-height: 18px; }
+      .status.error { color: #9f1239; }
+      .status.success { color: #166534; }
+      .inline { display: flex; gap: 10px; align-items: center; }
+      .inline .grow { flex: 1 1 auto; }
+      .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+      .btn {
+        border: 1px solid #c7c2b8; border-radius: 999px; background: #fff; color: #203047; padding: 9px 14px; font-size: 13px; cursor: pointer;
+      }
+      .btn.primary { background: #18345d; color: #fff; border-color: #18345d; }
+      .btn:disabled { opacity: .6; cursor: wait; }
+      .chiprow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+      .chip { font-size: 11px; border-radius: 999px; padding: 4px 8px; background: #f2efe8; color: #435066; }
+      .warning { background: #fff9e8; border-color: #ead9a6; }
+      .hidden { display: none !important; }
+      .footer-note { font-size: 11px; color: #6b7280; margin-top: 10px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="eyebrow">Experimental</div>
+      <h1>AI Lesson Generator</h1>
+      <p class="lede">Generate a structured source-sheet or shiur draft directly into the active Google Doc. Review, fact-check, and edit before sharing.</p>
+
+      <div class="card">
+        <div class="grid two">
+          <div>
+            <label for="provider">Model Family</label>
+            <select id="provider"></select>
+          </div>
+          <div>
+            <label for="model">Model</label>
+            <select id="model"></select>
+          </div>
+          <div>
+            <label for="keyStrategy">Key Source</label>
+            <select id="keyStrategy">
+              <option value="auto">Automatic</option>
+              <option value="managed">Use add-on managed key</option>
+              <option value="saved">Use my saved key</option>
+              <option value="manual">Paste a key just for this request</option>
+            </select>
+          </div>
+          <div>
+            <label for="duration">Duration (minutes)</label>
+            <input id="duration" type="number" min="10" max="120" step="5" value="45">
+          </div>
+        </div>
+        <div id="providerHints" class="chiprow"></div>
+        <div id="manualKeyWrap" class="grid hidden" style="margin-top:12px;">
+          <div>
+            <label for="apiKey">API Key</label>
+            <input id="apiKey" type="password" autocomplete="off" placeholder="Paste your API key here">
+          </div>
+          <label class="toggle"><input id="saveApiKey" type="checkbox"> Save this key in my add-on settings for future use</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="grid two">
+          <div style="grid-column: 1 / span 2;">
+            <label for="topic">Topic</label>
+            <input id="topic" type="text" placeholder="E.g. Gratitude after crisis, speech ethics, teshuvah and memory">
+          </div>
+          <div>
+            <label for="audience">Audience</label>
+            <input id="audience" type="text" placeholder="Adult learners, high school students, intro class">
+          </div>
+          <div>
+            <label for="lessonStyle">Lesson Style</label>
+            <select id="lessonStyle">
+              <option value="Interactive shiur">Interactive shiur</option>
+              <option value="Source-sheet chavruta">Source-sheet chavruta</option>
+              <option value="Text-study seminar">Text-study seminar</option>
+              <option value="Accessible intro session">Accessible intro session</option>
+            </select>
+          </div>
+          <div style="grid-column: 1 / span 2;">
+            <label for="additionalInstructions">Additional Instructions</label>
+            <textarea id="additionalInstructions" placeholder="Tone, angle, denominational assumptions, pacing notes, or teaching goals"></textarea>
+          </div>
+        </div>
+        <div class="toggle-grid">
+          <label class="toggle"><input id="includeOriginal" type="checkbox" checked> Include Hebrew / original text when available</label>
+          <label class="toggle"><input id="includeTranslation" type="checkbox" checked> Include translation when available</label>
+          <label class="toggle"><input id="includeEducatorNotes" type="checkbox" checked> Include educator notes</label>
+          <label class="toggle"><input id="includeDiscussionPrompts" type="checkbox" checked> Include discussion prompts</label>
+        </div>
+      </div>
+
+      <div class="card warning">
+        <div class="hint">Managed-key mode is intended for light internal use. This build enforces a cooldown when the add-on is using behind-the-scenes keys. If no managed key is available, paste your own or save a provider-specific key.</div>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <div class="actions">
+        <button id="closeBtn" class="btn" type="button">Close</button>
+        <button id="cycleBtn" class="btn" type="button">Today's Learning Cycle</button>
+        <button id="generateBtn" class="btn primary" type="button">Generate &amp; Insert</button>
+      </div>
+      <div class="footer-note">Supported provider families in this build: ChatGPT via OpenAI Responses, Claude via Anthropic Messages, and Gemini via Google’s generateContent endpoint.</div>
+    </div>
+
+    <script>
+      const state = { bootstrap: null };
+
+      function $(id) { return document.getElementById(id); }
+
+      function setStatus(message, kind) {
+        const el = $('status');
+        el.textContent = message || '';
+        el.className = 'status' + (kind ? ' ' + kind : '');
+      }
+
+      function withBusy(button, isBusy, text) {
+        button.disabled = !!isBusy;
+        if (text) button.dataset.busyText = text;
+        if (isBusy) {
+          button.dataset.originalText = button.textContent;
+          button.textContent = button.dataset.busyText || 'Working...';
+        } else if (button.dataset.originalText) {
+          button.textContent = button.dataset.originalText;
+        }
+      }
+
+      function refreshProviderUI() {
+        const provider = $('provider').value;
+        const providerInfo = (state.bootstrap.providers || []).find(p => p.key === provider);
+        const modelSelect = $('model');
+        modelSelect.innerHTML = '';
+        (providerInfo.models || []).forEach(model => {
+          const option = document.createElement('option');
+          option.value = model;
+          option.textContent = model;
+          modelSelect.appendChild(option);
+        });
+        modelSelect.value = providerInfo.models.includes(state.bootstrap.defaults.model) ? state.bootstrap.defaults.model : (providerInfo.defaultModel || providerInfo.models[0]);
+
+        const hints = [];
+        hints.push(providerInfo.managedKeyAvailable ? 'Managed key available' : 'No managed key configured');
+        hints.push(providerInfo.savedKeyAvailable ? 'Saved key available' : 'No saved key yet');
+        hints.push('Cooldown: ' + Math.ceil((state.bootstrap.managedKeyPolicy.cooldownSeconds || 0) / 60) + ' min for managed-key use');
+        $('providerHints').innerHTML = hints.map(text => '<span class="chip">' + text + '</span>').join('');
+
+        const strategy = $('keyStrategy').value;
+        const manualVisible = strategy === 'manual' || strategy === 'auto';
+        $('manualKeyWrap').classList.toggle('hidden', !manualVisible);
+      }
+
+      function collectPayload() {
+        return {
+          provider: $('provider').value,
+          model: $('model').value,
+          keyStrategy: $('keyStrategy').value,
+          apiKey: $('apiKey').value,
+          saveApiKey: $('saveApiKey').checked,
+          topic: $('topic').value,
+          audience: $('audience').value,
+          duration: Number($('duration').value || 45),
+          lessonStyle: $('lessonStyle').value,
+          additionalInstructions: $('additionalInstructions').value,
+          includeOriginal: $('includeOriginal').checked,
+          includeTranslation: $('includeTranslation').checked,
+          includeEducatorNotes: $('includeEducatorNotes').checked,
+          includeDiscussionPrompts: $('includeDiscussionPrompts').checked
+        };
+      }
+
+      function initialize(data) {
+        state.bootstrap = data;
+        if (!data.enabled) {
+          setStatus('Enable the experimental AI lesson generator in Preferences first.', 'error');
+          $('generateBtn').disabled = true;
+          $('cycleBtn').disabled = true;
+          return;
+        }
+
+        $('provider').innerHTML = (data.providers || []).map(provider => '<option value="' + provider.key + '">' + provider.label + '</option>').join('');
+        $('provider').value = data.defaults.provider;
+        $('keyStrategy').value = data.defaults.keyStrategy;
+        $('duration').value = data.defaults.duration;
+        $('audience').value = data.savedDefaults.audience || data.defaults.audience;
+        $('lessonStyle').value = data.savedDefaults.lessonStyle || data.defaults.lessonStyle;
+        refreshProviderUI();
+      }
+
+      function handleFailure(error) {
+        const message = (error && error.message) ? error.message : 'Something went wrong.';
+        setStatus(message, 'error');
+      }
+
+      $('provider').addEventListener('change', refreshProviderUI);
+      $('keyStrategy').addEventListener('change', refreshProviderUI);
+      $('closeBtn').addEventListener('click', () => google.script.host.close());
+
+      $('generateBtn').addEventListener('click', function() {
+        const button = this;
+        setStatus('Generating and inserting your draft...', '');
+        withBusy(button, true, 'Generating...');
+        google.script.run
+          .withSuccessHandler(function(result) {
+            withBusy(button, false);
+            const warningText = (result.warnings && result.warnings.length) ? ' Warnings: ' + result.warnings.join(' | ') : '';
+            setStatus('Inserted "' + result.title + '" using ' + result.provider + '.' + warningText, 'success');
+          })
+          .withFailureHandler(function(error) {
+            withBusy(button, false);
+            handleFailure(error);
+          })
+          .generateAiLessonDraft(collectPayload());
+      });
+
+      $('cycleBtn').addEventListener('click', function() {
+        const button = this;
+        setStatus('Building today\'s integrated learning-cycle shiur...', '');
+        withBusy(button, true, 'Generating...');
+        google.script.run
+          .withSuccessHandler(function(result) {
+            withBusy(button, false);
+            const warningText = (result.warnings && result.warnings.length) ? ' Warnings: ' + result.warnings.join(' | ') : '';
+            setStatus('Inserted "' + result.title + '" using ' + result.provider + '.' + warningText, 'success');
+          })
+          .withFailureHandler(function(error) {
+            withBusy(button, false);
+            handleFailure(error);
+          })
+          .runQuickActionTodaysLearningCycleShiur();
+      });
+
+      google.script.run
+        .withSuccessHandler(initialize)
+        .withFailureHandler(handleFailure)
+        .getAiLessonBootstrapData();
+    </script>
+  </body>
+</html>
