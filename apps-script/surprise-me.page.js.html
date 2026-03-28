@@ -1,4 +1,5 @@
 <script>
+  const APP_CONFIG = getAppConfig();
   function getSelectedCorpuses() {
     return $('.corpus-grid input:checked').map(function () {
       return $(this).val();

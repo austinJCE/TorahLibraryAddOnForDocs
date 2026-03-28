@@ -1,0 +1,26 @@
+{
+  "sidebar.page.js.html": [
+    "function applyEffectivePreferencesToUI",
+    "function saveSidebarPreference",
+    "google.script.run",
+    "setSidebarMode("
+  ],
+  "preferences.page.js.html": [
+    "document.addEventListener('DOMContentLoaded'",
+    "function byId",
+    "function bindStyleControl",
+    "google.script.run"
+  ],
+  "ai_lesson.page.js.html": [
+    "function initialize",
+    "function collectPayload",
+    "function runRequest",
+    "google.script.run.withSuccessHandler(initialize)"
+  ],
+  "surprise-me.page.js.html": [
+    "function getPayload",
+    "function setBusy",
+    "insertSurpriseMe(payload)",
+    "google.script.host.close()"
+  ]
+}

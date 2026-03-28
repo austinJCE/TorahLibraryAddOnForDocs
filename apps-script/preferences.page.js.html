@@ -1,5 +1,6 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    const APP_CONFIG = getAppConfig();
     const fontMeta = {
       "Ezra SIL": { stack: "'Ezra SIL', 'SBL Hebrew', 'Times New Roman', serif" },
       "SBL Hebrew": { stack: "'SBL Hebrew', 'Ezra SIL', 'Times New Roman', serif" },
@@ -40,7 +41,7 @@
     let selectedOverrideChar = "";
 
     function byId(id) {
-      return document.getElementById(id);
+      return uiById(id);
     }
 
     function encodeStyleState(flags) {

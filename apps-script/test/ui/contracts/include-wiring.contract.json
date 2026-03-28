@@ -1,0 +1,52 @@
+{
+  "sidebar.html": [
+    "<?!= include('ui_head'); ?>",
+    "<?!= include('ui_shell.css'); ?>",
+    "<?!= include('ui_components.css'); ?>",
+    "<?!= include('ui_utilities.css'); ?>",
+    "<?!= include('sidebar_css'); ?>",
+    "<?!= include('ui_core.js'); ?>",
+    "<?!= include('ui_api.js'); ?>",
+    "<?!= include('ui_state.js'); ?>",
+    "<?!= include('ui_dom.js'); ?>",
+    "<?!= include('ui_feedback.js'); ?>",
+    "<?!= include('sidebar.page.js'); ?>"
+  ],
+  "preferences.html": [
+    "<?!= include('ui_head'); ?>",
+    "<?!= include('ui_utilities.css'); ?>",
+    "<?!= HtmlService.createHtmlOutputFromFile('preferences_css').getContent(); ?>",
+    "window.APP_CONFIG = <?= JSON.stringify(appConfig) ?>;",
+    "<?!= include('ui_core.js'); ?>",
+    "<?!= include('ui_api.js'); ?>",
+    "<?!= include('ui_state.js'); ?>",
+    "<?!= include('ui_dom.js'); ?>",
+    "<?!= include('ui_feedback.js'); ?>",
+    "<?!= HtmlService.createHtmlOutputFromFile('preferences.page.js').getContent(); ?>"
+  ],
+  "ai_lesson.html": [
+    "<?!= include('ui_head'); ?>",
+    "<?!= include('ui_utilities.css'); ?>",
+    "<?!= include('ai_lesson_css'); ?>",
+    "window.APP_CONFIG = <?= JSON.stringify(appConfig) ?>;",
+    "<?!= include('ui_core.js'); ?>",
+    "<?!= include('ui_api.js'); ?>",
+    "<?!= include('ui_state.js'); ?>",
+    "<?!= include('ui_dom.js'); ?>",
+    "<?!= include('ui_feedback.js'); ?>",
+    "<?!= include('ai_lesson.page.js'); ?>"
+  ],
+  "surprise-me.html": [
+    "<?!= include('ui_head'); ?>",
+    "<?!= include('ui_components.css'); ?>",
+    "<?!= include('ui_utilities.css'); ?>",
+    "<?!= include('surprise-me_css'); ?>",
+    "window.APP_CONFIG = <?= JSON.stringify(appConfig) ?>;",
+    "<?!= include('ui_core.js'); ?>",
+    "<?!= include('ui_api.js'); ?>",
+    "<?!= include('ui_state.js'); ?>",
+    "<?!= include('ui_dom.js'); ?>",
+    "<?!= include('ui_feedback.js'); ?>",
+    "<?!= include('surprise-me.page.js'); ?>"
+  ]
+}

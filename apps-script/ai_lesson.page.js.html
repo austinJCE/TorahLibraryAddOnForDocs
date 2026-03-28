@@ -1,6 +1,7 @@
 <script>
+const APP_CONFIG = getAppConfig();
 const state = { bootstrap: null, activeTab: 'basic', cooldownTimer: null, cooldownRemaining: 0 };
-function $(id){ return document.getElementById(id); }
+function $(id){ return uiById(id); }
 function setStatus(message, kind) { const el = $('status'); el.textContent = message || ''; el.className = 'status' + (kind ? ' ' + kind : ''); }
 function config() { return (((state.bootstrap || {}).ui || {}).config) || {}; }
 function providers() { return (state.bootstrap && state.bootstrap.providers) ? state.bootstrap.providers : []; }
