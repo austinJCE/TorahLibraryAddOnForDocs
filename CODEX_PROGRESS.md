@@ -21,9 +21,9 @@ After every phase, Codex must update:
 
 ## Current status
 
-- Active branch: work
-- Last completed phase: **Phase 4 — Align Preferences and state flow**
-- Next planned phase: **Phase 5 — Move AI Shiur fully into Experimental**
+- Active branch: refactor/sidebar-phase-5-ai-shiur-sidebar
+- Last completed phase: **Phase 5 — Move AI Shiur fully into Experimental**
+- Next planned phase: **Phase 6 — Texts controls and preview sync**
 - Last updated by: Codex (GPT-5.3-Codex)
 - Last updated on: 2026-04-10
 
@@ -261,3 +261,41 @@ Smoke tests run:
 
 Notes:
 - ...
+
+
+
+### Phase 5 — Move AI Shiur fully into Experimental
+- Status: complete
+- Date: 2026-04-10
+- Branch: `refactor/sidebar-phase-5-ai-shiur-sidebar`
+
+Summary:
+- Replaced the Experimental AI Shiur accordion CTA with an inline sidebar-native workflow that supports generation directly from the Experimental tab.
+- Added internal AI Shiur Basic/Advanced mode controls inside the accordion and wired advanced provider/key options without reintroducing global sidebar Basic/Advanced mode state.
+- Added inline AI Shiur generation handlers (topic-based and quick actions) that call `generateAiLessonDraft` directly, making the modal opener a secondary convenience path rather than the primary flow.
+- Removed remaining global search-mode dependence on legacy `basic`/`advanced` values in server-side sidebar mode persistence and bootstrap normalization.
+
+Files changed:
+- `apps-script/sidebar.html`
+- `apps-script/sidebar.page.js.html`
+- `apps-script/Code.gs`
+- `apps-script/test/ui/snapshots/sidebar.html.snap`
+- `CODEX_PROGRESS.md`
+
+Decisions locked:
+- AI Shiur primary UX now lives in the Experimental sidebar accordion with inline controls; the modal opener is no longer the primary generation path.
+- Basic/Advanced remains available only as an internal AI Shiur toggle (`data-ai-mode`) and is not used as a top-level sidebar mode.
+- Sidebar search mode persistence is canonicalized to `texts | voices | experimental`, with legacy stored values mapped to `texts`.
+
+Deferred / remaining risks:
+- Inline AI Shiur UI currently reuses existing shared styles and may need targeted styling polish and spacing/accessibility refinement in a later UI pass.
+- Sidebar AI quick-action controls do not yet expose the full AI dialog configuration surface (audience/style fields) and currently rely on saved defaults for those fields.
+- End-to-end validation in a live Apps Script deployment is still required to confirm gateway/bootstrap behavior under production auth and key-policy states.
+
+Smoke tests run:
+- `cd apps-script && npm run test:ui` (fail first run due to expected snapshot drift after sidebar markup changes)
+- `cd apps-script && UPDATE_UI_SNAPSHOTS=1 npm run test:ui` (pass)
+- `cd apps-script && npm test` (pass)
+
+Notes:
+- Stopped after requested Phase 5 work.
