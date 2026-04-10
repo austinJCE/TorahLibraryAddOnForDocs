@@ -531,11 +531,18 @@
         preferenceObject[el.name] = el.value;
       });
 
+      if (Object.prototype.hasOwnProperty.call(preferenceObject, 'surprise_me_enabled')) {
+        preferenceObject.popcorn_enabled = !!preferenceObject.surprise_me_enabled;
+      }
+
       return preferenceObject;
     }
 
     function applyPreferencesToForm(preferences) {
       try {
+              if (preferences && preferences.surprise_me_enabled === undefined && preferences.popcorn_enabled !== undefined) {
+                preferences.surprise_me_enabled = preferences.popcorn_enabled;
+              }
               document.querySelectorAll('input[type="checkbox"]').forEach(function(el) {
                 el.checked = preferences[el.name] == 'true' || preferences[el.name] === true;
               });
