@@ -19,9 +19,9 @@
 
       <div class="sidebar-scroll">
         <section class="mode-switch-section" aria-label="Search mode selector">
-          <button type="button" class="mode-switch-button" data-sidebar-mode="basic">Basic</button>
-          <button type="button" class="mode-switch-button" data-sidebar-mode="advanced">Advanced</button>
+          <button type="button" class="mode-switch-button" data-sidebar-mode="texts">Texts</button>
           <button type="button" class="mode-switch-button" data-sidebar-mode="voices">Voices</button>
+          <button type="button" class="mode-switch-button experimental-mode-button" data-sidebar-mode="experimental" style="display:none;">Experimental Features</button>
         </section>
         <section class="reference-row unified-search-row">
           <div class="reference-input-shell">
@@ -314,7 +314,7 @@
         <button type="button" class="footer-tool-button open-linker-tool" title="Link Texts with Sefaria" aria-label="Link Texts with Sefaria"><span class="tool-icon-stack"><span class="link-emoji">🔗</span><span class="tool-arrow">→</span><span class="sefaria-badge samekh" aria-hidden="true">ס</span></span></button>
         <button type="button" class="footer-tool-button open-ai-lesson-tool" title="AI Shiur" aria-label="AI Shiur"><span class="footer-icon">🧠</span></button>
       </section>
-      <section class="session-override-actions advanced-only text-mode-only footer-settings-row" style="display:none;" aria-label="Settings">
+      <section class="session-override-actions text-mode-only footer-settings-row" style="display:none;" aria-label="Settings">
         <div class="session-override-label">Session Settings</div>
         <div class="session-override-buttons">
           <button type="button" class="footer-tool-button reset-session-overrides-button" title="Reset Session Settings" aria-label="Reset Session Settings" disabled><span class="footer-icon">↺</span></button>

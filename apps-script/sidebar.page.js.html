@@ -26,7 +26,7 @@ var sessionPreferences = {};
 var effectivePreferences = {};
 
 function isAdvancedSessionMode() {
-  return appMode === 'advanced';
+  return appMode === 'texts';
 }
 
 function hasSessionOverrides() {
@@ -261,14 +261,14 @@ google.script.run.withSuccessHandler(function (bootstrap) {
   accountPreferences = clonePlainObject((bootstrap && (bootstrap.accountPreferences || bootstrap.preferences)) || {});
   sessionPreferences = clonePlainObject((bootstrap && bootstrap.sessionState) || {});
   effectivePreferences = clonePlainObject((bootstrap && (bootstrap.effectivePreferences || bootstrap.preferences)) || accountPreferences);
-  var bootstrapMode = (bootstrap && bootstrap.mode) || window.INITIAL_SIDEBAR_MODE || 'basic';
+  var bootstrapMode = (bootstrap && bootstrap.mode) || window.INITIAL_SIDEBAR_MODE || 'texts';
   setSidebarMode(bootstrapMode, true);
   applyEffectivePreferencesToUI();
   bindSidebarCompositionCard();
   updateSidebarCompositionCard();
   loadSessionLibrary();
   setFooterButtonStates();
-}).getSidebarBootstrapData(window.INITIAL_SIDEBAR_MODE || 'basic');
+}).getSidebarBootstrapData(window.INITIAL_SIDEBAR_MODE || 'texts');
 
 $('.include-translation-source-info').on('change', function () {
   saveSidebarPreference({
@@ -369,7 +369,7 @@ function updateVersionControlsVisibility() {
   var outputMode = $('.output-mode-selection').val();
   var hideTranslations = $('.translation-version-select option:not(:disabled)').length <= 1;
   $('.translation-version-control').toggle(outputMode !== 'he' && appMode !== 'voices' && !hideTranslations);
-  $('.advanced-version-details').toggle(outputMode !== 'en' && appMode === 'advanced');
+  $('.advanced-version-details').toggle(outputMode !== 'en' && appMode === 'texts');
   $('.versions-section').toggleClass('single-translation', hideTranslations);
   if (appMode !== 'voices' && !!selectedResultKey) {
     $('.versions-section').toggle(!hideTranslations);
@@ -2234,45 +2234,61 @@ $('.close').click(function () {
 
 
 
-var appMode = window.INITIAL_SIDEBAR_MODE || 'basic';
+var appMode = normalizeSidebarMode(window.INITIAL_SIDEBAR_MODE || 'texts');
 var selectedVoiceItem = null;
 var originalTextRunUnifiedQuery = runUnifiedQuery;
 var originalResolveSelectedResult = resolveSelectedResult;
 var originalRefreshSelectedResult = refreshSelectedResult;
 var originalBuildSessionEntry = buildSessionEntry;
 
+function normalizeSidebarMode(mode) {
+  if (mode === 'voices' || mode === 'experimental' || mode === 'texts') return mode;
+  if (mode === 'basic' || mode === 'advanced' || mode === 'text') return 'texts';
+  return 'texts';
+}
+
 function setSidebarMode(mode, skipPreferenceSave) {
-  appMode = (mode === 'advanced' || mode === 'voices') ? mode : 'basic';
-  $('body').removeClass('mode-basic mode-advanced mode-voices').addClass('mode-' + appMode);
+  appMode = normalizeSidebarMode(mode);
+  $('body').removeClass('mode-basic mode-advanced mode-texts mode-voices mode-experimental').addClass('mode-' + appMode);
   $('.unified-sidebar').attr('data-mode', appMode);
-  $('.mode-switch-button').removeClass('is-active').attr('aria-pressed', 'false');
-  $('.mode-switch-button[data-sidebar-mode="' + appMode + '"]').addClass('is-active').attr('aria-pressed', 'true');
+  $('.mode-switch-button, .experimental-menu-button').removeClass('is-active').attr('aria-pressed', 'false');
+  $('.mode-switch-button[data-sidebar-mode="' + appMode + '"], .experimental-menu-button[data-sidebar-mode="' + appMode + '"]').addClass('is-active').attr('aria-pressed', 'true');
   $('.voices-only').toggle(appMode === 'voices');
-  $('.text-mode-only').toggle(appMode !== 'voices');
-  $('.reference-row .search-submit').toggle(appMode !== 'basic');
-  $('.advanced-version-details').toggle(appMode === 'advanced' && $('.output-mode-selection').val() !== 'en');
-  $('.input').attr('placeholder', appMode === 'voices' ? 'Search source sheets' : (appMode === 'advanced' ? 'Reference or phrase' : 'Reference or phrase'));
+  $('.text-mode-only').toggle(appMode === 'texts');
+  $('.reference-row .search-submit').toggle(appMode !== 'experimental');
+  $('.advanced-version-details').toggle(appMode === 'texts' && $('.output-mode-selection').val() !== 'en');
+  $('.input').attr('placeholder', appMode === 'voices' ? 'Search source sheets' : 'Search Sefaria');
   $('.search-results-label').text(appMode === 'voices' ? 'Source Sheets' : 'Search results');
   $('#insert-source').text(appMode === 'voices' ? 'Add Link' : 'Add Source');
   $('.open-label-text').text(appMode === 'voices' ? 'Open Sheet' : 'Open');
-  if (!skipPreferenceSave) saveAccountPreference({ search_mode: appMode });
+  if (!skipPreferenceSave && appMode !== 'experimental') saveAccountPreference({ search_mode: appMode });
   syncSessionOverrideButtons();
   updateModeDependentSections();
   setFooterButtonStates();
+  syncExperimentalFeatureAvailability();
+  updateExperimentalQuickActions();
 }
 
 function updateModeDependentSections() {
+  if (appMode === 'experimental') {
+    $('.results-panel, .display-layout-shell, .versions-section, .preview-section, .inline-session-settings').hide();
+    $('.experimental-section').show();
+    renderSessionLibrary();
+    return;
+  }
+
+  $('.experimental-section').hide();
   var hasSearch = !!(($('.input').val() || '').trim()) || getAllRawResults().length > 0;
   var hasSelectedTextResult = appMode !== 'voices' && !!selectedResultKey;
   var hasSelectedVoiceResult = appMode === 'voices' && !!selectedVoiceItem;
   var hideTranslations = $('.translation-version-select option:not(:disabled)').length <= 1;
   $('.results-panel').toggle(hasSearch);
   $('.display-layout-shell').toggle(hasSelectedTextResult);
-  $('.more-options-accordion').toggle(appMode === 'advanced' && hasSelectedTextResult);
+  $('.more-options-accordion').toggle(hasSelectedTextResult);
   $('.versions-section').toggle(hasSelectedTextResult && !hideTranslations);
   $('.preview-section').toggle(hasSelectedTextResult || hasSelectedVoiceResult);
   syncSessionOverrideButtons();
-  $('.inline-session-settings').toggle(appMode === 'advanced' && hasSelectedTextResult);
+  $('.inline-session-settings').toggle(hasSelectedTextResult);
   renderSessionLibrary();
 }
 
@@ -2548,7 +2564,7 @@ $(document).off('click.restoreCorpusItem', '.restore-corpus-menu-item')
     closeRestoreCorpusMenu();
     toggleCorpusVisibility(corpusKey);
   });
-  
+
 $(document).off('click.restoreCorpusDismiss').on('click.restoreCorpusDismiss', function (event) {
   if ($(event.target).closest('#restore-corpus-menu-wrap').length) return;
   closeRestoreCorpusMenu();
@@ -2587,7 +2603,7 @@ $('.session-library-panel').off('click keydown', '.session-library-item').on('cl
   event.preventDefault();
   var itemMode = $(this).attr('data-mode') || 'text';
   var query = $(this).attr('data-query') || $(this).attr('data-ref');
-  setSidebarMode(itemMode === 'voices' ? 'voices' : 'basic', true);
+  setSidebarMode(itemMode === 'voices' ? 'voices' : 'texts', true);
   if (query) {
     $('.input').val(query);
     runUnifiedQuery();
@@ -2618,7 +2634,6 @@ $('.bilingual-layout-selection').on('change', updateDisplayChoiceSummaries);
 $(document).ready(updateDisplayChoiceSummaries);
 
 
-/* === Experimental Features sidebar mode (late override) === */
 function isExperimentalAiEnabled() {
   return String((effectivePreferences || {}).experimental_ai_source_sheet_enabled) === 'true' || (effectivePreferences || {}).experimental_ai_source_sheet_enabled === true;
 }
@@ -2635,7 +2650,7 @@ function syncExperimentalFeatureAvailability() {
   $('.surprise-feature').toggle(isSurpriseEnabled());
   $('.ai-shiur-feature').toggle(isExperimentalAiEnabled());
   if (!hasExperimental && appMode === 'experimental') {
-    setSidebarMode('basic', true);
+    setSidebarMode('texts', true);
   }
 }
 function updateExperimentalQuickActions() {
@@ -2644,57 +2659,18 @@ function updateExperimentalQuickActions() {
   $('.experimental-quick-actions').toggle(isExperimentalMode);
 }
 
-var __originalSetSidebarMode = setSidebarMode;
-setSidebarMode = function(mode, skipPreferenceSave) {
-  appMode = (mode === 'advanced' || mode === 'voices' || mode === 'experimental') ? mode : 'basic';
-  $('body').removeClass('mode-basic mode-advanced mode-voices mode-experimental').addClass('mode-' + appMode);
-  $('.unified-sidebar').attr('data-mode', appMode);
-  $('.mode-switch-button, .experimental-menu-button').removeClass('is-active').attr('aria-pressed', 'false');
-  $('.mode-switch-button[data-sidebar-mode="' + appMode + '"]').addClass('is-active').attr('aria-pressed', 'true');
-  $('.experimental-menu-button[data-sidebar-mode="' + appMode + '"]').addClass('is-active').attr('aria-pressed', 'true');
-  $('.voices-only').toggle(appMode === 'voices');
-  $('.text-mode-only').toggle(appMode !== 'voices' && appMode !== 'experimental');
-  $('.reference-row .search-submit').show();
-  $('.history-submit').show();
-  $('.advanced-version-details').toggle(appMode === 'advanced' && $('.output-mode-selection').val() !== 'en');
-  $('.input').attr('placeholder', appMode === 'voices' ? 'Search source sheets' : 'Search Sefaria');
-  $('.search-results-label').text(appMode === 'voices' ? 'Source Sheets' : 'Search results');
-  $('#insert-source').text(appMode === 'voices' ? 'Add Link' : 'Add Source');
-  if (!skipPreferenceSave && appMode !== 'experimental') saveAccountPreference({ search_mode: appMode });
-  syncSessionOverrideButtons();
-  updateModeDependentSections();
-  setFooterButtonStates();
-  syncExperimentalFeatureAvailability();
-  updateExperimentalQuickActions();
-};
-
-var __originalUpdateModeDependentSections = updateModeDependentSections;
-updateModeDependentSections = function() {
-  if (appMode === 'experimental') {
-    $('.results-panel, .display-layout-shell, .versions-section, .preview-section, .inline-session-settings').hide();
-    $('.experimental-section').show();
-    syncExperimentalFeatureAvailability();
-    updateExperimentalQuickActions();
-    renderSessionLibrary();
-    return;
-  }
-  $('.experimental-section').hide();
-  __originalUpdateModeDependentSections();
-  syncExperimentalFeatureAvailability();
-  updateExperimentalQuickActions();
-};
-
 var __originalApplyEffectivePreferencesToUI = applyEffectivePreferencesToUI;
 applyEffectivePreferencesToUI = function() {
   __originalApplyEffectivePreferencesToUI();
   syncExperimentalFeatureAvailability();
   updateExperimentalQuickActions();
+  setFooterButtonStates();
 };
 
 syncSessionOverrideButtons = function() {
-  var isAdvanced = isAdvancedSessionMode();
-  $('.session-override-actions').toggle(isAdvanced);
-  $('.reset-session-overrides-button, .save-session-defaults-button').prop('disabled', !isAdvanced || !hasSessionOverrides());
+  var hasSelectedTextResult = appMode !== 'voices' && !!selectedResultKey;
+  $('.session-override-actions').toggle(hasSelectedTextResult);
+  $('.reset-session-overrides-button, .save-session-defaults-button').prop('disabled', !hasSessionOverrides());
   $('#open-session-library').prop('disabled', false).attr('aria-disabled', 'false');
 };
 
@@ -2738,256 +2714,5 @@ setFooterButtonStates();
 
 
 
-/* =========================================================
-   FINAL CLEANUP PASS (2026-03-27)
-   Canonical late overrides to reduce stacked regressions
-   ========================================================= */
-(function () {
-  if (window.__SIDEBAR_FINAL_CLEANUP_PASS__) return;
-  window.__SIDEBAR_FINAL_CLEANUP_PASS__ = true;
-
-  function boolPref(value) {
-    return value === true || String(value) === 'true';
-  }
-
-  function currentPrefs() {
-    return effectivePreferences || {};
-  }
-
-  function isExperimentalAiEnabledClean() {
-    return boolPref(currentPrefs().experimental_ai_source_sheet_enabled);
-  }
-
-  function isSurpriseEnabledClean() {
-    return boolPref(currentPrefs().popcorn_enabled);
-  }
-
-  function hasExperimentalFeaturesEnabledClean() {
-    return isExperimentalAiEnabledClean() || isSurpriseEnabledClean();
-  }
-
-  function syncExperimentalFeatureAvailabilityClean() {
-    var hasExperimental = hasExperimentalFeaturesEnabledClean();
-    $('.experimental-mode-button, .experimental-menu-row').toggle(hasExperimental);
-    $('.surprise-feature').toggle(isSurpriseEnabledClean());
-    $('.ai-shiur-feature').toggle(isExperimentalAiEnabledClean());
-    $('.experimental-menu-button').toggleClass('is-active', appMode === 'experimental');
-    if (!hasExperimental && appMode === 'experimental') {
-      setSidebarMode('basic', true);
-    }
-  }
-
-  function updateExperimentalQuickActionsClean() {
-    var experimentalMode = appMode === 'experimental';
-    $('.standard-quick-actions').toggle(!experimentalMode);
-    $('.experimental-quick-actions').toggle(experimentalMode);
-  }
-
-  var __oldSetSidebarModeCleanup = setSidebarMode;
-  setSidebarMode = function (mode, skipPreferenceSave) {
-    appMode = (mode === 'advanced' || mode === 'voices' || mode === 'experimental') ? mode : 'basic';
-    $('body').removeClass('mode-basic mode-advanced mode-voices mode-experimental').addClass('mode-' + appMode);
-    $('.unified-sidebar').attr('data-mode', appMode);
-    $('.mode-switch-button, .experimental-menu-button').removeClass('is-active').attr('aria-pressed', 'false');
-    $('.mode-switch-button[data-sidebar-mode="' + appMode + '"]').addClass('is-active').attr('aria-pressed', 'true');
-    $('.experimental-menu-button[data-sidebar-mode="' + appMode + '"]').addClass('is-active').attr('aria-pressed', 'true');
-    $('.voices-only').toggle(appMode === 'voices');
-    $('.text-mode-only').toggle(appMode !== 'voices' && appMode !== 'experimental');
-    $('.reference-row .search-submit, .reference-row .history-submit').show();
-    $('.advanced-version-details').toggle(appMode === 'advanced' && $('.output-mode-selection').val() !== 'en');
-    $('.input').attr('placeholder', appMode === 'voices' ? 'Search source sheets' : 'Search Sefaria');
-    $('.search-results-label').text(appMode === 'voices' ? 'Source Sheets' : 'Search results');
-    $('#insert-source').text(appMode === 'voices' ? 'Add Link' : 'Add Source');
-    if (!skipPreferenceSave && appMode !== 'experimental') saveAccountPreference({ search_mode: appMode });
-    syncSessionOverrideButtons();
-    updateModeDependentSections();
-    setFooterButtonStates();
-    syncExperimentalFeatureAvailabilityClean();
-    updateExperimentalQuickActionsClean();
-  };
-
-  var __oldUpdateModeDependentSectionsCleanup = updateModeDependentSections;
-  updateModeDependentSections = function () {
-    if (appMode === 'experimental') {
-      $('.results-panel, .display-layout-shell, .versions-section, .preview-section, .inline-session-settings').hide();
-      $('.experimental-section').show();
-      syncExperimentalFeatureAvailabilityClean();
-      updateExperimentalQuickActionsClean();
-      renderSessionLibrary();
-      return;
-    }
-    $('.experimental-section').hide();
-    __oldUpdateModeDependentSectionsCleanup();
-    var hasSelectedTextResult = appMode !== 'voices' && !!selectedResultKey;
-    $('.inline-session-settings').toggle(appMode === 'advanced' && hasSelectedTextResult);
-    syncExperimentalFeatureAvailabilityClean();
-    updateExperimentalQuickActionsClean();
-  };
-
-  var __oldApplyEffectivePreferencesCleanup = applyEffectivePreferencesToUI;
-  applyEffectivePreferencesToUI = function () {
-    __oldApplyEffectivePreferencesCleanup();
-    syncExperimentalFeatureAvailabilityClean();
-    updateExperimentalQuickActionsClean();
-    setFooterButtonStates();
-  };
-
-  syncSessionOverrideButtons = function () {
-    var isAdvanced = isAdvancedSessionMode();
-    var hasSelectedTextResult = appMode !== 'voices' && !!selectedResultKey;
-    $('.reset-session-overrides-button, .save-session-defaults-button').prop('disabled', !isAdvanced || !hasSessionOverrides());
-    $('.inline-session-settings').toggle(isAdvanced && hasSelectedTextResult);
-    $('#open-session-library').prop('disabled', false).attr('aria-disabled', 'false');
-  };
-
-  setFooterButtonStates = function () {
-    var hasSelection = !!((appMode === 'voices' && selectedVoiceItem && (selectedVoiceItem.url || selectedVoiceItem.ref)) || (hasResolvedReference && data && data.ref));
-    var hasHistoryItems = !!(((sessionLibrary && sessionLibrary.pinned) || []).length || ((sessionLibrary && sessionLibrary.inserted) || []).length);
-    $('#open-on-sefaria').toggleClass('is-active', hasSelection).prop('disabled', !hasSelection);
-    $('#open-session-library').toggleClass('is-active', hasHistoryItems);
-  };
-
-  renderSessionLibrary = function () {
-    var $panel = $('.session-library-panel');
-    if (!$panel.length) return;
-    var $combined = $('.session-library-combined-results');
-    if (!$combined.length) {
-      $('.session-library-group').remove();
-      $('.session-library-note').after("<div class='session-library-combined-results'></div>");
-      $combined = $('.session-library-combined-results');
-    }
-    $combined.empty();
-
-    syncSessionLibraryFilterOptions();
-
-    var grouped = {};
-    function addItem(item, bucket) {
-      if (!item || !item.ref) return;
-      var corpus = String((item && item.corpusLabel) || 'Other');
-      var corpusKey = (typeof getSessionEntryCorpusKey === 'function') ? getSessionEntryCorpusKey(item) : corpus.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'other';
-      if (sessionLibraryFilter !== 'all' && corpusKey !== sessionLibraryFilter) return;
-      if (!grouped[corpus]) grouped[corpus] = { pinned: [], inserted: [] };
-      grouped[corpus][bucket].push(item);
-    }
-
-    (sessionLibrary.pinned || []).forEach(function (item) { addItem(item, 'pinned'); });
-    (sessionLibrary.inserted || []).forEach(function (item) { if (!isPinnedRef(item.ref)) addItem(item, 'inserted'); });
-
-    Object.keys(grouped).sort().forEach(function (corpus) {
-      var bucket = grouped[corpus];
-      var total = bucket.pinned.length + bucket.inserted.length;
-      var html = "<details class='session-library-corpus-details' open><summary><span>" + escapeHTML(corpus) + "</span><span class='session-library-corpus-count'>" + total + "</span></summary><div class='session-library-corpus-list'>";
-      if (bucket.pinned.length) {
-        html += "<div class='session-library-entry-group-label'>Pinned</div>";
-        bucket.pinned.forEach(function (item) {
-          html += "<div class='result-item session-library-item is-pinned' data-ref='" + escapeHTML(item.ref) + "' data-url='" + escapeHTML(item.url || '') + "' data-mode='" + escapeHTML(item.mode || 'text') + "' data-query='" + escapeHTML(item.query || item.label || item.ref) + "' data-list='pinned' role='button' tabindex='0'><div class='result-title session-library-label'>" + escapeHTML(item.label || item.ref) + "</div><button type='button' class='session-library-remove' data-list='pinned' data-ref='" + escapeHTML(item.ref) + "' aria-label='Remove pinned item'>×</button></div>";
-        });
-      }
-      if (bucket.inserted.length) {
-        html += "<div class='session-library-entry-group-label'>Recent</div>";
-        bucket.inserted.forEach(function (item) {
-          html += "<div class='result-item session-library-item' data-ref='" + escapeHTML(item.ref) + "' data-url='" + escapeHTML(item.url || '') + "' data-mode='" + escapeHTML(item.mode || 'text') + "' data-query='" + escapeHTML(item.query || item.label || item.ref) + "' data-list='inserted' role='button' tabindex='0'><div class='result-title session-library-label'>" + escapeHTML(item.label || item.ref) + "</div></div>";
-        });
-      }
-      html += "</div></details>";
-      $combined.append(html);
-    });
-
-    var hasItems = !!((sessionLibrary.pinned || []).length || (sessionLibrary.inserted || []).length);
-    var hasVisibleItems = !!Object.keys(grouped).length;
-    $panel.toggle(hasItems);
-    $('.session-library-panel .results-hint').remove();
-    if (hasItems && !hasVisibleItems) {
-      $panel.append("<p class='results-hint'>No pinned or recent items match this corpus filter.</p>");
-    }
-    setFooterButtonStates();
-  };
-
-  function findResultByRef(ref) {
-    return queryState.libraryMatches
-      .concat(queryState.searchResults)
-      .concat(queryState.rawLibraryMatches)
-      .concat(queryState.rawSearchResults)
-      .find(function (item) { return item && item.ref === ref; }) || null;
-  }
-
-  $('.results-panel').off('click.cleanupPin', '.result-pin-button').on('click.cleanupPin', '.result-pin-button', function (event) {
-    event.preventDefault();
-    event.stopPropagation();
-    var ref = $(this).attr('data-ref');
-    var item = findResultByRef(ref);
-    if (!item) return;
-    if (isPinnedRef(ref)) {
-      removeSessionEntry('pinned', ref);
-    } else {
-      upsertSessionEntry('pinned', buildSessionEntry(item.ref, appMode === 'voices' ? getVoiceItemTitle(item) : item.label, getResultCorpusLabel(item, appMode === 'voices' ? 'Source Sheets' : 'Other'), {
-        mode: appMode === 'voices' ? 'voices' : 'text',
-        url: item.url || '',
-        query: (appMode === 'voices' ? getVoiceItemTitle(item) : item.label) || item.ref
-      }));
-    }
-    renderResults();
-    renderSessionLibrary();
-    setFooterButtonStates();
-  });
-
-  $('.mode-switch-button').off('click.cleanupMode').on('click.cleanupMode', function () {
-    var nextMode = $(this).attr('data-sidebar-mode');
-    setSidebarMode(nextMode);
-    clearSelectedResult();
-    selectedVoiceItem = null;
-    setInsertButtonState(false);
-    $('#open-on-sefaria').prop('disabled', true);
-    if (($('.input').val() || '').trim()) runUnifiedQuery();
-    else updateModeDependentSections();
-  });
-
-  $('.experimental-menu-button').off('click.cleanupExperimental').on('click.cleanupExperimental', function () {
-    setSidebarMode('experimental');
-  });
-
-  $('#open-session-library').off('click.cleanupHistory').on('click.cleanupHistory', function (event) {
-    if (event) event.preventDefault();
-    renderSessionLibrary();
-    $('#session-library-modal').removeAttr('hidden');
-  });
-
-  $('#run-sefaria').off('click.cleanupSearch').on('click.cleanupSearch', function (event) {
-    if (event) event.preventDefault();
-    runUnifiedQuery();
-  });
-
-  $('.open-surprise-tool').off('click.cleanupSurprise').on('click.cleanupSurprise', function (event) {
-    if (event) event.preventDefault();
-    if (!isSurpriseEnabledClean()) {
-      showSidebarNotice('Surprise Me is an experimental feature. Click OK to open Preferences and enable Experimental Features.', function () {
-        openPreferencesWithHint('experimental-features');
-      });
-      return;
-    }
-    google.script.run
-      .withSuccessHandler(function () { showSidebarToast('Launching Surprise Me…'); })
-      .withFailureHandler(function () { showSidebarNotice('Surprise Me is enabled, but its workflow is not yet wired in this build.'); })
-      .surpriseMeHTML();
-  });
-
-  $('.open-ai-lesson-tool').off('click.cleanupAi').on('click.cleanupAi', function (event) {
-    if (event) event.preventDefault();
-    if (!isExperimentalAiEnabledClean()) {
-      showSidebarNotice('AI Shiur is an experimental feature. Click OK to open Preferences and enable Experimental Features.', function () {
-        openPreferencesWithHint('experimental-features');
-      });
-      return;
-    }
-    google.script.run.openAiLessonGenerator();
-  });
-
-  setSidebarMode(appMode, true);
-  updateModeDependentSections();
-  syncExperimentalFeatureAvailabilityClean();
-  updateExperimentalQuickActionsClean();
-  syncRestoreCorpusButton();
-  setFooterButtonStates();
-})();
 
 </script>
