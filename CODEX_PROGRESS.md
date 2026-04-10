@@ -22,8 +22,8 @@ After every phase, Codex must update:
 ## Current status
 
 - Active branch: work
-- Last completed phase: **Phase 3 — Build the Experimental sidebar shell**
-- Next planned phase: **Phase 4 — Align Preferences and state flow**
+- Last completed phase: **Phase 4 — Align Preferences and state flow**
+- Next planned phase: **Phase 5 — Move AI Shiur fully into Experimental**
 - Last updated by: Codex (GPT-5.3-Codex)
 - Last updated on: 2026-04-10
 
@@ -199,6 +199,37 @@ Smoke tests run:
 
 Notes:
 - Stopped after requested Phase 3 experimental shell work.
+
+
+### Phase 4 — Align Preferences and state flow
+- Status: complete
+- Date: 2026-04-10
+- Branch: `work`
+
+Summary:
+- Added compatibility mapping in Preferences form serialization so `surprise_me_enabled` writes the canonical `popcorn_enabled` preference key used by sidebar/menu experimental gating.
+- Added reverse mapping when loading preferences so existing accounts with only `popcorn_enabled` hydrate the Preferences experimental toggle correctly.
+- Preserved the existing session-vs-default split: Preferences remains defaults authority while sidebar keeps live session editing behavior.
+
+Files changed:
+- `apps-script/preferences.page.js.html`
+- `CODEX_PROGRESS.md`
+
+Decisions locked:
+- Surprise Me experimental enablement is now canonically persisted via `popcorn_enabled`, with `surprise_me_enabled` retained as UI-facing compatibility input.
+- Preferences save flow continues to update saved defaults only; sidebar live session state behavior remains unchanged in this phase.
+
+Deferred / remaining risks:
+- Sidebar still contains a late `syncSessionOverrideButtons` function reassignment that should be normalized in a later cleanup pass.
+- AI Shiur remains modal-first and is not yet fully sidebar-native (Phase 5 scope).
+- A broader end-to-end verification that Preferences changes never implicitly overwrite active sidebar session state remains for Phase 9 verification.
+
+Smoke tests run:
+- `cd apps-script && npm run test:ui` (pass)
+
+Notes:
+- Stopped after requested Phase 4 work.
+
 
 ## Phase template for future updates
 
