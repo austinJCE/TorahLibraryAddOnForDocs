@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; background: #fbfbfa; color: #223; }
+      .wrap { padding: 20px; }
+      .eyebrow { color: #18345d; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
+      h1 { font-family: Georgia, serif; font-size: 24px; line-height: 1.2; margin: 0 0 10px; color: #18345d; }
+      p { font-size: 13px; line-height: 1.55; margin: 0 0 12px; }
+      .card { background: #fff; border: 1px solid #d9d8d3; border-radius: 14px; padding: 14px 16px; margin-top: 14px; }
+      ul { margin: 8px 0 0 18px; padding: 0; }
+      li { margin: 6px 0; font-size: 13px; }
+      .note { color: #666; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="eyebrow">Experimental</div>
+      <h1>AI Lesson Generator</h1>
+      <p>This entrypoint is now wired into the add-on as part of the refactor, but the full generation workflow is intentionally still a stub in this pass.</p>
+      <div class="card">
+        <p><strong>Planned flow</strong></p>
+        <ul>
+          <li>Topic, audience, duration, and lesson-style inputs</li>
+          <li>Structured source-sheet / shiur draft generation</li>
+          <li>One-click insertion into the active Google Doc</li>
+          <li>Quick Action for today's Daf Yomi, 929, and Parashah cycle</li>
+        </ul>
+      </div>
+      <p class="note">This placeholder keeps menu wiring, feature flags, and UI seams in place while the generator is implemented on top of the unified sidebar architecture.</p>
+    </div>
+  </body>
+</html>

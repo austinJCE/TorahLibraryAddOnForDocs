@@ -149,6 +149,148 @@
       return preferences.teamim_filter || 'available';
     }
 
+
+    function getCompositionState() {
+      const vowelsOn = byId('nekudot') ? byId('nekudot').value !== 'false' : true;
+      const cantillationOn = byId('teamim') ? byId('teamim').value !== 'false' : true;
+      const includeTransliteration = byId('include_transliteration_default') ? !!byId('include_transliteration_default').checked : false;
+      const scheme = byId('transliteration_scheme') ? byId('transliteration_scheme').value : 'simple_english';
+      return {
+        vowelsOn: vowelsOn,
+        cantillationOn: cantillationOn,
+        includeTransliteration: includeTransliteration,
+        scheme: scheme || 'simple_english'
+      };
+    }
+
+    function setCompositionVowels(on) {
+      if (byId('nekudot')) byId('nekudot').value = on ? 'true' : 'false';
+      if (byId('nekudot_filter')) byId('nekudot_filter').value = on ? 'always' : 'false';
+    }
+
+    function setCompositionCantillation(on) {
+      if (byId('teamim')) byId('teamim').value = on ? 'true' : 'false';
+      if (byId('teamim_filter')) byId('teamim_filter').value = on ? 'available' : 'false';
+    }
+
+    function setCompositionTransliteration(value) {
+      const normalized = value || 'none';
+      const include = normalized !== 'none';
+      if (byId('include_transliteration_default')) byId('include_transliteration_default').checked = include;
+      if (byId('transliteration_scheme') && include) {
+        byId('transliteration_scheme').value = normalized;
+        syncCustomSelect(byId('transliteration_scheme'));
+      }
+    }
+
+    function updateCompositionPreview() {
+      const card = byId('composition_card');
+      if (!card) return;
+
+      const state = getCompositionState();
+      const full = card.querySelector('.composition-hebrew-text--full');
+      const noCant = card.querySelector('.composition-hebrew-text--no-cantillation');
+      const consonants = card.querySelector('.composition-hebrew-text--consonants');
+      if (full) full.hidden = !(state.vowelsOn && state.cantillationOn);
+      if (noCant) noCant.hidden = !(state.vowelsOn && !state.cantillationOn);
+      if (consonants) consonants.hidden = !!state.vowelsOn;
+
+      const vowelsBtn = byId('composition-vowels-toggle');
+      const cantBtn = byId('composition-cantillation-toggle');
+      if (vowelsBtn) {
+        vowelsBtn.setAttribute('aria-pressed', state.vowelsOn ? 'true' : 'false');
+        vowelsBtn.classList.toggle('is-off', !state.vowelsOn);
+      }
+      if (cantBtn) {
+        cantBtn.setAttribute('aria-pressed', state.cantillationOn ? 'true' : 'false');
+        cantBtn.classList.toggle('is-off', !state.cantillationOn);
+      }
+
+      const translitBtn = byId('composition-transliteration-toggle');
+      const scheme = state.includeTransliteration ? state.scheme : 'none';
+      const sample = scheme === 'none' ? 'Transliteration off' : (transliterationExamples[scheme] || transliterationExamples.simple_english);
+      if (translitBtn) {
+        translitBtn.textContent = sample;
+        translitBtn.classList.toggle('is-none', scheme === 'none');
+        const fontMetaEntry = fontMeta[(byId('transliteration_font') || {}).value || ''];
+        translitBtn.style.fontFamily = fontMetaEntry ? fontMetaEntry.stack : '';
+        const sizeInput = byId('transliteration_font_size');
+        if (sizeInput && sizeInput.value) translitBtn.style.fontSize = Number(sizeInput.value) + 'px';
+        else translitBtn.style.fontSize = '';
+        applyPreviewStyles('composition-transliteration-toggle', 'transliteration_font_style');
+      }
+
+      const menu = byId('composition-transliteration-menu');
+      if (menu) {
+        menu.querySelectorAll('.composition-transliteration-option').forEach(function(option) {
+          option.classList.toggle('is-selected', option.getAttribute('data-value') === scheme);
+        });
+      }
+
+      const status = byId('composition-status');
+      if (status) {
+        status.textContent = 'Cantillation ' + (state.cantillationOn ? 'on' : 'off') + ' · Vowels ' + (state.vowelsOn ? 'on' : 'off') + ' · Transliteration: ' + (scheme === 'none' ? 'off' : scheme);
+      }
+    }
+
+    function bindCompositionPreview() {
+      const card = byId('composition_card');
+      if (!card || card.dataset.boundCompositionPreview === 'true') return;
+      card.dataset.boundCompositionPreview = 'true';
+
+      const cantBtn = byId('composition-cantillation-toggle');
+      const vowelsBtn = byId('composition-vowels-toggle');
+      const translitBtn = byId('composition-transliteration-toggle');
+      const menu = byId('composition-transliteration-menu');
+
+      if (cantBtn) {
+        cantBtn.addEventListener('click', function() {
+          const state = getCompositionState();
+          setCompositionCantillation(!state.cantillationOn);
+          updateCompositionPreview();
+        });
+      }
+
+      if (vowelsBtn) {
+        vowelsBtn.addEventListener('click', function() {
+          const state = getCompositionState();
+          setCompositionVowels(!state.vowelsOn);
+          updateCompositionPreview();
+        });
+      }
+
+      if (translitBtn && menu) {
+        translitBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const willOpen = menu.hidden;
+          menu.hidden = !willOpen;
+          translitBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
+
+        menu.querySelectorAll('.composition-transliteration-option').forEach(function(option) {
+          option.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            setCompositionTransliteration(option.getAttribute('data-value'));
+            menu.hidden = true;
+            translitBtn.setAttribute('aria-expanded', 'false');
+            updateCompositionPreview();
+            updateTransliterationPreview();
+          });
+        });
+      }
+
+      document.addEventListener('click', function(event) {
+        const menuNode = byId('composition-transliteration-menu');
+        const buttonNode = byId('composition-transliteration-toggle');
+        if (!menuNode || !buttonNode) return;
+        if (menuNode.hidden) return;
+        if (menuNode.contains(event.target) || buttonNode.contains(event.target)) return;
+        menuNode.hidden = true;
+        buttonNode.setAttribute('aria-expanded', 'false');
+      });
+    }
+
     function updateSheimotSummary() {
       const enabled = ['meforash_replace','yaw_replace','elodim_replace','god_replace']
         .map(byId)
@@ -161,84 +303,6 @@
 
     function getCustomField(selectId) {
       return byId(selectId + '_custom');
-    }
-
-    function getCustomTextField(selectId) {
-      return byId(selectId + '_custom');
-    }
-
-    function getStoredValueFromSelectOrCustom(selectId, hiddenId) {
-      const select = byId(selectId);
-      const custom = getCustomTextField(selectId);
-      const hidden = byId(hiddenId);
-      if (!select || !hidden) return '';
-
-      let value = '';
-      if (select.value === '__other__') {
-        value = custom ? custom.value.trim() : '';
-      } else {
-        value = select.value;
-      }
-      hidden.value = value;
-      return value;
-    }
-
-    function setSelectOrCustomValue(selectId, hiddenId, storedValue) {
-      const select = byId(selectId);
-      const custom = getCustomTextField(selectId);
-      const hidden = byId(hiddenId);
-      if (!select || !hidden) return;
-
-      const value = String(storedValue == null ? '' : storedValue);
-      const matches = Array.from(select.options).some(function(opt) { return opt.value === value; });
-
-      hidden.value = value;
-
-      if (matches) {
-        select.value = value;
-        if (custom) {
-          custom.hidden = true;
-          custom.value = '';
-        }
-      } else {
-        select.value = '__other__';
-        if (custom) {
-          custom.hidden = false;
-          custom.value = value;
-        }
-      }
-
-      syncCustomSelect(select);
-    }
-
-    function toggleCustomTextField(selectId) {
-      const select = byId(selectId);
-      const custom = getCustomTextField(selectId);
-      if (!select || !custom) return;
-      custom.hidden = select.value !== '__other__';
-      if (select.value !== '__other__') custom.value = '';
-    }
-
-    function bindCustomTextSelect(selectId, hiddenId) {
-      const select = byId(selectId);
-      const custom = getCustomTextField(selectId);
-      const hidden = byId(hiddenId);
-      if (!select || !hidden) return;
-
-      select.addEventListener('change', function() {
-        toggleCustomTextField(selectId);
-        getStoredValueFromSelectOrCustom(selectId, hiddenId);
-        syncCustomSelect(select);
-      });
-
-      if (custom) {
-        custom.addEventListener('input', function() {
-          getStoredValueFromSelectOrCustom(selectId, hiddenId);
-        });
-        custom.addEventListener('change', function() {
-          getStoredValueFromSelectOrCustom(selectId, hiddenId);
-        });
-      }
     }
 
     function getSelectStoredValue(selectId) {
@@ -446,8 +510,6 @@
 
     function collectPreferenceObject() {
       syncOverridesField();
-      getStoredValueFromSelectOrCustom('ai_model_default_select', 'ai_model_default');
-      getStoredValueFromSelectOrCustom('ai_lesson_style_default_select', 'ai_lesson_style_default');
       const preferenceObject = {};
 
       document.querySelectorAll('select').forEach(function(el) {
@@ -467,13 +529,6 @@
         if (el.dataset.customFor) return;
         preferenceObject[el.name] = el.value;
       });
-
-      if (preferenceObject.ai_provider_default === '__other__') {
-        preferenceObject.ai_provider_default = (byId('ai_provider_default_custom') || {}).value || '';
-      }
-      if (preferenceObject.ai_key_strategy_default === '__other__') {
-        preferenceObject.ai_key_strategy_default = (byId('ai_key_strategy_default_custom') || {}).value || '';
-      }
 
       return preferenceObject;
     }
@@ -502,41 +557,6 @@
                 setReplacementSelectValue(name, preferences[name]);
               });
 
-              setSelectOrCustomValue('ai_model_default_select', 'ai_model_default', preferences.ai_model_default || 'default');
-              setSelectOrCustomValue('ai_lesson_style_default_select', 'ai_lesson_style_default', preferences.ai_lesson_style_default || 'default');
-
-              (function() {
-                const provider = preferences.ai_provider_default || 'default';
-                const providerSelect = byId('ai_provider_default');
-                const providerCustom = byId('ai_provider_default_custom');
-                if (providerSelect) {
-                  const providerMatch = Array.from(providerSelect.options).some(function(opt) { return opt.value === provider; });
-                  if (providerMatch) {
-                    providerSelect.value = provider;
-                    if (providerCustom) { providerCustom.hidden = true; providerCustom.value = ''; }
-                  } else {
-                    providerSelect.value = '__other__';
-                    if (providerCustom) { providerCustom.hidden = false; providerCustom.value = provider; }
-                  }
-                  syncCustomSelect(providerSelect);
-                }
-
-                const keyStrategy = preferences.ai_key_strategy_default || 'auto';
-                const keySelect = byId('ai_key_strategy_default');
-                const keyCustom = byId('ai_key_strategy_default_custom');
-                if (keySelect) {
-                  const keyMatch = Array.from(keySelect.options).some(function(opt) { return opt.value === keyStrategy; });
-                  if (keyMatch) {
-                    keySelect.value = keyStrategy;
-                    if (keyCustom) { keyCustom.hidden = true; keyCustom.value = ''; }
-                  } else {
-                    keySelect.value = '__other__';
-                    if (keyCustom) { keyCustom.hidden = false; keyCustom.value = keyStrategy; }
-                  }
-                  syncCustomSelect(keySelect);
-                }
-              })();
-
               try {
                 transliterationOverrides = JSON.parse(preferences.transliteration_overrides || '{}') || {};
               } catch (e) {
@@ -545,7 +565,6 @@
 
               setSegmentedValue('vowels', inferVowelsValue(preferences));
               setSegmentedValue('cantillation', inferCantillationValue(preferences));
-              syncMarkingSelectsFromHidden();
 
               ['hebrew_font','translation_font','transliteration_font','source_title_font','sefaria_link_font','transliteration_scheme','preferred_translation_language']
                 .forEach(function(id) {
@@ -570,6 +589,7 @@
               updateStandardPreview('source_title_font', 'source_title_preview', 'source_title_font_style');
               updateStandardPreview('sefaria_link_font', 'sefaria_link_preview', 'sefaria_link_font_style');
               updateTransliterationPreview();
+              updateCompositionPreview();
               updateSheimotSummary();
               renderOverrideGrid();
               renderOverrideList();
@@ -629,135 +649,6 @@
       });
     });
 
-    function syncMarkingSelectsFromHidden(){
-      var nv = byId('nekudot_filter');
-      var tv = byId('teamim_filter');
-      if (byId('nekudot_filter_select') && nv) byId('nekudot_filter_select').value = nv.value || 'always';
-      if (byId('teamim_filter_select') && tv) byId('teamim_filter_select').value = tv.value || 'available';
-    }
-    function syncHiddenMarkingPrefs(){
-      var nv = byId('nekudot_filter_select');
-      var tv = byId('teamim_filter_select');
-      if (nv) { byId('nekudot_filter').value = nv.value; byId('nekudot').value = nv.value === 'false' ? 'false' : 'true'; }
-      if (tv) { byId('teamim_filter').value = tv.value; byId('teamim').value = tv.value === 'false' ? 'false' : 'true'; }
-    }
-    if (byId('nekudot_filter_select')) byId('nekudot_filter_select').addEventListener('change', syncHiddenMarkingPrefs);
-    if (byId('teamim_filter_select')) byId('teamim_filter_select').addEventListener('change', syncHiddenMarkingPrefs);
-  function updateCompositionPreview() {
-      var vowelsOn = byId('nekudot') ? byId('nekudot').value !== 'false' : true;
-      var cantOn = byId('teamim') ? byId('teamim').value !== 'false' : true;
-      var transliterationOn = byId('include_transliteration_default') ? byId('include_transliteration_default').checked : false;
-      var scheme = transliterationOn && byId('transliteration_scheme') ? byId('transliteration_scheme').value : 'none';
-
-      var full = document.querySelector('.composition-hebrew-text--full');
-      var noCant = document.querySelector('.composition-hebrew-text--no-cantillation');
-      var consonants = document.querySelector('.composition-hebrew-text--consonants');
-      if (full) full.hidden = !(vowelsOn && cantOn);
-      if (noCant) noCant.hidden = !(vowelsOn && !cantOn);
-      if (consonants) consonants.hidden = !!vowelsOn;
-
-      var vowelsBtn = byId('composition-vowels-toggle');
-      var cantBtn = byId('composition-cantillation-toggle');
-      if (vowelsBtn) {
-        vowelsBtn.classList.toggle('is-off', !vowelsOn);
-        vowelsBtn.setAttribute('aria-pressed', vowelsOn ? 'true' : 'false');
-      }
-      if (cantBtn) {
-        cantBtn.classList.toggle('is-off', !cantOn);
-        cantBtn.setAttribute('aria-pressed', cantOn ? 'true' : 'false');
-      }
-
-      var labels = {
-        none: 'None',
-        simple_english: "ha-sefer kol-ha'am",
-        traditional: "ha-sēfer kol-hā-ʿam",
-        modern_israeli: "ha-sefer kol-ha'am",
-        ashkenazi: "ha-seifer kol-ho'om",
-        academic_full: "ha-sēfer kol-hā-ʿām",
-        ipa_modern: "haˈsefeʁ kol haˈʔam",
-        ipa_tiberian: "hasˈseːfɛr kɔl hɔːˈʕɔm"
-      };
-
-      var translitBtn = byId('composition-transliteration-toggle');
-      if (translitBtn) {
-        translitBtn.textContent = labels[scheme] || labels.simple_english;
-        translitBtn.classList.toggle('is-none', scheme === 'none');
-      }
-      document.querySelectorAll('.composition-transliteration-option').forEach(function(opt) {
-        opt.classList.toggle('is-selected', opt.getAttribute('data-value') === scheme);
-      });
-
-      var status = byId('composition-status');
-      if (status) {
-        status.textContent =
-          'Cantillation ' + (cantOn ? 'on' : 'off') +
-          ' · Vowels ' + (vowelsOn ? 'on' : 'off') +
-          ' · Transliteration: ' + (scheme === 'none' ? 'off' : scheme.replace(/_/g, ' '));
-      }
-    }
-
-    function bindCompositionPreview() {
-      var vowelsBtn = byId('composition-vowels-toggle');
-      var cantBtn = byId('composition-cantillation-toggle');
-      var translitBtn = byId('composition-transliteration-toggle');
-      var translitMenu = byId('composition-transliteration-menu');
-
-      if (vowelsBtn) {
-        vowelsBtn.addEventListener('click', function() {
-          if (byId('nekudot')) byId('nekudot').value = byId('nekudot').value === 'false' ? 'true' : 'false';
-          syncHiddenMarkingPrefs();
-          updateCompositionPreview();
-        });
-      }
-
-      if (cantBtn) {
-        cantBtn.addEventListener('click', function() {
-          if (byId('teamim')) byId('teamim').value = byId('teamim').value === 'false' ? 'true' : 'false';
-          syncHiddenMarkingPrefs();
-          updateCompositionPreview();
-        });
-      }
-
-      if (translitBtn && translitMenu) {
-        translitBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          translitMenu.hidden = !translitMenu.hidden;
-          translitBtn.setAttribute('aria-expanded', translitMenu.hidden ? 'false' : 'true');
-        });
-
-        translitMenu.querySelectorAll('.composition-transliteration-option').forEach(function(opt) {
-          opt.addEventListener('click', function() {
-            var value = opt.getAttribute('data-value');
-            if (value === 'none') {
-              if (byId('include_transliteration_default')) byId('include_transliteration_default').checked = false;
-            } else {
-              if (byId('include_transliteration_default')) byId('include_transliteration_default').checked = true;
-              if (byId('transliteration_scheme')) {
-                byId('transliteration_scheme').value = value;
-                syncCustomSelect(byId('transliteration_scheme'));
-              }
-            }
-            translitMenu.hidden = true;
-            translitBtn.setAttribute('aria-expanded', 'false');
-            updateTransliterationPreview();
-            updateCompositionPreview();
-          });
-        });
-      }
-
-      document.addEventListener('click', function(e) {
-        if (!translitMenu || translitMenu.hidden) return;
-        if (translitMenu.contains(e.target) || (translitBtn && translitBtn.contains(e.target))) return;
-        translitMenu.hidden = true;
-        if (translitBtn) translitBtn.setAttribute('aria-expanded', 'false');
-      });
-
-      ['include_transliteration_default', 'transliteration_scheme'].forEach(function(id) {
-        var el = byId(id);
-        if (!el) return;
-        el.addEventListener('change', updateCompositionPreview);
-      });
-    }
     bindStyleControl('hebrew_font_style', 'hebrew_font_preview');
     bindStyleControl('translation_font_style', 'translation_font_preview');
     bindStyleControl('transliteration_font_style', 'transliteration_preview');
@@ -778,8 +669,6 @@
       'select#god_replacement',
       'select#ai_provider_default',
       'select#ai_key_strategy_default',
-      'select#ai_model_default_select',
-      'select#ai_lesson_style_default_select',
       'select#ai_saved_key_provider'
     ].join(','));
 
@@ -801,7 +690,8 @@
     }
 
     byId('transliteration_font').addEventListener('change', function(){ updateTransliterationPreview(); updateCompositionPreview(); });
-    byId('transliteration_scheme').addEventListener('change', function(){ updateTransliterationPreview(); updateCompositionPreview(); });
+    byId('transliteration_scheme').addEventListener('change', function(){ syncCustomSelect(byId('transliteration_scheme')); updateTransliterationPreview(); updateCompositionPreview(); });
+    if (byId('include_transliteration_default')) byId('include_transliteration_default').addEventListener('change', function(){ updateCompositionPreview(); });
 
     ['hebrew_font_size','translation_font_size','transliteration_font_size','source_title_font_size','sefaria_link_font_size'].forEach(function(id) {
       const el = byId(id);
@@ -817,24 +707,6 @@
       }
       el.addEventListener('blur', updateForField);
       el.addEventListener('change', updateForField);
-    });
-
-    bindCustomTextSelect('ai_model_default_select', 'ai_model_default');
-    bindCustomTextSelect('ai_lesson_style_default_select', 'ai_lesson_style_default');
-
-    ['ai_provider_default', 'ai_key_strategy_default'].forEach(function(id) {
-      const el = byId(id);
-      const custom = byId(id + '_custom');
-      if (!el || !custom) return;
-
-      function sync() {
-        custom.hidden = el.value !== '__other__';
-        if (el.value !== '__other__') custom.value = '';
-        syncCustomSelect(el);
-      }
-
-      el.addEventListener('change', sync);
-      sync();
     });
 
     bindReplacementField('meforash_replacement', 'meforash_replace');

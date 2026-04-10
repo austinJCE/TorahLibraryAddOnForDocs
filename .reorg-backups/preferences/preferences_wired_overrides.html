@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+    <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/smoothness/jquery-ui.css" />
+    <style>
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #f8f7f5;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #222;
+      }
+
+      .preferences-dialog {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      .preferences-shell {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 12px 16px 16px;
+      }
+
+      .save-bar {
+        background: #fff;
+        border-top: 1px solid #ddd;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .hide {
+        position: absolute;
+        inset: 0;
+        background: rgba(255,255,255,0.5);
+        z-index: 2;
+      }
+
+      .hide > img {
+        position: absolute;
+        top: 48%;
+        left: 48%;
+      }
+
+      #results { color: green; }
+
+      .section-card {
+        background: #fff;
+        border: 1px solid #e3dfd8;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+      }
+
+      .section-card h1 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        line-height: 1.2;
+      }
+
+      .section-note {
+        margin: 0 0 10px;
+        color: #666;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      preference { display: block; margin: 8px 0; }
+
+      .subsection-title {
+        margin: 12px 0 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #333;
+      }
+
+      .compact-row {
+        display: grid;
+        grid-template-columns: minmax(180px, 2.2fr) 80px 112px;
+        gap: 10px;
+        align-items: end;
+      }
+
+      .compact-field label,
+      .preference-field label {
+        display: block;
+        font-size: 12px;
+        color: #555;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+
+      .compact-field select,
+      .compact-field input,
+      .preference-field select,
+      .preference-field input[type="text"],
+      .preference-field input[type="number"] {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .inline-preview {
+        margin-top: 6px;
+        padding: 6px 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: #fafafa;
+        line-height: 1.45;
+      }
+
+      .inline-preview .label {
+        display: block;
+        font-size: 11px;
+        color: #666;
+        margin-bottom: 2px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .inline-preview.hebrew { direction: rtl; font-size: 1.2rem; }
+      .inline-preview.translation,
+      .inline-preview.transliteration { direction: ltr; font-size: 1rem; }
+
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 10px 0;
+      }
+
+      .toggle-copy { flex: 1; min-width: 0; }
+      .toggle-title { font-size: 13px; font-weight: 600; color: #333; }
+      .toggle-help { margin-top: 2px; color: #666; font-size: 11px; line-height: 1.35; }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 42px;
+        height: 24px;
+        flex: 0 0 auto;
+      }
+
+      .switch input { opacity: 0; width: 0; height: 0; }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background-color: #c7c7c7;
+        transition: .2s;
+        border-radius: 999px;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        top: 3px;
+        background-color: white;
+        transition: .2s;
+        border-radius: 50%;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      }
+
+      .switch input:checked + .slider { background-color: #1f3b68; }
+      .switch input:focus + .slider { box-shadow: 0 0 0 2px rgba(31,59,104,0.15); }
+      .switch input:checked + .slider:before { transform: translateX(18px); }
+
+      .segmented-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 10px 0;
+      }
+
+      .segmented-copy { flex: 1; min-width: 0; }
+
+      .segmented-control {
+        display: inline-grid;
+        grid-auto-flow: column;
+        gap: 0;
+        border: 1px solid #d5d1ca;
+        border-radius: 10px;
+        background: #f3f1ee;
+        overflow: hidden;
+        flex: 0 0 auto;
+      }
+
+      .segmented-control input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .segmented-control label {
+        min-width: 88px;
+        padding: 7px 10px;
+        text-align: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: #555;
+        cursor: pointer;
+        user-select: none;
+        border-left: 1px solid #d5d1ca;
+      }
+
+      .segmented-control label:first-of-type { border-left: 0; }
+
+      .segmented-control input:checked + label {
+        background: #1f3b68;
+        color: #fff;
+      }
+
+      details.compact-accordion {
+        border: 1px solid #e3dfd8;
+        border-radius: 8px;
+        background: #faf9f7;
+        padding: 8px 10px;
+        margin-top: 8px;
+      }
+
+      details.compact-accordion summary {
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 13px;
+        color: #333;
+        list-style: none;
+      }
+
+      details.compact-accordion summary::-webkit-details-marker { display: none; }
+      details.compact-accordion summary::before {
+        content: "▸";
+        margin-right: 6px;
+        color: #666;
+      }
+      details.compact-accordion[open] summary::before { content: "▾"; }
+
+      .accordion-summary-note {
+        font-weight: 400;
+        color: #666;
+        margin-left: 8px;
+      }
+
+      .replacement-grid {
+        margin-top: 10px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .replacement-row {
+        display: grid;
+        grid-template-columns: auto minmax(80px, 110px) minmax(120px, 1fr);
+        gap: 10px;
+        align-items: center;
+      }
+
+      .replacement-label {
+        font-size: 13px;
+        color: #333;
+        white-space: nowrap;
+      }
+
+      .mini-help {
+        margin-top: 8px;
+        font-size: 11px;
+        color: #666;
+        line-height: 1.4;
+      }
+
+      .style-toggle-group {
+        display: inline-flex;
+        border: 1px solid #d5d1ca;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #f3f1ee;
+      }
+
+      .style-toggle {
+        min-width: 34px;
+        height: 34px;
+        border: 0;
+        border-left: 1px solid #d5d1ca;
+        background: transparent;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .style-toggle:first-child { border-left: 0; }
+      .style-toggle.active {
+        background: #1f3b68;
+        color: #fff;
+      }
+
+      .transliteration-top-row {
+        display: grid;
+        grid-template-columns: 1fr minmax(190px, 240px);
+        gap: 10px;
+        align-items: end;
+      }
+
+      .override-grid {
+        display: grid;
+        grid-template-columns: repeat(8, minmax(34px, 1fr));
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .override-char {
+        border: 1px solid #d5d1ca;
+        border-radius: 8px;
+        background: #fff;
+        min-height: 34px;
+        font-size: 18px;
+        cursor: pointer;
+      }
+
+      .override-char.active {
+        background: #1f3b68;
+        color: #fff;
+        border-color: #1f3b68;
+      }
+
+      .override-editor-row {
+        display: grid;
+        grid-template-columns: 88px 1fr auto auto;
+        gap: 8px;
+        align-items: end;
+        margin-top: 10px;
+      }
+
+      .override-selected {
+        min-height: 38px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+      }
+
+      .small-button {
+        border: 1px solid #d5d1ca;
+        border-radius: 8px;
+        background: #fff;
+        color: #1f3b68;
+        padding: 8px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .override-list {
+        margin-top: 10px;
+        border: 1px solid #e3dfd8;
+        border-radius: 8px;
+        background: #fff;
+        max-height: 180px;
+        overflow: auto;
+      }
+
+      .override-list-empty {
+        padding: 10px;
+        color: #666;
+        font-size: 12px;
+      }
+
+      .override-item {
+        display: grid;
+        grid-template-columns: 48px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 8px 10px;
+        border-top: 1px solid #f0ece7;
+      }
+
+      .override-item:first-child { border-top: 0; }
+      .override-item-char {
+        font-size: 20px;
+        text-align: center;
+      }
+      .override-item-value {
+        font-size: 13px;
+        color: #333;
+        word-break: break-word;
+      }
+      .override-remove {
+        border: 0;
+        background: transparent;
+        color: #9a2c2c;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    </style>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+  </head>
+  <body>
+    <aside class="hide">
+      <img src="https://www.sefaria.org/static/img/ajax-loader.gif">
+    </aside>
+
+    <div class="preferences-dialog">
+      <div class="preferences-shell">
+
+        <section class="section-card" name="hebrew-text-settings">
+          <h1>Hebrew Text Settings</h1>
+          <p class="section-note">Choose how inserted Hebrew text is displayed, and whether divine-name mappings are applied automatically on insertion.</p>
+
+          <div class="segmented-row">
+            <div class="segmented-copy">
+              <div class="toggle-title">Vowels</div>
+              <div class="toggle-help">Show niqqud in Hebrew source text.</div>
+            </div>
+            <div class="segmented-control" role="radiogroup" aria-label="Vowels setting">
+              <input id="nekudot_never" type="radio" name="nekudot_filter" value="never">
+              <label for="nekudot_never">Never</label>
+              <input id="nekudot_always" type="radio" name="nekudot_filter" value="always">
+              <label for="nekudot_always">When available</label>
+              <input id="nekudot_tanakh" type="radio" name="nekudot_filter" value="tanakh">
+              <label for="nekudot_tanakh">Tanakh only</label>
+            </div>
+          </div>
+
+          <div class="segmented-row">
+            <div class="segmented-copy">
+              <div class="toggle-title">Cantillation</div>
+              <div class="toggle-help">Show trope marks in Hebrew source text.</div>
+            </div>
+            <div class="segmented-control" role="radiogroup" aria-label="Cantillation setting">
+              <input id="teamim_never" type="radio" name="teamim_filter" value="never">
+              <label for="teamim_never">Never</label>
+              <input id="teamim_always" type="radio" name="teamim_filter" value="always">
+              <label for="teamim_always">When available</label>
+              <input id="teamim_torah" type="radio" name="teamim_filter" value="torah">
+              <label for="teamim_torah">Torah only</label>
+            </div>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-copy">
+              <div class="toggle-title">Apply divine-name mappings on insertion</div>
+              <div class="toggle-help">Use the mappings below automatically when text is inserted from Sefaria.</div>
+            </div>
+            <label class="switch" for="apply_sheimot_on_insertion">
+              <input id="apply_sheimot_on_insertion" type="checkbox" name="apply_sheimot_on_insertion">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <details class="compact-accordion">
+            <summary>
+              Divine-name mappings
+              <span class="accordion-summary-note" id="sheimot_summary_note">Configure default replacements</span>
+            </summary>
+
+            <div class="replacement-grid">
+              <div class="replacement-row">
+                <label class="switch" for="meforash_replace">
+                  <input id="meforash_replace" type="checkbox" name="meforash_replace">
+                  <span class="slider"></span>
+                </label>
+                <div class="replacement-label">יהוה</div>
+                <select name="meforash_replacement">
+                  <option value="ה'">ה'</option>
+                  <option value="יקוק">יקוק</option>
+                  <option value="השם">השם</option>
+                  <option value="ד'">ד'</option>
+                  <option value="ידוד">ידוד</option>
+                  <option value="יהו-ה">יהו-ה</option>
+                  <option value="יחוח">יחוח</option>
+                </select>
+              </div>
+
+              <div class="replacement-row">
+                <label class="switch" for="yaw_replace">
+                  <input id="yaw_replace" type="checkbox" name="yaw_replace">
+                  <span class="slider"></span>
+                </label>
+                <div class="replacement-label">יה</div>
+                <select name="yaw_replacement">
+                  <option value="קה">קה</option>
+                  <option value="השם">השם</option>
+                </select>
+              </div>
+
+              <div class="replacement-row">
+                <label class="switch" for="elodim_replace">
+                  <input id="elodim_replace" type="checkbox" name="elodim_replace">
+                  <span class="slider"></span>
+                </label>
+                <div class="replacement-label">אלוהים</div>
+                <select name="elodim_replacement">
+                  <option value="אלוקים">אלוקים</option>
+                  <option value="אלודים">אלודים</option>
+                </select>
+              </div>
+
+              <div class="replacement-row">
+                <label class="switch" for="god_replace">
+                  <input id="god_replace" type="checkbox" name="god_replace">
+                  <span class="slider"></span>
+                </label>
+                <div class="replacement-label">God</div>
+                <input type="text" name="god_replacement" placeholder="G-d">
+              </div>
+            </div>
+
+            <div class="mini-help">
+              These mappings define the replacement rules themselves. The document-wide transform command remains separate from insertion-time replacement.
+            </div>
+          </details>
+        </section>
+
+        <section class="section-card" name="source">
+          <h1>Source</h1>
+          <div class="compact-row">
+            <div class="compact-field">
+              <label for="hebrew_font">Font</label>
+              <select name="hebrew_font" id="hebrew_font">
+                <optgroup label="Full Scholarly Support">
+                  <option value="Ezra SIL">Ezra SIL (Sefaria)</option>
+                  <option value="SBL Hebrew">SBL Hebrew (Sefaria)</option>
+                </optgroup>
+                <optgroup label="Common">
+                  <option value="Arial">Arial (Word compatible)</option>
+                  <option value="David">David</option>
+                  <option value="Frank Ruhl Libre">Frank Ruhl Libre (Sefaria)</option>
+                  <option value="Noto Rashi Hebrew">Noto Rashi Hebrew</option>
+                  <option value="Noto Sans Hebrew">Noto Sans Hebrew</option>
+                  <option value="Noto Serif Hebrew">Noto Serif Hebrew</option>
+                  <option value="Times New Roman">Times New Roman (Word compatible)</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="compact-field">
+              <label for="hebrew_font_size">Size</label>
+              <input id="hebrew_font_size" type="number" name="hebrew_font_size" min="8" max="48" step="1">
+            </div>
+
+            <div class="compact-field">
+              <label>Style</label>
+              <div class="style-toggle-group" data-style-target="hebrew_font_style">
+                <button type="button" class="style-toggle" data-style-value="bold" title="Bold">B</button>
+                <button type="button" class="style-toggle" data-style-value="italic" title="Italic"><em>I</em></button>
+                <button type="button" class="style-toggle" data-style-value="underline" title="Underline"><u>U</u></button>
+              </div>
+              <input type="hidden" id="hebrew_font_style" name="hebrew_font_style" value="normal">
+            </div>
+          </div>
+
+          <div class="inline-preview hebrew" id="hebrew_font_preview">
+            <span class="label">Preview</span>
+            ...וְעַתָּ֗ה כִּתְב֤וּ לָכֶם֙ אֶת־הַשִּׁירָ֣ה
+          </div>
+        </section>
+
+        <section class="section-card" name="translation">
+          <h1>Translation</h1>
+          <div class="compact-row">
+            <div class="compact-field">
+              <label for="translation_font">Font</label>
+              <select name="translation_font" id="translation_font">
+                <optgroup label="Google Fonts">
+                  <option value="Crimson Text">Crimson Text</option>
+                  <option value="EB Garamond">EB Garamond</option>
+                  <option value="Roboto">Roboto</option>
+                </optgroup>
+                <optgroup label="Common">
+                  <option value="Calibri">Calibri (Word compatible)</option>
+                  <option value="Georgia">Georgia</option>
+                  <option value="Times New Roman">Times New Roman (Word compatible)</option>
+                  <option value="Verdana">Verdana</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="compact-field">
+              <label for="translation_font_size">Size</label>
+              <input id="translation_font_size" type="number" name="translation_font_size" min="8" max="48" step="1">
+            </div>
+
+            <div class="compact-field">
+              <label>Style</label>
+              <div class="style-toggle-group" data-style-target="translation_font_style">
+                <button type="button" class="style-toggle" data-style-value="bold" title="Bold">B</button>
+                <button type="button" class="style-toggle" data-style-value="italic" title="Italic"><em>I</em></button>
+                <button type="button" class="style-toggle" data-style-value="underline" title="Underline"><u>U</u></button>
+              </div>
+              <input type="hidden" id="translation_font_style" name="translation_font_style" value="normal">
+            </div>
+          </div>
+
+          <div class="inline-preview translation" id="translation_font_preview">
+            <span class="label">Preview</span>
+            Therefore, write down this poem…
+          </div>
+        </section>
+
+        <section class="section-card" name="transliteration">
+          <h1>Transliteration</h1>
+
+          <div class="toggle-row">
+            <div class="toggle-copy">
+              <div class="toggle-title">Include transliteration by default</div>
+              <div class="toggle-help">When Hebrew output is selected, transliteration starts enabled.</div>
+            </div>
+            <label class="switch" for="include_transliteration_default">
+              <input id="include_transliteration_default" type="checkbox" name="include_transliteration_default">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="transliteration-top-row">
+            <div class="compact-field">
+              <label for="transliteration_scheme">Scheme</label>
+              <select id="transliteration_scheme" name="transliteration_scheme">
+                <option value="simple_english">Simple English</option>
+                <option value="academic_lite">Academic-lite</option>
+                <option value="modern_israeli">Modern Israeli</option>
+              </select>
+            </div>
+            <div class="compact-field">
+              <label for="transliteration_font">Font</label>
+              <select id="transliteration_font" name="transliteration_font">
+                <option value="Crimson Text">Crimson Text</option>
+                <option value="EB Garamond">EB Garamond</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Calibri">Calibri</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Verdana">Verdana</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="compact-row" style="margin-top:10px;">
+            <div class="compact-field"></div>
+
+            <div class="compact-field">
+              <label for="transliteration_font_size">Size</label>
+              <input id="transliteration_font_size" type="number" name="transliteration_font_size" min="8" max="48" step="1">
+            </div>
+
+            <div class="compact-field">
+              <label>Style</label>
+              <div class="style-toggle-group" data-style-target="transliteration_font_style">
+                <button type="button" class="style-toggle" data-style-value="bold" title="Bold">B</button>
+                <button type="button" class="style-toggle" data-style-value="italic" title="Italic"><em>I</em></button>
+                <button type="button" class="style-toggle" data-style-value="underline" title="Underline"><u>U</u></button>
+              </div>
+              <input type="hidden" id="transliteration_font_style" name="transliteration_font_style" value="normal">
+            </div>
+          </div>
+
+          <div class="inline-preview transliteration" id="transliteration_preview">
+            <span class="label">Preview</span>
+            Ve'atah kitvu lachem et hashirah
+          </div>
+
+          <details class="compact-accordion">
+            <summary>
+              Advanced transliteration overrides
+              <span class="accordion-summary-note" id="override_summary_note">No overrides saved</span>
+            </summary>
+
+            <div class="mini-help">
+              Select a Hebrew character below and choose a custom replacement. Saved overrides take precedence over the selected transliteration scheme.
+            </div>
+
+            <div class="override-grid" id="override_grid"></div>
+
+            <div class="override-editor-row">
+              <div class="compact-field">
+                <label>Character</label>
+                <div class="override-selected" id="override_selected_char">—</div>
+              </div>
+
+              <div class="compact-field">
+                <label for="override_value">Replacement</label>
+                <input type="text" id="override_value" placeholder="Enter replacement">
+              </div>
+
+              <button type="button" class="small-button" id="save_override">Save</button>
+              <button type="button" class="small-button" id="clear_override">Clear</button>
+            </div>
+
+            <div class="override-list" id="override_list">
+              <div class="override-list-empty">No overrides saved.</div>
+            </div>
+
+            <input type="hidden" id="transliteration_overrides" name="transliteration_overrides" value="{}">
+          </details>
+        </section>
+
+        <section class="section-card" name="features">
+          <h1>Experimental Features</h1>
+
+          <div class="toggle-row">
+            <div class="toggle-copy">
+              <div class="toggle-title">Enable Popcorn</div>
+              <div class="toggle-help">Legacy beta feature by Shlomi Helfgot.</div>
+            </div>
+            <label class="switch" for="popcorn_enabled">
+              <input id="popcorn_enabled" type="checkbox" name="popcorn_enabled">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <section class="save-bar" name="actions">
+        <button class="blue submit">Save Preferences</button>
+        <span id="results"></span>
+      </section>
+    </div>
+
+    <script>
+      const fontMeta = {
+        "Ezra SIL": { stack: "'Ezra SIL', 'SBL Hebrew', 'Times New Roman', serif" },
+        "SBL Hebrew": { stack: "'SBL Hebrew', 'Ezra SIL', 'Times New Roman', serif" },
+        "Arial": { stack: "Arial, 'Noto Sans Hebrew', sans-serif" },
+        "David": { stack: "David, 'Times New Roman', serif" },
+        "Frank Ruhl Libre": { stack: "'Frank Ruhl Libre', 'Times New Roman', serif" },
+        "Noto Rashi Hebrew": { stack: "'Noto Rashi Hebrew', 'Noto Serif Hebrew', serif" },
+        "Noto Sans Hebrew": { stack: "'Noto Sans Hebrew', Arial, sans-serif" },
+        "Noto Serif Hebrew": { stack: "'Noto Serif Hebrew', 'Times New Roman', serif" },
+        "Times New Roman": { stack: "'Times New Roman', serif" },
+        "Crimson Text": { stack: "'Crimson Text', Georgia, serif" },
+        "EB Garamond": { stack: "'EB Garamond', Georgia, serif" },
+        "Roboto": { stack: "Roboto, Arial, sans-serif" },
+        "Calibri": { stack: "Calibri, Arial, sans-serif" },
+        "Georgia": { stack: "Georgia, serif" },
+        "Verdana": { stack: "Verdana, Arial, sans-serif" }
+      };
+
+      const transliterationExamples = {
+        simple_english: "Ve'atah kitvu lachem et hashirah",
+        academic_lite: "Veʿattah kitvu lakhem et hashirah",
+        modern_israeli: "Veata khitvu lakhem et hashira"
+      };
+
+      const overrideCharacters = [
+        "א","ב","ג","ד","ה","ו","ז","ח",
+        "ט","י","כ","ך","ל","מ","ם","נ",
+        "ן","ס","ע","פ","ף","צ","ץ","ק",
+        "ר","ש","ת","ְ","ִ","ֵ","ֶ","ַ",
+        "ָ","ֹ","ֻ","ּ","ֲ","ֱ","ֳ","ׁ",
+        "ׂ","ׇ"
+      ];
+
+      let selectedOverrideChar = "";
+      let overrideMap = {};
+
+      function updateFontPreview(selectId, previewId) {
+        const select = document.getElementById(selectId);
+        const preview = document.getElementById(previewId);
+        if (!select || !preview) return;
+        const meta = fontMeta[select.value];
+        if (!meta) return;
+        select.style.fontFamily = meta.stack;
+        preview.style.fontFamily = meta.stack;
+      }
+
+      function updateStyleButtons(targetId) {
+        const target = document.getElementById(targetId);
+        if (!target) return;
+        const style = String(target.value || "normal");
+        const tokens = style === "normal" ? [] : style.split("_");
+        const group = document.querySelector('.style-toggle-group[data-style-target="' + targetId + '"]');
+        if (!group) return;
+        group.querySelectorAll(".style-toggle").forEach(function(btn) {
+          const value = btn.getAttribute("data-style-value");
+          btn.classList.toggle("active", tokens.indexOf(value) >= 0);
+        });
+      }
+
+      function toggleStyleValue(targetId, value) {
+        const target = document.getElementById(targetId);
+        if (!target) return;
+        let tokens = [];
+        if (target.value && target.value !== "normal") {
+          tokens = target.value.split("_");
+        }
+        const idx = tokens.indexOf(value);
+        if (idx >= 0) tokens.splice(idx, 1);
+        else tokens.push(value);
+        const ordered = ["bold", "italic", "underline"].filter(function(v) { return tokens.indexOf(v) >= 0; });
+        target.value = ordered.length ? ordered.join("_") : "normal";
+        updateStyleButtons(targetId);
+      }
+
+      function updateTransliterationPreview() {
+        const scheme = document.getElementById("transliteration_scheme");
+        const font = document.getElementById("transliteration_font");
+        const preview = document.getElementById("transliteration_preview");
+        if (!scheme || !preview) return;
+
+        const label = '<span class="label">Preview</span>';
+        const example = transliterationExamples[scheme.value] || transliterationExamples.simple_english;
+        preview.innerHTML = label + example;
+
+        if (font && fontMeta[font.value]) {
+          preview.style.fontFamily = fontMeta[font.value].stack;
+        }
+      }
+
+      function updateSheimotSummary() {
+        const enabled = [
+          document.getElementById("meforash_replace"),
+          document.getElementById("yaw_replace"),
+          document.getElementById("elodim_replace"),
+          document.getElementById("god_replace")
+        ].filter(Boolean).filter(function(el) { return el.checked; }).length;
+
+        const node = document.getElementById("sheimot_summary_note");
+        if (!node) return;
+        node.textContent = enabled > 0 ? enabled + " mapping" + (enabled === 1 ? "" : "s") + " enabled" : "No mappings enabled";
+      }
+
+      function renderOverrideGrid() {
+        const grid = document.getElementById("override_grid");
+        if (!grid) return;
+        grid.innerHTML = "";
+        overrideCharacters.forEach(function(ch) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "override-char";
+          btn.textContent = ch;
+          btn.setAttribute("data-char", ch);
+          if (selectedOverrideChar === ch) btn.classList.add("active");
+          btn.addEventListener("click", function() {
+            selectedOverrideChar = ch;
+            document.getElementById("override_selected_char").textContent = ch;
+            document.getElementById("override_value").value = Object.prototype.hasOwnProperty.call(overrideMap, ch) ? overrideMap[ch] : "";
+            renderOverrideGrid();
+          });
+          grid.appendChild(btn);
+        });
+      }
+
+      function renderOverrideList() {
+        const list = document.getElementById("override_list");
+        const summary = document.getElementById("override_summary_note");
+        if (!list) return;
+
+        const keys = Object.keys(overrideMap).sort();
+        summary.textContent = keys.length ? keys.length + " override" + (keys.length === 1 ? "" : "s") + " saved" : "No overrides saved";
+
+        if (!keys.length) {
+          list.innerHTML = '<div class="override-list-empty">No overrides saved.</div>';
+          document.getElementById("transliteration_overrides").value = "{}";
+          return;
+        }
+
+        list.innerHTML = "";
+        keys.forEach(function(key) {
+          const row = document.createElement("div");
+          row.className = "override-item";
+
+          const charCell = document.createElement("div");
+          charCell.className = "override-item-char";
+          charCell.textContent = key;
+
+          const valueCell = document.createElement("div");
+          valueCell.className = "override-item-value";
+          valueCell.textContent = overrideMap[key] === "" ? "(empty string)" : overrideMap[key];
+
+          const removeBtn = document.createElement("button");
+          removeBtn.type = "button";
+          removeBtn.className = "override-remove";
+          removeBtn.textContent = "Remove";
+          removeBtn.addEventListener("click", function() {
+            delete overrideMap[key];
+            if (selectedOverrideChar === key) {
+              document.getElementById("override_value").value = "";
+            }
+            renderOverrideList();
+            renderOverrideGrid();
+          });
+
+          row.appendChild(charCell);
+          row.appendChild(valueCell);
+          row.appendChild(removeBtn);
+          list.appendChild(row);
+        });
+
+        document.getElementById("transliteration_overrides").value = JSON.stringify(overrideMap);
+      }
+
+      function loadOverrideMap(raw) {
+        try {
+          const parsed = raw ? JSON.parse(raw) : {};
+          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            overrideMap = {};
+            Object.keys(parsed).forEach(function(key) {
+              overrideMap[String(key)] = String(parsed[key] == null ? "" : parsed[key]);
+            });
+          } else {
+            overrideMap = {};
+          }
+        } catch (e) {
+          overrideMap = {};
+        }
+      }
+
+      google.script.run.withSuccessHandler(function(preferences) {
+        var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        for (var n = 0; n < checkboxes.length; n += 1) {
+          var checkbox = checkboxes[n].name;
+          if (preferences[checkbox] == "true") {
+            checkboxes[n].checked = true;
+          }
+        }
+
+        if (preferences.nekudot_filter) {
+          const vowelEl = document.querySelector('input[name="nekudot_filter"][value="' + preferences.nekudot_filter + '"]');
+          if (vowelEl) vowelEl.checked = true;
+        } else {
+          document.getElementById("nekudot_always").checked = true;
+        }
+
+        if (preferences.teamim_filter) {
+          const teamimEl = document.querySelector('input[name="teamim_filter"][value="' + preferences.teamim_filter + '"]');
+          if (teamimEl) teamimEl.checked = true;
+        } else {
+          document.getElementById("teamim_always").checked = true;
+        }
+
+        var selectors = document.querySelectorAll("select");
+        for (var j = 0; j < selectors.length; j += 1) {
+          if (preferences[selectors[j].name] !== undefined && preferences[selectors[j].name] !== null) {
+            selectors[j].value = preferences[selectors[j].name];
+          }
+        }
+
+        var fields = document.querySelectorAll('input[type="text"], input[type="number"], input[type="hidden"]');
+        for (var k = 0; k < fields.length; k += 1) {
+          var fieldName = fields[k].name;
+          if (preferences[fieldName] !== undefined && preferences[fieldName] !== null) {
+            fields[k].value = preferences[fieldName];
+          }
+        }
+
+        updateFontPreview("hebrew_font", "hebrew_font_preview");
+        updateFontPreview("translation_font", "translation_font_preview");
+        updateTransliterationPreview();
+
+        ["hebrew_font_style", "translation_font_style", "transliteration_font_style"].forEach(updateStyleButtons);
+        updateSheimotSummary();
+
+        loadOverrideMap(preferences.transliteration_overrides || "{}");
+        renderOverrideGrid();
+        renderOverrideList();
+
+        $(".hide").fadeOut(1000);
+      }).getPreferences();
+
+      document.getElementById("hebrew_font").addEventListener("change", function() {
+        updateFontPreview("hebrew_font", "hebrew_font_preview");
+      });
+
+      document.getElementById("translation_font").addEventListener("change", function() {
+        updateFontPreview("translation_font", "translation_font_preview");
+      });
+
+      document.getElementById("transliteration_font").addEventListener("change", updateTransliterationPreview);
+      document.getElementById("transliteration_scheme").addEventListener("change", updateTransliterationPreview);
+
+      document.querySelectorAll(".style-toggle-group").forEach(function(group) {
+        const targetId = group.getAttribute("data-style-target");
+        group.querySelectorAll(".style-toggle").forEach(function(btn) {
+          btn.addEventListener("click", function() {
+            toggleStyleValue(targetId, btn.getAttribute("data-style-value"));
+          });
+        });
+      });
+
+      ["meforash_replace", "yaw_replace", "elodim_replace", "god_replace"].forEach(function(name) {
+        var el = document.getElementById(name);
+        if (el) {
+          el.addEventListener("change", updateSheimotSummary);
+        }
+      });
+
+      document.getElementById("save_override").addEventListener("click", function() {
+        if (!selectedOverrideChar) {
+          return;
+        }
+        overrideMap[selectedOverrideChar] = document.getElementById("override_value").value;
+        renderOverrideList();
+        renderOverrideGrid();
+      });
+
+      document.getElementById("clear_override").addEventListener("click", function() {
+        if (!selectedOverrideChar) {
+          return;
+        }
+        delete overrideMap[selectedOverrideChar];
+        document.getElementById("override_value").value = "";
+        renderOverrideList();
+        renderOverrideGrid();
+      });
+
+      $(".submit").click(function() {
+        $("#results").html('<img src="https://www.sefaria.org/static/img/ajax-loader.gif">');
+        var preferenceObject = {};
+
+        $("select").each(function(index, element) {
+          preferenceObject[$(element).attr("name")] = $(element).val();
+        });
+
+        $("input[type='checkbox']").each(function(index, element) {
+          preferenceObject[$(element).attr("name")] = $(element).is(":checked");
+        });
+
+        $("input[type='text'], input[type='number'], input[type='hidden']").each(function(index, element) {
+          preferenceObject[$(element).attr("name")] = $(element).val();
+        });
+
+        const vowelChoice = document.querySelector('input[name="nekudot_filter"]:checked');
+        if (vowelChoice) preferenceObject.nekudot_filter = vowelChoice.value;
+
+        const teamimChoice = document.querySelector('input[name="teamim_filter"]:checked');
+        if (teamimChoice) preferenceObject.teamim_filter = teamimChoice.value;
+
+        preferenceObject.transliteration_overrides = JSON.stringify(overrideMap);
+
+        google.script.run.withSuccessHandler(function() {
+          $("#results").html("Successfully updated preferences.");
+          updateSheimotSummary();
+          renderOverrideList();
+        }).setPreferences(preferenceObject);
+      });
+    </script>
+  </body>
+</html>
