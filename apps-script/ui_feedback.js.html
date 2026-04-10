@@ -1,0 +1,17 @@
+<script>
+  function showSidebarNotice(message, onConfirm) {
+    var $notice = $('#sidebar-notice');
+    if (!$notice.length) return;
+    $('#sidebar-notice-message').text(message || '');
+    $notice.prop('hidden', false);
+
+    $('#sidebar-notice-ok').off('click.sharedNotice').on('click.sharedNotice', function () {
+      $notice.prop('hidden', true);
+      if (typeof onConfirm === 'function') onConfirm();
+    });
+
+    $('#sidebar-notice-cancel').off('click.sharedNotice').on('click.sharedNotice', function () {
+      $notice.prop('hidden', true);
+    });
+  }
+</script>

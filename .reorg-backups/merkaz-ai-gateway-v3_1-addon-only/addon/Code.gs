@@ -21,7 +21,9 @@ const SETTINGS = [
   "hebrew_font_size",
   "hebrew_font_style",
   "include_translation_source_info",
-  "include_transliteration_default",  "insert_sefaria_link_default",
+  "include_transliteration_default",
+  "insert_citation_default",
+  "insert_sefaria_link_default",
   "link_texts_default",
   "show_line_markers_default",
   "output_mode_default",
@@ -102,7 +104,7 @@ function onInstall() {
     "transliteration_biblical_dagesh_mode": "none",
     "versioning": true,
     "yaw_replace": false,
-    "search_mode": "texts",
+    "search_mode": "basic",
     "experimental_ai_source_sheet_enabled": false,
     "ai_provider_default": "default",
     "ai_model_default": "",
@@ -145,8 +147,9 @@ function onOpen(e) {
   }
 
   addOnMenu
-      .addItem('Texts', 'textsHTML')
-      .addItem('Voices', 'voicesHTML')
+      .addItem('Basic Search', 'basicHTML')
+      .addItem('Advanced Search', 'sefariaHTML')
+      .addItem('Voices on Sefaria', 'voicesHTML')
       .addSubMenu(quickActionsMenu);
 
   if (experimentalAiEnabled) {
@@ -175,28 +178,22 @@ function getSearchMode_() {
 }
 
 function openSharedSidebar_(mode) {
-  var resolvedMode = setSearchMode_(mode || getSearchMode_());
-  var template = HtmlService.createTemplateFromFile('sidebar');
+  const resolvedMode = setSearchMode_(mode || getSearchMode_());
+  const template = HtmlService.createTemplateFromFile('sidebar');
   template.initialMode = resolvedMode;
-  template.appConfig = getUiAppConfig_('sidebar', resolvedMode);
-  var output = template.evaluate()
-    .setTitle(resolvedMode === 'voices' ? 'Voices' : 'Texts')
+  let output = template.evaluate()
+    .setTitle(resolvedMode === 'voices' ? 'Voices on Sefaria' : (resolvedMode === 'advanced' ? 'Advanced Search' : 'Basic Search'))
     .setWidth(300);
   DocumentApp.getUi().showSidebar(output);
   extendedGemaraPreference = PropertiesService.getUserProperties().getProperty("extended_gemara");
 }
 
-function textsHTML() {
-  openSharedSidebar_('texts');
-}
-
-// Legacy entry points kept for menu/backward compatibility.
 function basicHTML() {
-  openSharedSidebar_('texts');
+  openSharedSidebar_('basic');
 }
 
 function sefariaHTML() {
-  openSharedSidebar_('texts');
+  openSharedSidebar_('advanced');
 }
 
 function voicesHTML() {
@@ -205,9 +202,9 @@ function voicesHTML() {
 
 function getSidebarBootstrapData(mode, sessionId) {
   const accountPreferences = getAccountPreferences();
-  const resolvedMode = (mode === 'voices') ? 'voices' : ((mode === 'texts' || mode === 'basic' || mode === 'advanced') ? 'texts' : getSearchMode_());
+  const resolvedMode = (mode === 'advanced' || mode === 'voices') ? mode : (mode === 'basic' ? 'basic' : getSearchMode_());
   const resolvedSessionId = sessionId || generateSidebarSessionId_();
-  const sessionState = resolvedMode === 'texts' ? getSidebarSessionState(resolvedSessionId) : {};
+  const sessionState = resolvedMode === 'advanced' ? getSidebarSessionState(resolvedSessionId) : {};
   const effectivePreferences = Object.assign({}, accountPreferences, sessionState);
   return {
     mode: resolvedMode,
@@ -225,14 +222,6 @@ function supportPopup() {
       .setHeight(860);
   DocumentApp.getUi().showModalDialog(html, 'Support');
 }
-
-function releaseNotesPopup() {
-  var html = HtmlService.createHtmlOutputFromFile('release-notes')
-    .setWidth(700)
-    .setHeight(700);
-  SpreadsheetApp.getUi().showModalDialog(html, 'Release Notes');
-}
-
 
 function howItWorksPopup() {
   const html = HtmlService.createHtmlOutputFromFile('help')
@@ -1759,7 +1748,6 @@ function insertSheetReference(sheetPayload) {
 
 function openAiLessonGenerator() {
   const template = HtmlService.createTemplateFromFile('ai_lesson');
-  template.appConfig = getUiAppConfig_('ai_lesson', 'modal');
   const output = template.evaluate()
     .setWidth(460)
     .setHeight(720);
@@ -2546,7 +2534,6 @@ function insertGeneratedLessonIntoDoc_(lesson, request) {
 
 function preferencesPopup() {
   const template = HtmlService.createTemplateFromFile('preferences');
-  template.appConfig = getUiAppConfig_('preferences', 'modal');
   const output = template.evaluate()
     .setTitle('Preferences')
     .setWidth(600)

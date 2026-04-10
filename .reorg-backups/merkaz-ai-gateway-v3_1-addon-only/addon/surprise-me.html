@@ -1,13 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <?!= include('ui_head'); ?>
-    <?!= include('ui_components.css'); ?>
-    <?!= include('ui_utilities.css'); ?>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
     <?!= include('surprise-me_css'); ?>
-    <script>
-      window.APP_CONFIG = <?= JSON.stringify(appConfig) ?>;
-    </script>
   </head>
   <body>
     <main class="surprise-shell">
@@ -94,11 +90,7 @@
       </footer>
     </main>
 
-    <?!= include('ui_core.js'); ?>
-    <?!= include('ui_api.js'); ?>
-    <?!= include('ui_state.js'); ?>
-    <?!= include('ui_dom.js'); ?>
-    <?!= include('ui_feedback.js'); ?>
-    <?!= include('surprise-me.page.js'); ?>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <?!= include('surprise-me_js'); ?>
   </body>
 </html>

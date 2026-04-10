@@ -1,13 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <?!= include('ui_head'); ?>
+    <base target="_top">
     <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
-    <?!= include('ui_utilities.css'); ?>
     <?!= include('ai_lesson_css'); ?>
-    <script>
-      window.APP_CONFIG = <?= JSON.stringify(appConfig) ?>;
-    </script>
   </head>
   <body>
     <div class="wrap">
@@ -158,11 +154,6 @@
         </section>
       </div>
     </div>
-    <?!= include('ui_core.js'); ?>
-    <?!= include('ui_api.js'); ?>
-    <?!= include('ui_state.js'); ?>
-    <?!= include('ui_dom.js'); ?>
-    <?!= include('ui_feedback.js'); ?>
-    <?!= include('ai_lesson.page.js'); ?>
+    <?!= include('ai_lesson_js'); ?>
   </body>
 </html>

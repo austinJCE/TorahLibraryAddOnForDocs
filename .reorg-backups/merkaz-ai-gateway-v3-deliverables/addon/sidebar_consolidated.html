@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <?!= include('ui_head'); ?>
-    <?!= include('ui_shell.css'); ?>
-    <?!= include('ui_components.css'); ?>
-    <?!= include('ui_utilities.css'); ?>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
     <?!= include('sidebar_css'); ?>
     <script>
       window.INITIAL_SIDEBAR_MODE = '<?= initialMode ?>';
-      window.APP_CONFIG = <?= JSON.stringify(appConfig) ?>;
     </script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
   </head>
   <body>
     <main class="unified-sidebar" data-mode="<?= initialMode ?>">
@@ -22,16 +20,50 @@
           <button type="button" class="mode-switch-button" data-sidebar-mode="basic">Basic</button>
           <button type="button" class="mode-switch-button" data-sidebar-mode="advanced">Advanced</button>
           <button type="button" class="mode-switch-button" data-sidebar-mode="voices">Voices</button>
-          <button type="button" class="mode-switch-button" data-sidebar-mode="voices">Voices</button>
+          <button type="button" class="mode-switch-button experimental-mode-button" data-sidebar-mode="experimental" title="Experimental Features" aria-label="Experimental Features" style="display:none;">🧪</button>
+        </section>
+        <section class="experimental-menu-row" style="display:none;" aria-label="Experimental feature navigation">
+          <button type="button" class="experimental-menu-button" data-sidebar-mode="experimental" title="Experimental Features">Experimental Features</button>
+        </section>
+        <section class="inline-session-settings text-mode-only" style="display:none;" aria-label="Session settings">
+          <div class="inline-session-settings-label">Session:</div>
+          <div class="inline-session-settings-buttons advanced-only ">
+            <button type="button" class="footer-tool-button reset-session-overrides-button" title="Reset Session Settings" aria-label="Reset Session Settings" disabled><span class="footer-icon">↺</span></button>
+            <button type="button" class="footer-tool-button save-session-defaults-button" title="Save Settings as Defaults" aria-label="Save Settings as Defaults" disabled><span class="footer-icon">💾</span></button>
+          </div>
         </section>
         <section class="reference-row unified-search-row">
           <div class="reference-input-shell">
             <input type="text" class="input" placeholder="Search Sefaria" aria-label="Search Sefaria" title="Press / to search">
           </div>
+          <button type="button" class="search-submit history-submit session-library-primary-button" id="open-session-library" title="History" aria-label="History"><span class="search-submit-icon" aria-hidden="true">📜</span></button>
           <button class="search-submit" id="run-sefaria" title="Search Sefaria" aria-label="Search Sefaria"><span class="search-submit-icon" aria-hidden="true">🔍</span></button>
         </section>
         <section class="mode-context-note voices-only" style="display:none;">
           <div class="helper-text">Searching source sheets via Sefaria’s sheet index.</div>
+        </section>
+
+        <section class="experimental-section" style="display:none;">
+          <details class="sidebar-accordion experimental-accordion" open>
+            <summary class="section-label accordion-summary">Experimental Features</summary>
+            <div class="accordion-panel experimental-panel more-options-card">
+              <p class="helper-text experimental-intro">Enabled experimental tools live here so they behave like sidebar-native workflows instead of separate modals.</p>
+              <details class="experimental-feature-card surprise-feature" style="display:none;" open>
+                <summary><span>Surprise Me</span><span class="experimental-feature-badge">Enabled</span></summary>
+                <div class="experimental-feature-body">
+                  <p class="helper-text">Launch a surprise source workflow from inside the sidebar.</p>
+                  <button type="button" class="submit primary-action-button experimental-launch-button open-surprise-tool">Surprise Me</button>
+                </div>
+              </details>
+              <details class="experimental-feature-card ai-shiur-feature" style="display:none;" open>
+                <summary><span>AI Shiur</span><span class="experimental-feature-badge">Enabled</span></summary>
+                <div class="experimental-feature-body">
+                  <p class="helper-text">Open the AI Shiur generator from the sidebar experimental workspace.</p>
+                  <button type="button" class="submit primary-action-button experimental-launch-button open-ai-lesson-tool">Open AI Shiur</button>
+                </div>
+              </details>
+            </div>
+          </details>
         </section>
 
         <section class="results-panel" style="display:none;">
@@ -115,7 +147,6 @@
           aria-label="Restore Corpus"
           title="Restore Corpus"
           style="display:none;">⤦</button>
-
         <label class="visually-hidden" for="restore-corpus-select">Restore removed corpus</label>
         <select class="results-tool restore-corpus-select visually-hidden" id="restore-corpus-select" aria-label="Restore removed corpus">
           <option value="">Restore…</option>
@@ -135,16 +166,16 @@
             <summary class="section-label accordion-summary">Display &amp; Layout</summary>
             <div class="accordion-panel">
               <div class="display-layout-section">
-                <details class="display-choice-detail display-choice-dropdown">
-                  <summary class="display-choice-summary" aria-label="Display selector"><span class="display-choice-label">Display</span><span class="display-choice-selected display-choice-selected--display" id="display-choice-summary-text" data-mode="both"><span class="mode-card-content both"><span class="mode-card-symbol latin">A</span><span class="mode-card-plus">+</span><span class="mode-card-symbol">א</span></span></span></summary>
+                <details class="display-choice-detail" open>
+                  <summary class="display-choice-summary"><span>Display</span></summary>
                   <div class="mode-card-group compact-mode-card-group" role="radiogroup" aria-label="Display mode">
                     <button type="button" class="mode-card" data-mode="en" role="radio" aria-checked="false" title="Translation"><span class="mode-card-content"><span class="mode-card-symbol latin">A</span></span></button>
                     <button type="button" class="mode-card" data-mode="both" role="radio" aria-checked="false" title="Original with Translation"><span class="mode-card-content both"><span class="mode-card-symbol latin">A</span><span class="mode-card-plus">+</span><span class="mode-card-symbol">א</span></span></button>
                     <button type="button" class="mode-card" data-mode="he" role="radio" aria-checked="false" title="Original"><span class="mode-card-content"><span class="mode-card-symbol">א</span></span></button>
                   </div>
                 </details>
-                <details class="display-choice-detail bilingual-layout-wrapper display-choice-dropdown">
-                  <summary class="display-choice-summary" aria-label="Layout selector"><span class="display-choice-label">Layout</span><span class="display-choice-selected display-choice-selected--layout" id="layout-choice-summary-text" data-layout="he-right"><span class="layout-icon side-by-side" aria-hidden="true"><span class="layout-col en"></span><span class="layout-col he"></span></span></span></summary>
+                <details class="display-choice-detail bilingual-layout-wrapper" open>
+                  <summary class="display-choice-summary"><span>Layout</span></summary>
                   <div class="layout-option-group" role="radiogroup" aria-label="Bilingual layout">
                     <button type="button" class="layout-option" data-layout="he-top" role="radio" aria-checked="false" title="Stacked">
                       <span class="layout-icon stacked" aria-hidden="true"><span class="layout-row he"></span><span class="layout-row en"></span></span>
@@ -162,13 +193,6 @@
                 <summary class="section-label accordion-summary">More Options</summary>
                 <div class="more-options-panel accordion-panel">
                   <div class="options-panel more-options-card options-section">
-                    <div class="session-settings-inline-row text-mode-only" aria-label="Session settings">
-                      <div class="session-settings-inline-label">Session:</div>
-                      <div class="session-settings-inline-buttons">
-                        <button type="button" class="footer-tool-button reset-session-overrides-button" title="Reset Session Settings" aria-label="Reset Session Settings" disabled><span class="footer-icon">↺</span></button>
-                        <button type="button" class="footer-tool-button save-session-defaults-button" title="Save Settings as Defaults" aria-label="Save Settings as Defaults" disabled><span class="footer-icon">💾</span></button>
-                      </div>
-                    </div>
                     <div class="subsection-label">Text and Links</div>
 
                     <div class="sidebar-composition-card hebrew-options-row" id="sidebar-composition-card" aria-label="Interactive text preview">
@@ -212,6 +236,10 @@
                       <label for="include-translation-source-info" title="Adds version and source details below the inserted translation text.">Translation details</label>
                       <label class="switch" for="include-translation-source-info"><input id="include-translation-source-info" type="checkbox" class="include-translation-source-info"><span class="slider"></span></label>
                     </div>
+                    <div class="toggle-row option-toggle-row insert-citation-row">
+                      <label for="insert-citation-only" title="Adds the formatted source citation below the inserted text block.">Include source citation</label>
+                      <label class="switch" for="insert-citation-only"><input id="insert-citation-only" type="checkbox" class="insert-citation-only"><span class="slider"></span></label>
+                    </div>
                     <div class="toggle-row hebrew-options-row transliteration-options-row option-toggle-row visually-hidden" aria-hidden="true">
                       <label for="include-transliteration" title="Uses your saved transliteration scheme and overrides.">Transliteration</label>
                       <label class="switch" for="include-transliteration"><input id="include-transliteration" type="checkbox" class="include-transliteration"><span class="slider"></span></label>
@@ -231,12 +259,9 @@
           <details class="sidebar-accordion versions-accordion" open>
             <summary class="section-label accordion-summary">Versions</summary>
             <div class="accordion-panel versions-panel more-options-card">
-              <details class="translation-version-details version-choice-details" open>
-                <summary><span>Translation Versions</span><span class="version-summary-count translation-summary-count"></span></summary>
-                <div class="version-control translation-version-control"></div>
-              </details>
-              <details class="advanced-version-details version-choice-details">
-                <summary><span>Original Versions</span><span class="version-summary-count hebrew-summary-count"></span></summary>
+              <div class="version-control translation-version-control"></div>
+              <details class="advanced-version-details">
+                <summary>Original Edition</summary>
                 <p class="advanced-version-note">Choose a specific Hebrew/original edition only when needed.</p>
                 <div class="version-control hebrew-version-control"></div>
               </details>
@@ -303,25 +328,20 @@
     <footer class="sidebar-footer">
       <section class="primary-actions" aria-label="Primary actions">
         <button class="submit primary-action-button" id="insert-source" disabled>Add Source</button>
-        <button type="button" class="submit tertiary-action-button session-library-primary-button" id="open-session-library" title="Session Library" aria-label="Session Library">
-          <span class="footer-icon" aria-hidden="true">📜</span>
-        </button>
+        
         <button class="submit secondary-action-button" id="open-on-sefaria" disabled title="Open the selected item on Sefaria" aria-label="Open the selected item on Sefaria">
           <span class="open-sefaria-label icon-only" aria-hidden="true"><img src="https://the-merkaz.org/wp-content/uploads/2026/03/sefarrow_32.png" alt="" class="open-sefaria-icon"></span>
         </button>
       </section>
-      <section class="sidebar-footer-tools quick-actions-row" aria-label="Quick actions">
+      <section class="sidebar-footer-tools quick-actions-row standard-quick-actions" aria-label="Quick actions">
         <button type="button" class="footer-tool-button open-divine-names-tool" title="Transform Divine Names" aria-label="Transform Divine Names"><span class="tool-icon-stack"><span class="samekh-sized">ה</span><span class="tool-arrow">→</span><span class="samekh-sized">ש</span></span></button>
         <button type="button" class="footer-tool-button open-linker-tool" title="Link Texts with Sefaria" aria-label="Link Texts with Sefaria"><span class="tool-icon-stack"><span class="link-emoji">🔗</span><span class="tool-arrow">→</span><span class="sefaria-badge samekh" aria-hidden="true">ס</span></span></button>
-        <button type="button" class="footer-tool-button open-ai-lesson-tool" title="AI Shiur" aria-label="AI Shiur"><span class="footer-icon">🧠</span></button>
+        <button type="button" class="footer-tool-button open-preferences-tool" title="Preferences" aria-label="Preferences"><span class="footer-icon footer-gear-icon">⚙︎</span></button>
       </section>
-      <section class="session-override-actions advanced-only text-mode-only footer-settings-row" style="display:none;" aria-label="Settings">
-        <div class="session-override-label">Session Settings</div>
-        <div class="session-override-buttons">
-          <button type="button" class="footer-tool-button reset-session-overrides-button" title="Reset Session Settings" aria-label="Reset Session Settings" disabled><span class="footer-icon">↺</span></button>
-          <button type="button" class="footer-tool-button save-session-defaults-button" title="Save Settings as Defaults" aria-label="Save Settings as Defaults" disabled><span class="footer-icon">💾</span></button>
-          <button type="button" class="footer-tool-button open-preferences-tool" title="Preferences" aria-label="Preferences"><span class="footer-icon footer-gear-icon">⚙︎</span></button>
-        </div>
+      <section class="sidebar-footer-tools quick-actions-row experimental-quick-actions" aria-label="Experimental quick actions" style="display:none;">
+        <button type="button" class="footer-tool-button open-surprise-tool" title="Surprise Me" aria-label="Surprise Me"><span class="footer-icon">🎲</span></button>
+        <button type="button" class="footer-tool-button open-ai-lesson-tool" title="AI Shiur" aria-label="AI Shiur"><span class="footer-icon">🧠</span></button>
+        <button type="button" class="footer-tool-button open-preferences-tool" title="Experimental Features" aria-label="Experimental Features"><span class="footer-icon">🧪</span></button>
       </section>
       <div class="footer footer-inline">
         <a target="_blank" href="https://help.sefaria.org/hc/en-us/sections/20235182393244">Help</a>
@@ -342,11 +362,6 @@
       </div>
     </div>
 
-    <?!= include('ui_core.js'); ?>
-    <?!= include('ui_api.js'); ?>
-    <?!= include('ui_state.js'); ?>
-    <?!= include('ui_dom.js'); ?>
-    <?!= include('ui_feedback.js'); ?>
-    <?!= include('sidebar.page.js'); ?>
+    <?!= include('sidebar_js'); ?>
   </body>
 </html>

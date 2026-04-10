@@ -49,12 +49,12 @@
   }
 
   .save-actions {
-	  display: grid;
-	  grid-template-columns: repeat(4, minmax(0, 1fr));
-	  align-items: stretch;
-	  gap: 8px;
-	  order: 2;
-	}
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 
   .save-feedback {
     display: flex;
@@ -398,6 +398,18 @@
   .compact-field input[type="number"],
   .override-editor input,
   #override_selected_char,
+  #nekudot_filter_select,
+  #teamim_filter_select {
+    box-sizing: border-box;
+    width: 100%;
+    height: 32px;
+    padding: 6px 10px;
+    background: #fff;
+    border: 1px solid #d2d0ca;
+    border-radius: 6px;
+    color: #333;
+    font-size: 13px;
+  }
 
   .compact-field input[type="number"],
   #override_selected_char {
@@ -412,6 +424,11 @@
     height: 30px;
     padding: 0 10px;
     border-radius: 8px;
+  }
+
+  #nekudot_filter_select,
+  #teamim_filter_select {
+    appearance: none;
   }
 
   .enhanced-native-select {
@@ -773,6 +790,17 @@
     gap: 8px;
   }
 
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    clip: rect(0, 0, 0, 0);
+  }
+
 
 /* ================================
    Divine Name Mappings GRID v2
@@ -786,11 +814,13 @@
 
 #divine-name-mappings .replacement-row {
   display: grid;
-  grid-template-columns: 42px 88px minmax(0, 1fr) 96px;
-  grid-template-areas: "toggle label select custom";
+  grid-template-columns: 42px 88px minmax(0, 1fr);
+  grid-template-areas:
+    "toggle label select"
+    ".      .     custom";
   align-items: center;
-  column-gap: 8px;
-  row-gap: 0;
+  column-gap: 10px;
+  row-gap: 6px;
   min-width: 0;
 }
 
@@ -833,21 +863,22 @@
 #divine-name-mappings .replacement-custom {
   grid-area: custom;
   box-sizing: border-box;
-  width: 96px;
-  min-width: 96px;
-  max-width: 96px;
+  width: 100%;
+  min-width: 0;
   height: 32px;
-  padding: 0 8px;
+  padding: 0 10px;
   background: #fff;
   border: 1px solid #d2d0ca;
   border-radius: 8px;
   color: #333;
-  font-size: 11px;
-  justify-self: end;
+  font-size: 12px;
 }
 
+/* Reserve the custom field row so nothing shifts when Other/Custom is selected */
 #divine-name-mappings .replacement-custom[hidden] {
-  display: none !important;
+  display: block !important;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 
@@ -857,7 +888,7 @@
    ================================ */
 
 .composition-card {
-  margin: 12px 0 8px;
+  margin: 12px 0 4px;
   padding: 12px;
   background: linear-gradient(180deg, #fcfbf9 0%, #f7f4ef 100%);
   border: 1px solid #e3dfd8;
@@ -890,6 +921,25 @@
   text-align: center;
 }
 
+.composition-title {
+  display: inline-block;
+  margin: 0 0 16px;
+  padding: 2px 6px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  line-height: 1.2;
+}
+
+.composition-title:focus-visible,
+.mark-pill:focus-visible,
+.composition-transliteration:focus-visible,
+.composition-transliteration-option:focus-visible {
+  outline: 2px solid rgba(31, 59, 104, 0.35);
+  outline-offset: 2px;
+}
+
 .composition-hebrew-stage {
   position: relative;
   display: inline-flex;
@@ -909,14 +959,16 @@
   user-select: none;
 }
 
-.composition-hebrew-text {
-  display: block;
+.composition-text {
+  display: none;
   white-space: nowrap;
   color: #1f1f1f;
 }
 
-.composition-hebrew-text[hidden] {
-  display: none !important;
+.composition-hebrew[data-marks="all"] .composition-text--full,
+.composition-hebrew[data-marks="vowels-only"] .composition-text--no-cantillation,
+.composition-hebrew[data-marks="none"] .composition-text--consonants {
+  display: block;
 }
 
 .mark-pill {
@@ -934,13 +986,6 @@
   line-height: 22px;
   white-space: nowrap;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-}
-
-.mark-pill:focus-visible,
-.composition-transliteration:focus-visible,
-.composition-transliteration-option:focus-visible {
-  outline: 2px solid rgba(31, 59, 104, 0.35);
-  outline-offset: 2px;
 }
 
 .mark-pill--top { top: 0; }
@@ -997,10 +1042,6 @@
   transform: translateX(-50%);
 }
 
-.composition-transliteration-menu[hidden] {
-  display: none !important;
-}
-
 .composition-transliteration-option {
   padding: 8px 10px;
   cursor: pointer;
@@ -1029,13 +1070,4 @@
   display: none !important;
 }
 
-
-  .title-links-citation-toggle {
-    margin-top: 12px;
-  }
-
-  .preview-link-sample {
-    color: #1155cc;
-    text-decoration: underline;
-  }
 </style>

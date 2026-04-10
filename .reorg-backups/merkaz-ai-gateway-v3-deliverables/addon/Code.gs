@@ -21,7 +21,9 @@ const SETTINGS = [
   "hebrew_font_size",
   "hebrew_font_style",
   "include_translation_source_info",
-  "include_transliteration_default",  "insert_sefaria_link_default",
+  "include_transliteration_default",
+  "insert_citation_default",
+  "insert_sefaria_link_default",
   "link_texts_default",
   "show_line_markers_default",
   "output_mode_default",
@@ -102,9 +104,9 @@ function onInstall() {
     "transliteration_biblical_dagesh_mode": "none",
     "versioning": true,
     "yaw_replace": false,
-    "search_mode": "texts",
+    "search_mode": "basic",
     "experimental_ai_source_sheet_enabled": false,
-    "ai_provider_default": "default",
+    "ai_provider_default": "openai",
     "ai_model_default": "",
     "ai_key_strategy_default": "auto"
   };
@@ -122,45 +124,39 @@ let extendedGemaraPreference = false;
 function onOpen(e) {
   const ui = DocumentApp.getUi();
   const addOnMenu = ui.createAddonMenu();
+
   const quickActionsMenu = ui.createMenu('Quick Actions')
       .addItem('Transform Divine Names', 'transformDivineNames')
       .addItem('Link Texts with Sefaria', 'linkTextsWithSefaria');
 
-  let experimentalAiEnabled = false;
-  let surpriseEnabled = false;
+  addOnMenu
+      .addItem('Basic Search', 'basicHTML')
+      .addItem('Advanced Search', 'sefariaHTML')
+      .addItem('Voices on Sefaria', 'voicesHTML')
+      .addSubMenu(quickActionsMenu)
+      .addSeparator()
+      .addItem('Preferences', 'preferencesPopup')
+      .addItem('Support', 'supportPopup');
 
   // Per Google Workspace add-on guidance, avoid reading PropertiesService while
   // the add-on is still in AuthMode.NONE so the menu always renders.
   if (!e || e.authMode !== ScriptApp.AuthMode.NONE) {
     const prefs = getPreferences();
-    experimentalAiEnabled = prefs.experimental_ai_source_sheet_enabled == "true";
-    surpriseEnabled = prefs.popcorn_enabled == "true";
+    if (prefs.experimental_ai_source_sheet_enabled == "true") {
+      addOnMenu
+        .addSeparator()
+        .addItem('Generate Shiur Draft (experimental)', 'openAiLessonGenerator');
+      quickActionsMenu.addSeparator()
+        .addItem("Today's Daf Lesson (45 min)", 'runQuickActionTodaysDafLessonMenu')
+        .addItem("Today's 929 Lesson (45 min)", 'runQuickActionTodays929LessonMenu')
+        .addItem("This Week's Parashah Lesson (45 min)", 'runQuickActionThisWeeksParashahLessonMenu');
+    }
+    if (prefs.popcorn_enabled == "true") {
+      addOnMenu.addSeparator().addItem('Surprise Me', 'surpriseMeHTML');
+    }
   }
 
-  if (experimentalAiEnabled) {
-    quickActionsMenu.addSeparator()
-      .addItem("Today's Daf Lesson (45 min)", 'runQuickActionTodaysDafLessonMenu')
-      .addItem("Today's 929 Lesson (45 min)", 'runQuickActionTodays929LessonMenu')
-      .addItem("This Week's Parashah Lesson (45 min)", 'runQuickActionThisWeeksParashahLessonMenu');
-  }
-
-  addOnMenu
-      .addItem('Texts', 'textsHTML')
-      .addItem('Voices', 'voicesHTML')
-      .addSubMenu(quickActionsMenu);
-
-  if (experimentalAiEnabled) {
-    addOnMenu.addSeparator().addItem('Generate Shiur Draft (experimental)', 'openAiLessonGenerator');
-  }
-  if (surpriseEnabled) {
-    addOnMenu.addSeparator().addItem('Surprise Me', 'surpriseMeHTML');
-  }
-
-  addOnMenu
-      .addSeparator()
-      .addItem('Preferences', 'preferencesPopup')
-      .addItem('Support', 'supportPopup')
-      .addToUi();
+  addOnMenu.addToUi();
 }
 
 function setSearchMode_(mode) {
@@ -175,28 +171,22 @@ function getSearchMode_() {
 }
 
 function openSharedSidebar_(mode) {
-  var resolvedMode = setSearchMode_(mode || getSearchMode_());
-  var template = HtmlService.createTemplateFromFile('sidebar');
+  const resolvedMode = setSearchMode_(mode || getSearchMode_());
+  const template = HtmlService.createTemplateFromFile('sidebar');
   template.initialMode = resolvedMode;
-  template.appConfig = getUiAppConfig_('sidebar', resolvedMode);
-  var output = template.evaluate()
-    .setTitle(resolvedMode === 'voices' ? 'Voices' : 'Texts')
+  let output = template.evaluate()
+    .setTitle(resolvedMode === 'voices' ? 'Voices on Sefaria' : (resolvedMode === 'advanced' ? 'Advanced Search' : 'Basic Search'))
     .setWidth(300);
   DocumentApp.getUi().showSidebar(output);
   extendedGemaraPreference = PropertiesService.getUserProperties().getProperty("extended_gemara");
 }
 
-function textsHTML() {
-  openSharedSidebar_('texts');
-}
-
-// Legacy entry points kept for menu/backward compatibility.
 function basicHTML() {
-  openSharedSidebar_('texts');
+  openSharedSidebar_('basic');
 }
 
 function sefariaHTML() {
-  openSharedSidebar_('texts');
+  openSharedSidebar_('advanced');
 }
 
 function voicesHTML() {
@@ -205,9 +195,9 @@ function voicesHTML() {
 
 function getSidebarBootstrapData(mode, sessionId) {
   const accountPreferences = getAccountPreferences();
-  const resolvedMode = (mode === 'voices') ? 'voices' : ((mode === 'texts' || mode === 'basic' || mode === 'advanced') ? 'texts' : getSearchMode_());
+  const resolvedMode = (mode === 'advanced' || mode === 'voices') ? mode : (mode === 'basic' ? 'basic' : getSearchMode_());
   const resolvedSessionId = sessionId || generateSidebarSessionId_();
-  const sessionState = resolvedMode === 'texts' ? getSidebarSessionState(resolvedSessionId) : {};
+  const sessionState = resolvedMode === 'advanced' ? getSidebarSessionState(resolvedSessionId) : {};
   const effectivePreferences = Object.assign({}, accountPreferences, sessionState);
   return {
     mode: resolvedMode,
@@ -225,14 +215,6 @@ function supportPopup() {
       .setHeight(860);
   DocumentApp.getUi().showModalDialog(html, 'Support');
 }
-
-function releaseNotesPopup() {
-  var html = HtmlService.createHtmlOutputFromFile('release-notes')
-    .setWidth(700)
-    .setHeight(700);
-  SpreadsheetApp.getUi().showModalDialog(html, 'Release Notes');
-}
-
 
 function howItWorksPopup() {
   const html = HtmlService.createHtmlOutputFromFile('help')
@@ -1240,8 +1222,8 @@ function getDefaultPreferences() {
     sefaria_link_font_style: "underline",
     search_mode: "basic",
     experimental_ai_source_sheet_enabled: false,
-    ai_provider_default: "default",
-    ai_model_default: "",
+    ai_provider_default: "openai",
+    ai_model_default: "gpt-5-mini",
     ai_key_strategy_default: "auto",
     ai_audience_default: "Adult learners",
     ai_lesson_style_default: "Interactive shiur",
@@ -1759,7 +1741,6 @@ function insertSheetReference(sheetPayload) {
 
 function openAiLessonGenerator() {
   const template = HtmlService.createTemplateFromFile('ai_lesson');
-  template.appConfig = getUiAppConfig_('ai_lesson', 'modal');
   const output = template.evaluate()
     .setWidth(460)
     .setHeight(720);
@@ -1834,9 +1815,8 @@ function legacy_getAiLessonBootstrapData_() {
 
 function saveAiLessonDefaults_(payload) {
   const userProperties = PropertiesService.getUserProperties();
-  const requestedProvider = String(payload && payload.provider || '').toLowerCase().trim();
-  const provider = requestedProvider === 'default' ? 'default' : normalizeAiProvider_(requestedProvider);
-  const model = provider === 'default' ? '' : sanitizeAiModel_(provider, payload && payload.model);
+  const provider = normalizeAiProvider_(payload && payload.provider);
+  const model = sanitizeAiModel_(provider, payload && payload.model);
   userProperties.setProperty('ai_provider_default', provider);
   userProperties.setProperty('ai_model_default', model);
   userProperties.setProperty('ai_key_strategy_default', normalizeAiKeyStrategy_(payload && payload.keyStrategy));
@@ -2546,7 +2526,6 @@ function insertGeneratedLessonIntoDoc_(lesson, request) {
 
 function preferencesPopup() {
   const template = HtmlService.createTemplateFromFile('preferences');
-  template.appConfig = getUiAppConfig_('preferences', 'modal');
   const output = template.evaluate()
     .setTitle('Preferences')
     .setWidth(600)

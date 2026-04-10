@@ -1,13 +1,10 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <?!= include('ui_head'); ?>
-    <?!= include('ui_utilities.css'); ?>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/smoothness/jquery-ui.css" />
     <?!= HtmlService.createHtmlOutputFromFile('preferences_css').getContent(); ?>
-    <script>
-      window.APP_CONFIG = <?= JSON.stringify(appConfig) ?>;
-    </script>
   </head>
   <body>
     <aside class="hide"><img src="https://www.sefaria.org/static/img/ajax-loader.gif" name="loading"></aside>
@@ -113,10 +110,10 @@
             <div class="toggle-row title-links-citation-toggle">
               <div class="toggle-copy">
                 <div class="toggle-title">Include Source Citation After Inserted Text</div>
-                <div class="toggle-help">Adds the formatted source citation below the inserted text block.</div>
+                <div class="toggle-help">Adds the formatted source citation below the inserted text block. This matches the sidebar toggle.</div>
               </div>
-              <label class="switch" for="include-translation-source-info">
-                <input id="include-translation-source-info" type="checkbox" name="include-translation-source-info">
+              <label class="switch" for="insert_citation_default">
+                <input id="insert_citation_default" type="checkbox" name="insert_citation_default">
                 <span class="slider"></span>
               </label>
             </div>
@@ -171,51 +168,28 @@
               <div class="inline-preview hebrew" id="hebrew_font_preview"><span class="label">Preview</span>וְשַׂמְתֶּם אֶת־דְּבָרַי אֵלֶּה עַל־לְבַבְכֶם</div>
             </details>
 
-            <div class="composition-card" id="composition_card" aria-label="Interactive text composition preview">
-              <div class="composition-card-header">
-                <div class="composition-card-label">Interactive Preview</div>
-                <div class="composition-card-help">Use the preview controls to set vowels, cantillation, and transliteration defaults.</div>
+            <div class="compact-inline-pair compact-inline-pair--spaced">
+              <div class="compact-field">
+                <label for="nekudot_filter_select">Vowels</label>
+                <select id="nekudot_filter_select">
+                  <option value="always">When Available</option>
+                  <option value="tanakh">Tanakh Only</option>
+                  <option value="false">Never</option>
+                </select>
+                <input type="hidden" id="nekudot" name="nekudot">
+                <input type="hidden" id="nekudot_filter" name="nekudot_filter">
               </div>
-
-              <div class="composition-surface">
-                <div class="composition-hebrew-stage">
-                  <button type="button" id="composition-cantillation-toggle" class="mark-pill mark-pill--top" aria-pressed="true" title="Toggle cantillation">Cantillation</button>
-
-                  <div id="composition-hebrew-preview" class="composition-hebrew" dir="rtl" lang="he" aria-label="Hebrew preview">
-                    <span class="composition-hebrew-text composition-hebrew-text--full">הַסֵּ֙פֶר֙ כָל־הָעָ֔ם</span>
-                    <span class="composition-hebrew-text composition-hebrew-text--no-cantillation" hidden>הַסֵּפֶר כָל־הָעָם</span>
-                    <span class="composition-hebrew-text composition-hebrew-text--consonants" hidden>הספר כל־העם</span>
-                  </div>
-
-                  <button type="button" id="composition-vowels-toggle" class="mark-pill mark-pill--bottom" aria-pressed="true" title="Toggle vowels">Vowels</button>
-                </div>
-
-                <div class="composition-transliteration-wrap">
-                  <button type="button" id="composition-transliteration-toggle" class="composition-transliteration" aria-haspopup="listbox" aria-expanded="false">ha-sefer kol-ha'am</button>
-
-                  <div id="composition-transliteration-menu" class="composition-transliteration-menu" role="listbox" hidden>
-                    <button type="button" class="composition-transliteration-option" data-value="none">None</button>
-                    <button type="button" class="composition-transliteration-option" data-value="simple_english">Simple English</button>
-                    <button type="button" class="composition-transliteration-option" data-value="traditional">Traditional</button>
-                    <button type="button" class="composition-transliteration-option" data-value="modern_israeli">Modern Israeli</button>
-                    <button type="button" class="composition-transliteration-option" data-value="ashkenazi">Ashkenazi</button>
-                    <button type="button" class="composition-transliteration-option" data-value="academic_full">Academic (Full)</button>
-                    <button type="button" class="composition-transliteration-option" data-value="ipa_modern">IPA (Modern Israeli)</button>
-                    <button type="button" class="composition-transliteration-option" data-value="ipa_tiberian">IPA (Tiberian-ish)</button>
-                  </div>
-                </div>
-
-                <div class="composition-status" id="composition-status" aria-live="polite">Cantillation on · Vowels on · Transliteration: off</div>
+              <div class="compact-field">
+                <label for="teamim_filter_select">Cantillation</label>
+                <select id="teamim_filter_select">
+                  <option value="available">When Available</option>
+                  <option value="tanakh">Tanakh Only</option>
+                  <option value="false">Never</option>
+                </select>
+                <input type="hidden" id="teamim" name="teamim">
+                <input type="hidden" id="teamim_filter" name="teamim_filter">
               </div>
             </div>
-
-            <div class="composition-state-inputs" hidden>
-              <input type="hidden" id="nekudot" name="nekudot">
-              <input type="hidden" id="nekudot_filter" name="nekudot_filter">
-              <input type="hidden" id="teamim" name="teamim">
-              <input type="hidden" id="teamim_filter" name="teamim_filter">
-            </div>
-
 
             <details class="compact-accordion">
               <summary>Transliteration</summary>
@@ -328,25 +302,17 @@
               <div class="compact-field">
                 <select id="preferred_translation_language" name="preferred_translation_language">
                   <option value="en">English</option>
-                  <option value="he">Hebrew</option>
-                  <option value="ar">Arabic</option>
-                  <option value="cs">Czech</option>
-                  <option value="eo">Esperanto</option>
-                  <option value="fa">Farsi (Persian)</option>
-                  <option value="fi">Finnish</option>
+                  <option value="es">Spanish</option>
                   <option value="fr">French</option>
                   <option value="de">German</option>
-                  <option value="hu">Hungarian</option>
-                  <option value="it">Italian</option>
-                  <option value="itk">Judeo-Italian</option>
-                  <option value="jrb">Judeo-Arabic</option>
-                  <option value="lad">Ladino (Judeo-Spanish)</option>
-                  <option value="ko">Korean</option>
-                  <option value="pl">Polish</option>
                   <option value="pt">Portuguese</option>
+                  <option value="it">Italian</option>
                   <option value="ru">Russian</option>
-                  <option value="es">Spanish</option>
+                  <option value="ar">Arabic</option>
+                  <option value="he">Hebrew</option>
                   <option value="yi">Yiddish</option>
+                  <option value="lad">Ladino</option>
+                  <option value="jrb">Judeo-Arabic</option>
                 </select>
               </div>
             </div>
@@ -475,10 +441,11 @@
                 <span class="slider"></span>
               </label>
             </div>
+
             <div class="toggle-row">
               <div class="toggle-copy">
                 <div class="toggle-title">Enable Experimental AI Lesson Generator</div>
-                <div class="toggle-help">Generate a structured lesson or source-sheet draft directly in Google Docs. Basic mode uses the Merkaz website default route so most users do not need to choose a provider, model, or API key. Advanced mode keeps provider, model, and request-level key controls for power users.</div>
+                <div class="toggle-help">Beta feature: generate a structured source sheet or shiur draft directly in Google Docs. The generator supports ChatGPT, Claude, or Gemini, can use a managed add-on key or your own API key, and inserts editable content into the active document.</div>
               </div>
               <label class="switch" for="experimental_ai_source_sheet_enabled">
                 <input id="experimental_ai_source_sheet_enabled" type="checkbox" name="experimental_ai_source_sheet_enabled">
@@ -486,57 +453,52 @@
               </label>
             </div>
 
-            <div class="section-note" style="margin-top:10px;">The AI modal now has a <strong>Basic</strong> tab for the Merkaz-managed default experience and an <strong>Advanced</strong> tab for provider-specific overrides. The three lesson quick actions also appear in the add-on’s <strong>Quick Actions</strong> submenu.</div>
-
-            <details class="compact-accordion compact-accordion--nested" open>
+            
+            <details class="compact-accordion compact-accordion--nested">
               <summary>AI Quick Defaults</summary>
               <div class="compact-inline-pair compact-inline-pair--spaced">
                 <div class="compact-field">
-                  <label for="ai_provider_default">Preferred Route</label>
+                  <label for="ai_provider_default">Default Model Family</label>
                   <select id="ai_provider_default" name="ai_provider_default">
-                    <option value="default">Default (recommended)</option>
                     <option value="openai">ChatGPT / OpenAI</option>
                     <option value="anthropic">Claude / Anthropic</option>
                     <option value="gemini">Gemini / Google</option>
                   </select>
-                  <div class="mini-help">This pre-fills the AI modal. In Basic mode the site still decides how to route the request.</div>
                 </div>
                 <div class="compact-field">
-                  <label for="ai_key_strategy_default">Advanced Key Source Default</label>
+                  <label for="ai_key_strategy_default">Default Key Source</label>
                   <select id="ai_key_strategy_default" name="ai_key_strategy_default">
                     <option value="auto">Automatic</option>
-                    <option value="managed">Use site-managed key</option>
+                    <option value="managed">Use add-on managed key</option>
                     <option value="saved">Use my saved key</option>
                     <option value="manual">Paste a key for this request</option>
                   </select>
-                  <div class="mini-help">Only applies when you switch to Advanced mode.</div>
                 </div>
               </div>
-              <input id="ai_model_default" name="ai_model_default" type="hidden" value="">
               <div class="compact-inline-pair compact-inline-pair--spaced">
+                <div class="compact-field">
+                  <label for="ai_model_default">Default Model</label>
+                  <input id="ai_model_default" name="ai_model_default" type="text" placeholder="Auto">
+                </div>
                 <div class="compact-field compact-field--size">
                   <label for="ai_duration_default">Default Length</label>
                   <input id="ai_duration_default" name="ai_duration_default" type="number" min="10" max="120" step="5" value="45">
                 </div>
+              </div>
+              <div class="compact-inline-pair compact-inline-pair--spaced">
                 <div class="compact-field">
                   <label for="ai_audience_default">Default Audience</label>
                   <input id="ai_audience_default" name="ai_audience_default" type="text" placeholder="Adult learners">
                 </div>
-              </div>
-              <div class="compact-inline-pair compact-inline-pair--spaced">
                 <div class="compact-field">
                   <label for="ai_lesson_style_default">Default Style</label>
                   <input id="ai_lesson_style_default" name="ai_lesson_style_default" type="text" placeholder="Interactive shiur">
-                </div>
-                <div class="compact-field">
-                  <label>Permissions note</label>
-                  <div class="mini-help">Google may describe the add-on as able to “run when you are not present” because it can make secure external requests to the Merkaz site. In practice, AI requests are only sent when you choose a menu item or click a button in the add-on.</div>
                 </div>
               </div>
             </details>
 
             <details class="compact-accordion compact-accordion--nested">
-              <summary>Saved AI Keys (Advanced mode)</summary>
+              <summary>Saved AI Keys</summary>
               <div class="compact-inline-pair compact-inline-pair--spaced">
                 <div class="compact-field">
                   <label for="ai_saved_key_provider">Provider</label>
@@ -566,7 +528,6 @@
           <button type="button" class="submit reset-preferences-button">Reset To Defaults</button>
           <button type="button" class="submit refresh-sidebar-button">Refresh Sidebar</button>
           <button type="button" class="blue submit save-preferences-button">Save Preferences</button>
-		  <button type="button" class="blue submit save-close-preferences-button">Save and Close</button>
         </div>
         <div class="save-feedback">
           <span id="results"></span>
@@ -586,12 +547,8 @@
       </div>
     </div>
 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
-    <?!= include('ui_core.js'); ?>
-    <?!= include('ui_api.js'); ?>
-    <?!= include('ui_state.js'); ?>
-    <?!= include('ui_dom.js'); ?>
-    <?!= include('ui_feedback.js'); ?>
-    <?!= HtmlService.createHtmlOutputFromFile('preferences.page.js').getContent(); ?>
+    <?!= HtmlService.createHtmlOutputFromFile('preferences_js').getContent(); ?>
   </body>
 </html>
