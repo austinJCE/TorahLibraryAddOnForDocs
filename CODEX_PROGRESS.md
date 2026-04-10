@@ -21,9 +21,9 @@ After every phase, Codex must update:
 
 ## Current status
 
-- Active branch: refactor/sidebar-phase-5-ai-shiur-sidebar
-- Last completed phase: **Phase 5 — Move AI Shiur fully into Experimental**
-- Next planned phase: **Phase 6 — Texts controls and preview sync**
+- Active branch: refactor/sidebar-phase-6-texts-preview-sync
+- Last completed phase: **Phase 6 — Texts controls and preview sync**
+- Next planned phase: **Phase 7 — Extensions menu**
 - Last updated by: Codex (GPT-5.3-Codex)
 - Last updated on: 2026-04-10
 
@@ -299,3 +299,32 @@ Smoke tests run:
 
 Notes:
 - Stopped after requested Phase 5 work.
+
+### Phase 6 — Texts controls and preview sync
+- Status: complete
+- Date: 2026-04-10
+- Branch: `refactor/sidebar-phase-6-texts-preview-sync`
+
+Summary:
+- Kept the existing Texts-tab split intact: live display/layout language controls stay in the main Texts workflow while insertion refinements remain in More Options.
+- Wired More Options preference changes that affect rendering (`include_translation_source_info`, transliteration defaults/scheme changes, and insert-link state) to trigger immediate preview refreshes for the selected ref.
+- Preserved compact/expanded selector UX for display/layout controls and existing translation-version selection flow while ensuring preview updates continue to route through the active resolved selection.
+
+Files changed:
+- `apps-script/sidebar.page.js.html`
+- `CODEX_PROGRESS.md`
+
+Decisions locked:
+- Preview refreshes for Texts now run from the same selected-result re-resolution path (`refreshSelectedResult`) when rendering-affecting More Options values change.
+- The compact display/layout card UX and version selector surfaces remain the authoritative live controls; this phase did not relocate controls or alter top-level mode architecture.
+
+Deferred / remaining risks:
+- `insert_sefaria_link_default` currently triggers preview refresh for state coherence, but the preview UI itself still does not visibly represent link insertion toggles; a dedicated preview affordance may be needed later.
+- Full live Apps Script verification is still needed to confirm all preview refresh callbacks remain performant under network latency and large refs.
+- Broader phase-level verification of More Options semantics against real document insertion output remains part of final verification scope.
+
+Smoke tests run:
+- `cd apps-script && npm run test:ui` (pass)
+
+Notes:
+- Stopped after requested Phase 6 work.

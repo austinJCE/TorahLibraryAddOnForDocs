@@ -240,12 +240,14 @@ function bindSidebarCompositionCard() {
       saveSidebarPreference({ include_transliteration_default: false }, function () {
         effectivePreferences.transliteration_scheme = getSidebarTransliterationScheme();
         updateSidebarCompositionCard();
+        refreshSelectedResult();
       });
     } else {
       $('.include-transliteration').prop('checked', true);
       saveSidebarPreference({ include_transliteration_default: true, transliteration_scheme: value }, function () {
         effectivePreferences.transliteration_scheme = value;
         updateSidebarCompositionCard();
+        refreshSelectedResult();
       });
     }
     closeSidebarTransliterationMenu();
@@ -273,6 +275,8 @@ google.script.run.withSuccessHandler(function (bootstrap) {
 $('.include-translation-source-info').on('change', function () {
   saveSidebarPreference({
     include_translation_source_info: $('.include-translation-source-info').is(':checked')
+  }, function () {
+    refreshSelectedResult();
   });
 });
 
@@ -281,6 +285,7 @@ $('.include-transliteration').on('change', function () {
     include_transliteration_default: $('.include-transliteration').is(':checked')
   }, function () {
     updateSidebarCompositionCard();
+    refreshSelectedResult();
   });
 });
 
@@ -290,6 +295,7 @@ $('.insert-sefaria-link').on('change', function () {
     insert_sefaria_link_default: $('.insert-sefaria-link').is(':checked')
   }, function () {
     updateSidebarCompositionCard();
+    refreshSelectedResult();
   });
 });
 
