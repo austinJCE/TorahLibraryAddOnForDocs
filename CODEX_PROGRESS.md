@@ -22,8 +22,8 @@ After every phase, Codex must update:
 ## Current status
 
 - Active branch: work
-- Last completed phase: **Phase 2 — Normalize top-level sidebar architecture**
-- Next planned phase: **Phase 3 — Build the Experimental sidebar shell**
+- Last completed phase: **Phase 3 — Build the Experimental sidebar shell**
+- Next planned phase: **Phase 4 — Align Preferences and state flow**
 - Last updated by: Codex (GPT-5.3-Codex)
 - Last updated on: 2026-04-10
 
@@ -164,6 +164,41 @@ Smoke tests run:
 
 Notes:
 - Stopped after requested Phase 2 mode architecture work.
+
+### Phase 3 — Build the Experimental sidebar shell
+- Status: complete
+- Date: 2026-04-10
+- Branch: `work`
+
+Summary:
+- Added a real Experimental Features section to the sidebar DOM with dedicated Surprise Me and AI Shiur accordion blocks.
+- Wired visible Experimental content to real sidebar nodes (`.experimental-section`, `.surprise-feature`, `.ai-shiur-feature`) so mode toggles no longer depend on missing markup.
+- Added distinct footer quick-action rows for standard vs experimental actions and bound them to existing mode-driven visibility logic.
+- Hid the search/reference row in Experimental mode so the shell behaves as a dedicated surface rather than a text/voices search state.
+
+Files changed:
+- `apps-script/sidebar.html`
+- `apps-script/sidebar.page.js.html`
+- `apps-script/test/ui/snapshots/sidebar.html.snap`
+- `CODEX_PROGRESS.md`
+
+Decisions locked:
+- Experimental mode now has a concrete sidebar DOM surface with real accordion sections for Surprise Me and AI Shiur.
+- Experimental top-level tab visibility continues to be determined from saved preference-backed feature flags (`experimental_ai_source_sheet_enabled` / `popcorn_enabled`), not incidental local toggles.
+- Footer quick actions are now explicitly split into `standard-quick-actions` and `experimental-quick-actions`, with mode-based visibility handled in one place.
+
+Deferred / remaining risks:
+- AI Shiur internals are still modal-first command wiring (`openAiLessonGenerator`) and not yet a full sidebar-native workflow (Phase 5).
+- Preferences/session authority model is still partial; explicit alignment of saved defaults vs live session behavior remains Phase 4 scope.
+- Styling polish for the new Experimental section and row spacing relies on existing shared styles and may need targeted cleanup in a later UI pass.
+
+Smoke tests run:
+- `cd apps-script && npm run test:ui` (pass)
+- `cd apps-script && UPDATE_UI_SNAPSHOTS=1 npm run test:ui` (pass; snapshot refresh)
+- `cd apps-script && npm test` (pass)
+
+Notes:
+- Stopped after requested Phase 3 experimental shell work.
 
 ## Phase template for future updates
 
