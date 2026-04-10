@@ -178,6 +178,12 @@ function getSidebarTransliterationLabel(value) {
   return labels[value] || labels.simple_english;
 }
 
+
+function getVoiceItemTitle(item) {
+  if (!item) return '';
+  return item.label || item.title || item.sheet_title || item.name || (item.sheet && item.sheet.title) || item.ref || '';
+}
+
 function closeSidebarTransliterationMenu() {
   $('#sidebar-transliteration-menu').addClass('hidden');
   $('#sidebar-transliteration-toggle').attr('aria-expanded', 'false');
@@ -1094,7 +1100,7 @@ function renderResultGroup(selector, items, groupName) {
     var metaLine = "<div class='result-meta'><span>" + escapeHTML(cluster) + "</span><span> • </span><span>" + escapeHTML(describeResultLanguages(item)) + "</span></div>";
     var subtitle = item.subtitle ? "<div class='result-subtitle'>" + escapeHTML(item.subtitle) + "</div>" : '';
     var snippet = item.snippet ? "<div class='result-snippet'>" + item.snippet + "</div>" : subtitle;
-    var titleText = appMode === 'voices' ? (item.label || item.ref) : (groupName === 'Search results' && item.ref ? item.ref : (item.label || item.ref));
+    var titleText = appMode === 'voices' ? getVoiceItemTitle(item) : (groupName === 'Search results' && item.ref ? item.ref : (item.label || item.ref));
     $list.append("<li class='result-item result-row " + accentClass + " " + selectedClass + "' data-key='" + escapeHTML(item.key) + "' data-ref='" + escapeHTML(item.ref) + "' role='button' tabindex='0' aria-pressed='" + (item.key === selectedResultKey ? 'true' : 'false') + "'><div class='result-row-main'><button type='button' class='result-pin-button" + (isPinnedRef(item.ref) ? " is-pinned" : "") + "' data-ref='" + escapeHTML(item.ref) + "' data-label='" + escapeHTML(titleText) + "' aria-label='" + (isPinnedRef(item.ref) ? "Unpin result" : "Pin result") + "' title='" + (isPinnedRef(item.ref) ? "Unpin result" : "Pin result") + "'>📌</button><div class='result-title'>" + escapeHTML(titleText) + "</div></div>" + metaLine + snippet + "</li>");
   });
 }
@@ -1157,7 +1163,7 @@ function renderRestoreCorpusMenu() {
   $items.html(html);
 }
 
-function syncRestoreCorpusButton() {function syncRestoreCorpusButton() {
+function syncRestoreCorpusButton() {
   var $button = $('#restore-corpus-button');
   var removed = (resultPostProcessState && resultPostProcessState.removedCorpora) || [];
 
@@ -1616,12 +1622,12 @@ $('.results-panel').on('click keydown', '.result-item', function (event) {
   if (!item) return;
 
   selectedResultKey = item.key;
-  selectedResultSummary = { label: item.label || item.ref, subtitle: item.subtitle || '' };
+  selectedResultSummary = { label: appMode === 'voices' ? getVoiceItemTitle(item) : (item.label || item.ref), subtitle: item.subtitle || '' };
   resultsCollapsed = true;
   $('.result-item').removeClass('selected').attr('aria-pressed', 'false');
   $(this).addClass('selected').attr('aria-pressed', 'true');
   updateResultsVisibility();
-  resolveSelectedResult(item.ref, item.label || item.ref);
+  resolveSelectedResult(item.ref, appMode === 'voices' ? getVoiceItemTitle(item) : (item.label || item.ref));
 });
 
 $('.results-panel').on('click', '.result-group-remove', function (event) {
@@ -2414,7 +2420,7 @@ resolveSelectedResult = function(selectedRef, inputLabel) {
     $('#open-on-sefaria').prop('disabled', !(item && item.url));
     if (item) {
       var snippet = normalizeOptionText(item.snippet || item.summary || '');
-      var previewHtml = "<div class='voice-preview'><div class='voice-preview-title'>" + escapeHTML(item.label || item.ref || 'Source sheet') + "</div>";
+      var previewHtml = "<div class='voice-preview'><div class='voice-preview-title'>" + escapeHTML(getVoiceItemTitle(item) || 'Source sheet') + "</div>";
       if (snippet) previewHtml += "<div class='voice-preview-snippet'>" + escapeHTML(snippet) + "</div>";
       if (item.url) previewHtml += "<div class='voice-preview-link'>Open on Sefaria with the footer button.</div>";
       previewHtml += "</div>";
@@ -2441,10 +2447,10 @@ function handleInsertAction() {
     $('.hide').fadeIn('150');
     google.script.run.withSuccessHandler(function () {
       $('.hide').fadeOut('150');
-      upsertSessionEntry('inserted', buildSessionEntry(selectedVoiceItem.ref, selectedVoiceItem.label, 'Source Sheets', {
+      upsertSessionEntry('inserted', buildSessionEntry(selectedVoiceItem.ref, getVoiceItemTitle(selectedVoiceItem), 'Source Sheets', {
         mode: 'voices',
         url: selectedVoiceItem.url,
-        query: selectedVoiceItem.label
+        query: getVoiceItemTitle(selectedVoiceItem)
       }));
     }).withFailureHandler(function (error) {
       $('.hide').fadeOut('150');
@@ -2568,10 +2574,10 @@ $('.results-panel').off('click', '.result-pin-button').on('click', '.result-pin-
   var item = queryState.libraryMatches.concat(queryState.searchResults).concat(queryState.rawLibraryMatches).concat(queryState.rawSearchResults).find(function(result){ return result && result.ref === ref; });
   if (!item) return;
   if (isPinnedRef(ref)) removeSessionEntry('pinned', ref);
-  else upsertSessionEntry('pinned', buildSessionEntry(item.ref, item.label, getResultCorpusLabel(item, appMode === 'voices' ? 'Source Sheets' : 'Other'), {
+  else upsertSessionEntry('pinned', buildSessionEntry(item.ref, appMode === 'voices' ? getVoiceItemTitle(item) : item.label, getResultCorpusLabel(item, appMode === 'voices' ? 'Source Sheets' : 'Other'), {
     mode: appMode === 'voices' ? 'voices' : 'text',
     url: item.url || '',
-    query: item.label || item.ref
+    query: (appMode === 'voices' ? getVoiceItemTitle(item) : item.label) || item.ref
   }));
   renderResults();
 });
@@ -2914,10 +2920,10 @@ setFooterButtonStates();
     if (isPinnedRef(ref)) {
       removeSessionEntry('pinned', ref);
     } else {
-      upsertSessionEntry('pinned', buildSessionEntry(item.ref, item.label, getResultCorpusLabel(item, appMode === 'voices' ? 'Source Sheets' : 'Other'), {
+      upsertSessionEntry('pinned', buildSessionEntry(item.ref, appMode === 'voices' ? getVoiceItemTitle(item) : item.label, getResultCorpusLabel(item, appMode === 'voices' ? 'Source Sheets' : 'Other'), {
         mode: appMode === 'voices' ? 'voices' : 'text',
         url: item.url || '',
-        query: item.label || item.ref
+        query: (appMode === 'voices' ? getVoiceItemTitle(item) : item.label) || item.ref
       }));
     }
     renderResults();

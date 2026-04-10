@@ -21,11 +21,11 @@ After every phase, Codex must update:
 
 ## Current status
 
-- Active branch: codex_refactor
-- Last completed phase: _none_
-- Next planned phase: **Phase 1 — Stabilize current build**
-- Last updated by: _pending_
-- Last updated on: _pending_
+- Active branch: refactor/sidebar-phase-1-stabilize
+- Last completed phase: **Phase 1 — Stabilize current build**
+- Next planned phase: **Phase 2 — Normalize top-level sidebar architecture**
+- Last updated by: Codex (GPT-5.3-Codex)
+- Last updated on: 2026-04-10
 
 ---
 
@@ -61,10 +61,10 @@ These should not be re-litigated unless explicitly changed by the user.
 ## Known pre-refactor issues
 
 - Sidebar JS contains stacked/overlapping generations of mode logic.
-- There is a known duplicated function declaration / syntax blocker around `syncRestoreCorpusButton`.
-- Sidebar top-level navigation currently contains duplicate Voices markup.
+- Resolved in Phase 1: duplicated function declaration / syntax blocker around `syncRestoreCorpusButton`.
+- Resolved in Phase 1: duplicate top-level Voices markup in sidebar navigation.
 - Experimental mode behavior exists partially in JS but not fully in matching DOM.
-- Voices result titles can regress to raw sheet refs/IDs.
+- Mitigated in Phase 1: Voices title fallback now prioritizes human-readable fields before refs/IDs.
 - Preferences and sidebar behavior are closer than before but not yet fully aligned to the desired state model.
 
 ---
@@ -94,6 +94,39 @@ Smoke tests run:
 - None yet
 
 ---
+
+
+
+### Phase 1 — Stabilize current build
+- Status: complete
+- Date: 2026-04-10
+- Branch: `refactor/sidebar-phase-1-stabilize`
+
+Summary:
+- Removed a malformed duplicate function declaration that could break sidebar script parsing (`syncRestoreCorpusButton`).
+- Removed duplicate top-level Voices mode button markup from the sidebar mode switch section.
+- Added a canonical Voices title fallback helper and wired Voices rendering/selection/pinning/session entries to prefer human-readable sheet title fields before falling back to `item.ref`.
+
+Files changed:
+- `apps-script/sidebar.page.js.html`
+- `apps-script/sidebar.html`
+- `CODEX_PROGRESS.md`
+
+Decisions locked:
+- Phase 1 remains a surgical stabilization pass only; no top-level architecture migration was attempted.
+- Voices title rendering now uses fallback order: `item.label || item.title || item.sheet_title || item.name || (item.sheet && item.sheet.title) || item.ref`.
+- Existing Basic/Advanced top-level shell remains in place until Phase 2 by design.
+
+Deferred / remaining risks:
+- Sidebar still contains stacked late override blocks and global basic/advanced mode logic (planned for Phase 2).
+- Experimental mode code and DOM layering remain partially duplicated and should be normalized in later phases.
+- UI snapshot baseline drift exists in `preferences.html` tests and is not part of this phase scope.
+
+Smoke tests run:
+- `npm test` (apps-script): fails due to existing `preferences.html` snapshot mismatch unrelated to Phase 1 edits; sidebar include/selector/js-contract checks passed.
+
+Notes:
+- Stopped after requested Phase 1 stabilization work.
 
 ## Phase template for future updates
 
