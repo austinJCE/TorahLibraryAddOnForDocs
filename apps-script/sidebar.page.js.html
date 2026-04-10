@@ -2255,6 +2255,7 @@ function setSidebarMode(mode, skipPreferenceSave) {
   $('.mode-switch-button[data-sidebar-mode="' + appMode + '"], .experimental-menu-button[data-sidebar-mode="' + appMode + '"]').addClass('is-active').attr('aria-pressed', 'true');
   $('.voices-only').toggle(appMode === 'voices');
   $('.text-mode-only').toggle(appMode === 'texts');
+  $('.reference-row').toggle(appMode !== 'experimental');
   $('.reference-row .search-submit').toggle(appMode !== 'experimental');
   $('.advanced-version-details').toggle(appMode === 'texts' && $('.output-mode-selection').val() !== 'en');
   $('.input').attr('placeholder', appMode === 'voices' ? 'Search source sheets' : 'Search Sefaria');

@@ -254,6 +254,26 @@
           </details>
         </section>
 
+        <section class="experimental-section" style="display:none;">
+          <details class="sidebar-accordion experimental-accordion surprise-feature" open>
+            <summary class="section-label accordion-summary">Surprise Me</summary>
+            <div class="accordion-panel">
+              <p class="helper-text">Discover a random source and open it instantly.</p>
+              <button type="button" class="submit tertiary-action-button open-surprise-tool">Open Surprise Me</button>
+            </div>
+          </details>
+          <details class="sidebar-accordion experimental-accordion ai-shiur-feature" open>
+            <summary class="section-label accordion-summary">AI Shiur</summary>
+            <div class="accordion-panel">
+              <p class="helper-text">Generate an AI-assisted lesson draft from your selected sources.</p>
+              <button type="button" class="submit tertiary-action-button open-ai-lesson-tool">Open AI Shiur</button>
+            </div>
+          </details>
+          <section class="experimental-menu-row" style="display:none;">
+            <button type="button" class="mode-switch-button experimental-menu-button" data-sidebar-mode="experimental">Experimental Features</button>
+          </section>
+        </section>
+
         
       </div>
 
@@ -309,9 +329,12 @@
           <span class="open-sefaria-label icon-only" aria-hidden="true"><img src="https://the-merkaz.org/wp-content/uploads/2026/03/sefarrow_32.png" alt="" class="open-sefaria-icon"></span>
         </button>
       </section>
-      <section class="sidebar-footer-tools quick-actions-row" aria-label="Quick actions">
+      <section class="sidebar-footer-tools quick-actions-row standard-quick-actions" aria-label="Quick actions">
         <button type="button" class="footer-tool-button open-divine-names-tool" title="Transform Divine Names" aria-label="Transform Divine Names"><span class="tool-icon-stack"><span class="samekh-sized">ה</span><span class="tool-arrow">→</span><span class="samekh-sized">ש</span></span></button>
         <button type="button" class="footer-tool-button open-linker-tool" title="Link Texts with Sefaria" aria-label="Link Texts with Sefaria"><span class="tool-icon-stack"><span class="link-emoji">🔗</span><span class="tool-arrow">→</span><span class="sefaria-badge samekh" aria-hidden="true">ס</span></span></button>
+      </section>
+      <section class="sidebar-footer-tools quick-actions-row experimental-quick-actions" aria-label="Experimental quick actions" style="display:none;">
+        <button type="button" class="footer-tool-button open-surprise-tool" title="Surprise Me" aria-label="Surprise Me"><span class="footer-icon">🎲</span></button>
         <button type="button" class="footer-tool-button open-ai-lesson-tool" title="AI Shiur" aria-label="AI Shiur"><span class="footer-icon">🧠</span></button>
       </section>
       <section class="session-override-actions text-mode-only footer-settings-row" style="display:none;" aria-label="Settings">
