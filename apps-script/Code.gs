@@ -132,9 +132,13 @@ function onOpen(e) {
   // Per Google Workspace add-on guidance, avoid reading PropertiesService while
   // the add-on is still in AuthMode.NONE so the menu always renders.
   if (!e || e.authMode !== ScriptApp.AuthMode.NONE) {
-    const prefs = getPreferences();
-    experimentalAiEnabled = prefs.experimental_ai_source_sheet_enabled == "true";
-    surpriseEnabled = prefs.popcorn_enabled == "true";
+    try {
+      const prefs = getPreferences();
+      experimentalAiEnabled = prefs.experimental_ai_source_sheet_enabled == "true";
+      surpriseEnabled = prefs.popcorn_enabled == "true";
+    } catch (err) {
+      Logger.log('onOpen: failed to load preferences for menu flags; rendering base menu only. ' + err.message);
+    }
   }
 
   if (experimentalAiEnabled) {
@@ -149,11 +153,14 @@ function onOpen(e) {
       .addItem('Voices', 'voicesHTML')
       .addSubMenu(quickActionsMenu);
 
-  if (experimentalAiEnabled) {
-    addOnMenu.addSeparator().addItem('Generate Shiur Draft (experimental)', 'openAiLessonGenerator');
-  }
-  if (surpriseEnabled) {
-    addOnMenu.addSeparator().addItem('Surprise Me', 'surpriseMeHTML');
+  if (experimentalAiEnabled || surpriseEnabled) {
+    addOnMenu.addSeparator();
+    if (experimentalAiEnabled) {
+      addOnMenu.addItem('Generate Shiur Draft (experimental)', 'openAiLessonGenerator');
+    }
+    if (surpriseEnabled) {
+      addOnMenu.addItem('Surprise Me', 'surpriseMeHTML');
+    }
   }
 
   addOnMenu

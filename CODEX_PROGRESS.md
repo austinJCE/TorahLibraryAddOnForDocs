@@ -21,9 +21,9 @@ After every phase, Codex must update:
 
 ## Current status
 
-- Active branch: refactor/sidebar-phase-6-texts-preview-sync
-- Last completed phase: **Phase 6 — Texts controls and preview sync**
-- Next planned phase: **Phase 7 — Extensions menu**
+- Active branch: refactor/sidebar-phase-7-extensions-menu
+- Last completed phase: **Phase 7 — Extensions menu**
+- Next planned phase: **Phase 8 — Module split**
 - Last updated by: Codex (GPT-5.3-Codex)
 - Last updated on: 2026-04-10
 
@@ -328,3 +328,32 @@ Smoke tests run:
 
 Notes:
 - Stopped after requested Phase 6 work.
+
+### Phase 7 — Extensions menu
+- Status: complete
+- Date: 2026-04-10
+- Branch: `refactor/sidebar-phase-7-extensions-menu`
+
+Summary:
+- Hardened `onOpen` preference loading so menu rendering gracefully falls back to the base Texts/Voices/Quick Actions/Preferences/Support menu when preferences cannot be read, preserving safe behavior under early/open edge cases.
+- Kept the Quick Actions submenu as the dedicated global command surface with always-on core actions and conditional AI lesson actions.
+- Normalized conditional experimental menu insertion so `Generate Shiur Draft (experimental)` and `Surprise Me` render as a contiguous optional block under one separator, preserving stable top-level order.
+
+Files changed:
+- `apps-script/Code.gs`
+- `CODEX_PROGRESS.md`
+
+Decisions locked:
+- Add-on menu rendering is now explicitly fault-tolerant: preference-read failures no longer block base menu creation.
+- Experimental top-level menu entries remain strictly preference-gated (`experimental_ai_source_sheet_enabled` for AI draft and `popcorn_enabled` for Surprise Me).
+- Extensions Quick Actions remains distinct from sidebar footer quick actions and keeps AI lesson quick actions conditional on experimental AI enablement.
+
+Deferred / remaining risks:
+- Menu behavior has been validated via unit/UI contract tests, but live Apps Script verification under real AuthMode transitions is still recommended.
+- Additional logging/telemetry for preference read failures is minimal (`Logger.log`) and could be expanded in a future observability pass if needed.
+
+Smoke tests run:
+- `cd apps-script && npm test` (pass)
+
+Notes:
+- Stopped after requested Phase 7 work.
