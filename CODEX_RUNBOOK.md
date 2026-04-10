@@ -1,67 +1,89 @@
-# Codex Runbook for TorahLibraryAddOnForDocs
+# Codex Refactor Runbook
 
-This runbook is intended to be committed into the repository so Codex has a stable, explicit refactor brief.
+This runbook is the operational guide for phased Codex work on the Google Docs add-on refactor.
 
-## How to use this runbook
+## Required repo docs
 
-- Run **one phase at a time**.
-- Ask Codex to **stop after each phase**.
-- Review the diff before continuing.
-- Do **not** ask Codex to "fix everything" in one pass.
-- Treat `CODEX_GROUNDING.yaml` as the authoritative product/UX spec.
+Codex must read these before every phase:
 
-## Branching rule
+- `docs/CODEX_GROUNDING.yaml`
+- `docs/CODEX_RUNBOOK.md`
+- `docs/CODEX_PROGRESS.md`
 
-Create one branch per phase:
+## Authority order
 
-- `codex/phase-01-stabilize-sidebar`
-- `codex/phase-02-normalize-modes`
-- `codex/phase-03-experimental-surface`
-- `codex/phase-04-preferences-state-flow`
-- `codex/phase-05-ai-shiur-sidebar-native`
-- `codex/phase-06-texts-preview-sync`
-- `codex/phase-07-extensions-menu`
-- `codex/phase-08-module-split`
-- `codex/phase-09-final-verification`
+1. `CODEX_GROUNDING.yaml` — authoritative product and architecture contract
+2. `CODEX_PROGRESS.md` — branch-local implementation memory and already-completed work
+3. `CODEX_RUNBOOK.md` — execution plan for the next phase only
 
-## Required Codex output format for every phase
+If there is any conflict:
+- product behavior is governed by `CODEX_GROUNDING.yaml`
+- already-completed implementation decisions for the current branch are governed by `CODEX_PROGRESS.md`
+- phase sequencing is governed by `CODEX_RUNBOOK.md`
 
-At the end of each phase, Codex must output:
+## Global instructions for every Codex phase
 
-1. `Changed files:`
-2. `What changed:`
-3. `Assumptions:`
-4. `Risks / follow-ups:`
-5. `Stopped after phase:`
+Use this preamble at the top of every Codex task:
 
-## Global constraints
+```text
+Read docs/CODEX_GROUNDING.yaml, docs/CODEX_RUNBOOK.md, and docs/CODEX_PROGRESS.md first.
+Treat CODEX_GROUNDING.yaml as authoritative.
+Use CODEX_PROGRESS.md to avoid repeating completed work or reintroducing removed patterns.
+Only execute the requested phase.
+At the end of the phase:
+1. update docs/CODEX_PROGRESS.md
+2. summarize files changed
+3. list decisions locked
+4. list remaining risks / deferred work
+Then stop.
+```
 
-- Preserve the working **Texts search pipeline** unless a specific bug fix requires touching it.
-- Do not reintroduce global sidebar `basic` / `advanced` modes.
-- Top-level sidebar modes must be only:
-  - `texts`
-  - `voices`
-  - `experimental` (conditional)
-- `Basic / Advanced` is allowed **only inside AI Shiur**.
-- Preferences are the **saved default authority**.
-- Sidebar edits **session state**.
-- Preview reflects **session state**.
-- More Options are **session-level refinements**, not hidden global defaults.
-- Experimental features are **enabled in Preferences**, not activated from incidental local toggles.
-- Remove dead/conflicting legacy logic rather than layering new overrides on top.
+## Branch naming convention
 
----
+Use one branch per phase unless intentionally continuing the same branch:
+
+- `refactor/sidebar-phase-1-stabilize`
+- `refactor/sidebar-phase-2-modes`
+- `refactor/sidebar-phase-3-experimental-shell`
+- `refactor/sidebar-phase-4-state-and-preferences`
+- `refactor/sidebar-phase-5-ai-shiur-sidebar`
+- `refactor/sidebar-phase-6-texts-preview-sync`
+- `refactor/sidebar-phase-7-extensions-menu`
+- `refactor/sidebar-phase-8-module-split`
+- `refactor/sidebar-phase-9-verification`
+
+## Required output format from Codex after each phase
+
+Codex should end each phase with exactly this structure:
+
+```text
+Phase completed:
+Branch:
+Files changed:
+- ...
+
+Decisions locked:
+- ...
+
+Deferred / remaining risks:
+- ...
+
+Smoke tests run:
+- ...
+
+CODEX_PROGRESS.md updated: yes
+Stopped after requested phase: yes
+```
 
 ## Phase 1 — Stabilize the current build
 
 ### Prompt
-
 ```text
-You are working in a Google Apps Script add-on repo for a Google Docs sidebar.
+Read docs/CODEX_GROUNDING.yaml, docs/CODEX_RUNBOOK.md, and docs/CODEX_PROGRESS.md first.
+Treat CODEX_GROUNDING.yaml as authoritative.
+Use CODEX_PROGRESS.md to avoid repeating completed work or reintroducing removed patterns.
 
-Before editing:
-- Read CODEX_GROUNDING.yaml and follow it as the authoritative product spec.
-- Create a new branch named codex/phase-01-stabilize-sidebar.
+Create or switch to branch: refactor/sidebar-phase-1-stabilize
 
 Task: perform a stabilization pass only. Do not refactor architecture yet.
 
@@ -86,25 +108,25 @@ Specific known issues to look for:
 Voices title fallback should prefer this order:
 item.label || item.title || item.sheet_title || item.name || (item.sheet && item.sheet.title) || item.ref
 
-Deliverables:
-- Make the fixes
-- Summarize exactly which files changed
-- Explain each fix briefly
-- Stop after this stabilization pass
+At the end of the phase:
+1. update docs/CODEX_PROGRESS.md
+2. summarize files changed
+3. list decisions locked
+4. list remaining risks / deferred work
+Then stop.
 ```
 
----
-
-## Phase 2 — Normalize top-level sidebar modes
+## Phase 2 — Normalize top-level sidebar architecture
 
 ### Prompt
-
 ```text
-Before editing:
-- Read CODEX_GROUNDING.yaml and follow it as the authoritative product spec.
-- Create a new branch named codex/phase-02-normalize-modes from the latest reviewed branch.
+Read docs/CODEX_GROUNDING.yaml, docs/CODEX_RUNBOOK.md, and docs/CODEX_PROGRESS.md first.
+Treat CODEX_GROUNDING.yaml as authoritative.
+Use CODEX_PROGRESS.md to avoid repeating completed work or reintroducing removed patterns.
 
-Task: perform the sidebar mode architecture refactor.
+Create or switch to branch: refactor/sidebar-phase-2-modes
+
+Now perform the sidebar mode architecture refactor.
 
 Target top-level sidebar navigation:
 - Texts
@@ -133,25 +155,25 @@ Acceptance criteria:
 - No duplicate setSidebarMode implementations remain
 - Mode visibility logic is consolidated, not layered
 
-Deliverables:
-- Make the changes
-- List changed files
-- Identify any leftover legacy mode code that should be addressed later
-- Stop after this phase
+At the end of the phase:
+1. update docs/CODEX_PROGRESS.md
+2. summarize files changed
+3. list decisions locked
+4. list remaining risks / deferred work
+Then stop.
 ```
 
----
-
-## Phase 3 — Build the Experimental Features sidebar surface
+## Phase 3 — Build the Experimental sidebar shell
 
 ### Prompt
-
 ```text
-Before editing:
-- Read CODEX_GROUNDING.yaml and follow it as the authoritative product spec.
-- Create a new branch named codex/phase-03-experimental-surface from the latest reviewed branch.
+Read docs/CODEX_GROUNDING.yaml, docs/CODEX_RUNBOOK.md, and docs/CODEX_PROGRESS.md first.
+Treat CODEX_GROUNDING.yaml as authoritative.
+Use CODEX_PROGRESS.md to avoid repeating completed work or reintroducing removed patterns.
 
-Task: implement the Experimental Features sidebar surface so the DOM matches the intended behavior.
+Create or switch to branch: refactor/sidebar-phase-3-experimental-shell
+
+Now implement the Experimental Features sidebar surface so the DOM matches the intended behavior.
 
 Requirements:
 1. Add a real top-level Experimental Features tab/button to the sidebar.
@@ -174,30 +196,25 @@ Constraints:
 - Do not yet fully redesign AI Shiur internals beyond placing it in the Experimental tab.
 - Preserve standard Texts/Voices behavior.
 
-Acceptance criteria:
-- No JS references missing experimental DOM nodes
-- Experimental tab visibility is preference-gated
-- Standard and experimental footer actions are structurally distinct
-- Surprise Me and AI Shiur have persistent sidebar locations
-
-Deliverables:
-- Make the changes
-- Summarize changed files and new DOM structure
-- Stop after this phase
+At the end of the phase:
+1. update docs/CODEX_PROGRESS.md
+2. summarize files changed
+3. list decisions locked
+4. list remaining risks / deferred work
+Then stop.
 ```
-
----
 
 ## Phase 4 — Align Preferences and state flow
 
 ### Prompt
-
 ```text
-Before editing:
-- Read CODEX_GROUNDING.yaml and follow it as the authoritative product spec.
-- Create a new branch named codex/phase-04-preferences-state-flow from the latest reviewed branch.
+Read docs/CODEX_GROUNDING.yaml, docs/CODEX_RUNBOOK.md, and docs/CODEX_PROGRESS.md first.
+Treat CODEX_GROUNDING.yaml as authoritative.
+Use CODEX_PROGRESS.md to avoid repeating completed work or reintroducing removed patterns.
 
-Task: refactor Preferences and sidebar state flow to enforce a clean source-of-truth model.
+Create or switch to branch: refactor/sidebar-phase-4-state-and-preferences
+
+Now refactor Preferences and sidebar state flow to enforce a clean source-of-truth model.
 
 Target model:
 - userPreferences = saved defaults
@@ -218,39 +235,27 @@ Requirements:
    - niqqud
    - cantillation
 4. Ensure Preview always reflects current session state, not raw saved preferences.
-5. Experimental feature enablement must be controlled in Preferences:
-   - master experimental enablement if present
-   - AI Mode
-   - Surprise Me
+5. Experimental feature enablement must be controlled in Preferences.
 
-Important:
-- Preferences should mirror saved defaults, not compete with live sidebar controls.
-- Do not bury live layout/display/translation controls in Preferences.
-
-Acceptance criteria:
-- Preferences changes do not silently override current live session until applied/saved
-- Sidebar initializes from preferences but can diverge during session
-- Reset-to-defaults behavior is coherent
-- Experimental tab visibility follows preference state
-
-Deliverables:
-- Make the changes
-- Summarize changed files and state-flow decisions
-- Stop after this phase
+At the end of the phase:
+1. update docs/CODEX_PROGRESS.md
+2. summarize files changed
+3. list decisions locked
+4. list remaining risks / deferred work
+Then stop.
 ```
 
----
-
-## Phase 5 — Move AI Shiur fully into the Experimental tab
+## Phase 5 — Move AI Shiur fully into Experimental
 
 ### Prompt
-
 ```text
-Before editing:
-- Read CODEX_GROUNDING.yaml and follow it as the authoritative product spec.
-- Create a new branch named codex/phase-05-ai-shiur-sidebar-native from the latest reviewed branch.
+Read docs/CODEX_GROUNDING.yaml, docs/CODEX_RUNBOOK.md, and docs/CODEX_PROGRESS.md first.
+Treat CODEX_GROUNDING.yaml as authoritative.
+Use CODEX_PROGRESS.md to avoid repeating completed work or reintroducing removed patterns.
 
-Task: refactor AI Shiur so it is sidebar-native inside Experimental Features.
+Create or switch to branch: refactor/sidebar-phase-5-ai-shiur-sidebar
+
+Now refactor AI Shiur so it is sidebar-native inside Experimental Features.
 
 Requirements:
 1. AI Shiur must live inside the Experimental Features tab as an accordion-based workflow.
@@ -259,34 +264,25 @@ Requirements:
 4. If the old AI modal remains, demote it to a secondary/legacy path only if necessary; do not keep it as the primary UX.
 5. Ensure AI-related quick actions and controls follow the system-level experimental state.
 
-Important UX rule:
-- AI Shiur is no longer modal-first.
-- Its internal Basic/Advanced toggle affects only the AI Shiur accordion UI, not global sidebar state.
-
-Acceptance criteria:
-- No global sidebar mode changes occur when toggling AI Shiur Basic/Advanced
-- AI Shiur can be reached persistently from Experimental Features
-- Old modal-only assumptions are removed or clearly isolated
-
-Deliverables:
-- Make the changes
-- Summarize changed files
-- Note any legacy modal code still intentionally retained
-- Stop after this phase
+At the end of the phase:
+1. update docs/CODEX_PROGRESS.md
+2. summarize files changed
+3. list decisions locked
+4. list remaining risks / deferred work
+Then stop.
 ```
 
----
-
-## Phase 6 — Clean up Texts live controls and preview sync
+## Phase 6 — Texts controls and preview sync
 
 ### Prompt
-
 ```text
-Before editing:
-- Read CODEX_GROUNDING.yaml and follow it as the authoritative product spec.
-- Create a new branch named codex/phase-06-texts-preview-sync from the latest reviewed branch.
+Read docs/CODEX_GROUNDING.yaml, docs/CODEX_RUNBOOK.md, and docs/CODEX_PROGRESS.md first.
+Treat CODEX_GROUNDING.yaml as authoritative.
+Use CODEX_PROGRESS.md to avoid repeating completed work or reintroducing removed patterns.
 
-Task: do a UX/state pass on the Texts tab to enforce the correct split between live controls and More Options.
+Create or switch to branch: refactor/sidebar-phase-6-texts-preview-sync
+
+Now do a UX/state pass on the Texts tab to enforce the correct split between live controls and More Options.
 
 Requirements:
 1. Keep these as always-visible live controls in the main Texts workflow:
@@ -302,34 +298,25 @@ Requirements:
 4. Ensure Preview reflects the actual current insertion/rendering state.
 5. Preserve the intended compact/expanded selector UX for layout/display controls.
 
-Constraints:
-- Do not move these live controls into Preferences.
-- Do not make Preview depend on stale saved defaults.
-
-Acceptance criteria:
-- Texts controls are visible where intended
-- More Options behaves as a refinement layer
-- Preview updates correctly for layout/display/translation and detail toggles
-- No duplicate control path exists for the same live behavior
-
-Deliverables:
-- Make the changes
-- Summarize changed files
-- Stop after this phase
+At the end of the phase:
+1. update docs/CODEX_PROGRESS.md
+2. summarize files changed
+3. list decisions locked
+4. list remaining risks / deferred work
+Then stop.
 ```
 
----
-
-## Phase 7 — Refactor the Extensions menu
+## Phase 7 — Extensions menu
 
 ### Prompt
-
 ```text
-Before editing:
-- Read CODEX_GROUNDING.yaml and follow it as the authoritative product spec.
-- Create a new branch named codex/phase-07-extensions-menu from the latest reviewed branch.
+Read docs/CODEX_GROUNDING.yaml, docs/CODEX_RUNBOOK.md, and docs/CODEX_PROGRESS.md first.
+Treat CODEX_GROUNDING.yaml as authoritative.
+Use CODEX_PROGRESS.md to avoid repeating completed work or reintroducing removed patterns.
 
-Task: refactor the Google Docs Extensions menu to match the intended command-surface model.
+Create or switch to branch: refactor/sidebar-phase-7-extensions-menu
+
+Now refactor the Google Docs Extensions menu to match the intended command-surface model.
 
 Target top-level order:
 1. Texts
@@ -356,30 +343,25 @@ Requirements:
 3. Experimental items must be conditional and stable.
 4. Keep top-menu quick actions distinct from sidebar footer actions.
 
-Acceptance criteria:
-- Menu ordering is stable
-- Preferences/Support remain persistent bottom items
-- Experimental items appear only when enabled
-- Base menu renders reliably even under limited auth
-
-Deliverables:
-- Make the changes
-- Summarize changed files
-- Stop after this phase
+At the end of the phase:
+1. update docs/CODEX_PROGRESS.md
+2. summarize files changed
+3. list decisions locked
+4. list remaining risks / deferred work
+Then stop.
 ```
 
----
-
-## Phase 8 — Controlled module split
+## Phase 8 — Module split
 
 ### Prompt
-
 ```text
-Before editing:
-- Read CODEX_GROUNDING.yaml and follow it as the authoritative product spec.
-- Create a new branch named codex/phase-08-module-split from the latest reviewed branch.
+Read docs/CODEX_GROUNDING.yaml, docs/CODEX_RUNBOOK.md, and docs/CODEX_PROGRESS.md first.
+Treat CODEX_GROUNDING.yaml as authoritative.
+Use CODEX_PROGRESS.md to avoid repeating completed work or reintroducing removed patterns.
 
-Task: begin the controlled file-structure refactor.
+Create or switch to branch: refactor/sidebar-phase-8-module-split
+
+Now begin the controlled file-structure refactor.
 
 Target direction:
 Server files:
@@ -417,38 +399,28 @@ Requirements:
 1. Extract shared logic from monolithic sidebar JS into reusable partials/modules.
 2. Keep page modules thin and purpose-specific.
 3. Prefer behavior hooks via data-* attributes where practical.
-4. Do not do a cosmetic rewrite for its own sake; preserve working behavior while improving structure.
+4. Preserve working behavior introduced in earlier phases.
 5. Remove dead duplicated logic instead of copying it into new modules.
 
-Important:
-- This is a controlled split, not a full redesign.
-- Preserve working behavior introduced in earlier phases.
-
-Acceptance criteria:
-- Shared state/api/feedback logic is separated from page-specific code
-- Sidebar page file is materially smaller and more focused
-- Legacy duplicated mode logic does not survive the split
-- File names and responsibilities align with the target architecture
-
-Deliverables:
-- Make the changes
-- Summarize new file structure
-- Note any follow-up split that should happen later
-- Stop after this phase
+At the end of the phase:
+1. update docs/CODEX_PROGRESS.md
+2. summarize files changed
+3. list decisions locked
+4. list remaining risks / deferred work
+Then stop.
 ```
 
----
-
-## Phase 9 — Final verification and cleanup
+## Phase 9 — Final verification
 
 ### Prompt
-
 ```text
-Before editing:
-- Read CODEX_GROUNDING.yaml and follow it as the authoritative product spec.
-- Create a new branch named codex/phase-09-final-verification from the latest reviewed branch.
+Read docs/CODEX_GROUNDING.yaml, docs/CODEX_RUNBOOK.md, and docs/CODEX_PROGRESS.md first.
+Treat CODEX_GROUNDING.yaml as authoritative.
+Use CODEX_PROGRESS.md to avoid repeating completed work or reintroducing removed patterns.
 
-Task: do a final verification pass across the refactor.
+Create or switch to branch: refactor/sidebar-phase-9-verification
+
+Do a final verification pass across the refactor.
 
 Checklist:
 1. Search works in Texts.
@@ -468,24 +440,12 @@ Checklist:
 12. No obvious dead experimental DOM hooks remain.
 13. No syntax/runtime blockers remain in sidebar JS.
 
-Deliverables:
-- Fix any remaining inconsistencies you find
-- Produce a concise final report:
-  - changed files
-  - remaining risks
-  - recommended manual smoke tests
-- Stop
+Fix any remaining inconsistencies you find.
+
+At the end of the phase:
+1. update docs/CODEX_PROGRESS.md
+2. summarize files changed
+3. list decisions locked
+4. list remaining risks / deferred work
+Then stop.
 ```
-
----
-
-## Manual smoke tests after each reviewed phase
-
-- Sidebar opens without JS parse errors.
-- Texts search returns and renders results.
-- Selecting a text updates Preview.
-- Voices results show human-readable titles where available.
-- Top-level tabs shown are the expected set for the current preference state.
-- Experimental tab appears only when enabled in Preferences.
-- Footer actions match standard vs experimental state.
-- Preferences changes do not unexpectedly overwrite current live session state.
