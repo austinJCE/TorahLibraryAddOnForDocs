@@ -265,8 +265,40 @@
           <details class="sidebar-accordion experimental-accordion ai-shiur-feature" open>
             <summary class="section-label accordion-summary">AI Shiur</summary>
             <div class="accordion-panel">
-              <p class="helper-text">Generate an AI-assisted lesson draft from your selected sources.</p>
-              <button type="button" class="submit tertiary-action-button open-ai-lesson-tool">Open AI Shiur</button>
+              <p class="helper-text">Generate an AI-assisted lesson draft directly from the sidebar.</p>
+              <div class="ai-shiur-inline">
+                <div class="ai-shiur-mode-toggle" role="tablist" aria-label="AI Shiur mode">
+                  <button type="button" class="ai-shiur-mode-button is-active" data-ai-mode="basic" aria-pressed="true">Basic</button>
+                  <button type="button" class="ai-shiur-mode-button" data-ai-mode="advanced" aria-pressed="false">Advanced</button>
+                </div>
+                <div class="ai-shiur-fields">
+                  <label for="ai-shiur-topic-input">Topic</label>
+                  <input id="ai-shiur-topic-input" class="ai-shiur-topic-input" type="text" placeholder="Speech ethics, teshuvah and memory">
+                  <div class="ai-shiur-advanced-fields" style="display:none;">
+                    <label for="ai-shiur-provider-select">Provider route</label>
+                    <select id="ai-shiur-provider-select" class="ai-shiur-provider-select">
+                      <option value="default">Site decides</option>
+                    </select>
+                    <label for="ai-shiur-model-input">Model (optional)</label>
+                    <input id="ai-shiur-model-input" class="ai-shiur-model-input" type="text" placeholder="Auto">
+                    <label for="ai-shiur-key-strategy-select">Key source</label>
+                    <select id="ai-shiur-key-strategy-select" class="ai-shiur-key-strategy-select">
+                      <option value="auto">Automatic</option>
+                      <option value="managed">Use site-managed key</option>
+                      <option value="saved">Use my saved key</option>
+                      <option value="manual">Paste key for this request</option>
+                    </select>
+                    <input id="ai-shiur-manual-key-input" class="ai-shiur-manual-key-input" type="password" autocomplete="off" placeholder="Paste a request-level key" style="display:none;">
+                  </div>
+                </div>
+                <div class="ai-shiur-actions">
+                  <button type="button" class="submit tertiary-action-button ai-shiur-quick-action-button" data-quick-action="daf">Today's Daf</button>
+                  <button type="button" class="submit tertiary-action-button ai-shiur-quick-action-button" data-quick-action="929">Today's 929</button>
+                  <button type="button" class="submit tertiary-action-button ai-shiur-quick-action-button" data-quick-action="parashah">This Week's Parashah</button>
+                  <button type="button" class="submit tertiary-action-button ai-shiur-generate-button">Generate &amp; Insert</button>
+                </div>
+                <p class="helper-text ai-shiur-status" aria-live="polite"></p>
+              </div>
             </div>
           </details>
           <section class="experimental-menu-row" style="display:none;">

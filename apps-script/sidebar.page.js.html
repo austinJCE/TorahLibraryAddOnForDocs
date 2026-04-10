@@ -34,10 +34,10 @@ function hasSessionOverrides() {
 }
 
 function syncSessionOverrideButtons() {
-  var isAdvanced = isAdvancedSessionMode();
-  $('.session-override-actions').toggle(isAdvanced);
-  $('.reset-session-overrides-button, .save-session-defaults-button').prop('disabled', !isAdvanced || !hasSessionOverrides());
-  $('#open-session-library').prop('disabled', !isAdvanced);
+  var hasSelectedTextResult = appMode !== 'voices' && !!selectedResultKey;
+  $('.session-override-actions').toggle(hasSelectedTextResult);
+  $('.reset-session-overrides-button, .save-session-defaults-button').prop('disabled', !hasSessionOverrides());
+  $('#open-session-library').prop('disabled', false).attr('aria-disabled', 'false');
 }
 
 function syncAiQuickActionState() {
@@ -1676,11 +1676,6 @@ $('.open-linker-tool').on('click', function () {
   google.script.run.linkerHTML();
 });
 
-$('.open-ai-lesson-tool').on('click', function () {
-  if ($(this).prop('disabled')) return;
-  google.script.run.openAiLessonGenerator();
-});
-
 function bindDropdownToggle(selector) {
   var dropdown = $(selector);
   if (!dropdown.length) return;
@@ -2668,12 +2663,80 @@ applyEffectivePreferencesToUI = function() {
   setFooterButtonStates();
 };
 
-syncSessionOverrideButtons = function() {
-  var hasSelectedTextResult = appMode !== 'voices' && !!selectedResultKey;
-  $('.session-override-actions').toggle(hasSelectedTextResult);
-  $('.reset-session-overrides-button, .save-session-defaults-button').prop('disabled', !hasSessionOverrides());
-  $('#open-session-library').prop('disabled', false).attr('aria-disabled', 'false');
-};
+var aiShiurState = { mode: 'basic', bootstrap: null };
+
+function setAiShiurStatus(message, kind) {
+  var $status = $('.ai-shiur-status');
+  if (!$status.length) return;
+  $status.text(message || '').removeClass('status-error status-success status-loading');
+  if (kind) $status.addClass('status-' + kind);
+}
+
+function setAiShiurInlineMode(nextMode) {
+  aiShiurState.mode = nextMode === 'advanced' ? 'advanced' : 'basic';
+  $('.ai-shiur-mode-button').removeClass('is-active').attr('aria-pressed', 'false');
+  $('.ai-shiur-mode-button[data-ai-mode="' + aiShiurState.mode + '"]').addClass('is-active').attr('aria-pressed', 'true');
+  $('.ai-shiur-advanced-fields').toggle(aiShiurState.mode === 'advanced');
+}
+
+function refreshAiShiurProviderOptions() {
+  var providers = (((aiShiurState.bootstrap || {}).providers) || []).map(function(provider){ return provider && provider.key ? provider : null; }).filter(Boolean);
+  var $provider = $('#ai-shiur-provider-select');
+  if (!$provider.length) return;
+  if (!providers.length) {
+    $provider.html("<option value='default'>Site decides</option>");
+    return;
+  }
+  $provider.html(providers.map(function(provider) {
+    return "<option value='" + escapeHTML(provider.key) + "'>" + escapeHTML(provider.label || provider.key) + "</option>";
+  }).join(''));
+}
+
+function syncAiShiurManualKeyVisibility() {
+  var showManual = aiShiurState.mode === 'advanced' && $('#ai-shiur-key-strategy-select').val() === 'manual' && $('#ai-shiur-provider-select').val() !== 'default';
+  $('#ai-shiur-manual-key-input').toggle(showManual);
+}
+
+function collectAiShiurPayload(quickAction) {
+  var advanced = aiShiurState.mode === 'advanced';
+  var payload = {
+    provider: advanced ? ($('#ai-shiur-provider-select').val() || 'default') : 'default',
+    model: advanced ? ($('#ai-shiur-model-input').val() || '') : '',
+    keyStrategy: advanced ? ($('#ai-shiur-key-strategy-select').val() || 'auto') : 'auto',
+    apiKey: advanced ? ($('#ai-shiur-manual-key-input').val() || '') : '',
+    topic: ($('#ai-shiur-topic-input').val() || '').trim(),
+    contextMode: 'topic',
+    audience: String(((effectivePreferences || {}).ai_audience_default) || 'Adult learners'),
+    duration: Math.max(10, Math.min(120, Number((effectivePreferences || {}).ai_duration_default) || 45)),
+    lessonStyle: String(((effectivePreferences || {}).ai_lesson_style_default) || 'Interactive shiur'),
+    additionalInstructions: '',
+    includeOriginal: true,
+    includeTranslation: true,
+    includeTransliteration: false,
+    includeEducatorNotes: true,
+    includeDiscussionPrompts: true
+  };
+  if (quickAction) payload.quickAction = quickAction;
+  return payload;
+}
+
+function initializeAiShiurInline() {
+  if (!isExperimentalAiEnabled()) return;
+  google.script.run.withSuccessHandler(function(bootstrap) {
+    aiShiurState.bootstrap = bootstrap || {};
+    var defaults = (bootstrap && bootstrap.savedDefaults) ? bootstrap.savedDefaults : {};
+    $('#ai-shiur-topic-input').val('');
+    $('#ai-shiur-model-input').val(defaults.model || '');
+    $('#ai-shiur-key-strategy-select').val(defaults.keyStrategy || 'auto');
+    refreshAiShiurProviderOptions();
+    $('#ai-shiur-provider-select').val(defaults.provider || 'default');
+    var defaultMode = ((((bootstrap || {}).ui || {}).defaultModalTab) === 'advanced') ? 'advanced' : 'basic';
+    setAiShiurInlineMode(defaultMode);
+    syncAiShiurManualKeyVisibility();
+  }).withFailureHandler(function(error){
+    setAiShiurStatus((error && error.message) || 'AI Shiur setup is unavailable right now.', 'error');
+  }).getAiLessonBootstrapData();
+}
 
 function handleSurpriseToolClick() {
   if (!isSurpriseEnabled()) {
@@ -2703,7 +2766,44 @@ $('.open-ai-lesson-tool').off('click').on('click', function(event){
     });
     return;
   }
-  google.script.run.openAiLessonGenerator();
+  setSidebarMode('experimental');
+  $('.ai-shiur-feature')[0].open = true;
+  $('#ai-shiur-topic-input').focus();
+});
+$('.ai-shiur-mode-button').off('click').on('click', function(event){
+  if (event) event.preventDefault();
+  setAiShiurInlineMode($(this).attr('data-ai-mode'));
+  syncAiShiurManualKeyVisibility();
+});
+$('#ai-shiur-provider-select, #ai-shiur-key-strategy-select').off('change').on('change', syncAiShiurManualKeyVisibility);
+$('.ai-shiur-generate-button').off('click').on('click', function(event){
+  if (event) event.preventDefault();
+  if (!isExperimentalAiEnabled()) return;
+  var payload = collectAiShiurPayload('');
+  setAiShiurStatus('Generating and inserting your draft…', 'loading');
+  var $button = $(this).prop('disabled', true);
+  google.script.run.withSuccessHandler(function(result){
+    setAiShiurStatus('Inserted "' + ((result && result.title) || 'AI Lesson Draft') + '".', 'success');
+    $button.prop('disabled', false);
+  }).withFailureHandler(function(error){
+    setAiShiurStatus((error && error.message) || 'Unable to generate a lesson right now.', 'error');
+    $button.prop('disabled', false);
+  }).generateAiLessonDraft(payload);
+});
+$('.ai-shiur-quick-action-button').off('click').on('click', function(event){
+  if (event) event.preventDefault();
+  if (!isExperimentalAiEnabled()) return;
+  var quickAction = $(this).attr('data-quick-action');
+  var payload = collectAiShiurPayload(quickAction);
+  setAiShiurStatus('Generating and inserting your draft…', 'loading');
+  var $button = $(this).prop('disabled', true);
+  google.script.run.withSuccessHandler(function(result){
+    setAiShiurStatus('Inserted "' + ((result && result.title) || 'AI Lesson Draft') + '".', 'success');
+    $button.prop('disabled', false);
+  }).withFailureHandler(function(error){
+    setAiShiurStatus((error && error.message) || 'Unable to run this AI quick action right now.', 'error');
+    $button.prop('disabled', false);
+  }).generateAiLessonDraft(payload);
 });
 $('.experimental-menu-button').off('click').on('click', function(){ setSidebarMode('experimental'); });
 $('.mode-switch-button[data-sidebar-mode="experimental"]').off('click').on('click', function(){ setSidebarMode('experimental'); });
@@ -2712,6 +2812,7 @@ $('.mode-switch-button[data-sidebar-mode="experimental"]').off('click').on('clic
 syncExperimentalFeatureAvailability();
 updateExperimentalQuickActions();
 setFooterButtonStates();
+initializeAiShiurInline();
 
 
 

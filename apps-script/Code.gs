@@ -164,14 +164,16 @@ function onOpen(e) {
 }
 
 function setSearchMode_(mode) {
-  const normalizedMode = (mode === 'advanced' || mode === 'voices') ? mode : 'basic';
+  const normalizedMode = (mode === 'voices' || mode === 'experimental') ? mode : 'texts';
   PropertiesService.getUserProperties().setProperty('search_mode', normalizedMode);
   return normalizedMode;
 }
 
 function getSearchMode_() {
   const stored = PropertiesService.getUserProperties().getProperty('search_mode');
-  return (stored === 'advanced' || stored === 'voices') ? stored : 'basic';
+  if (stored === 'voices' || stored === 'experimental' || stored === 'texts') return stored;
+  if (stored === 'advanced' || stored === 'basic' || stored === 'text') return 'texts';
+  return 'texts';
 }
 
 function openSharedSidebar_(mode) {
@@ -180,7 +182,7 @@ function openSharedSidebar_(mode) {
   template.initialMode = resolvedMode;
   template.appConfig = getUiAppConfig_('sidebar', resolvedMode);
   var output = template.evaluate()
-    .setTitle(resolvedMode === 'voices' ? 'Voices' : 'Texts')
+    .setTitle(resolvedMode === 'voices' ? 'Voices' : (resolvedMode === 'experimental' ? 'Experimental Features' : 'Texts'))
     .setWidth(300);
   DocumentApp.getUi().showSidebar(output);
   extendedGemaraPreference = PropertiesService.getUserProperties().getProperty("extended_gemara");
@@ -205,7 +207,9 @@ function voicesHTML() {
 
 function getSidebarBootstrapData(mode, sessionId) {
   const accountPreferences = getAccountPreferences();
-  const resolvedMode = (mode === 'voices') ? 'voices' : ((mode === 'texts' || mode === 'basic' || mode === 'advanced') ? 'texts' : getSearchMode_());
+  const resolvedMode = (mode === 'voices' || mode === 'experimental' || mode === 'texts')
+    ? mode
+    : getSearchMode_();
   const resolvedSessionId = sessionId || generateSidebarSessionId_();
   const sessionState = resolvedMode === 'texts' ? getSidebarSessionState(resolvedSessionId) : {};
   const effectivePreferences = Object.assign({}, accountPreferences, sessionState);
