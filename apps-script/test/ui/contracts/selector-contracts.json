@@ -7,7 +7,8 @@
       ".results-panel",
       "#display-choice-summary-text",
       "#layout-choice-summary-text",
-      "data-sidebar-mode=\"advanced\""
+      "data-sidebar-mode=\"texts\"",
+      "data-sidebar-mode=\"experimental\""
     ]
   },
   "preferences": {

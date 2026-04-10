@@ -21,9 +21,9 @@ After every phase, Codex must update:
 
 ## Current status
 
-- Active branch: refactor/sidebar-phase-1-stabilize
-- Last completed phase: **Phase 1 — Stabilize current build**
-- Next planned phase: **Phase 2 — Normalize top-level sidebar architecture**
+- Active branch: work
+- Last completed phase: **Phase 2 — Normalize top-level sidebar architecture**
+- Next planned phase: **Phase 3 — Build the Experimental sidebar shell**
 - Last updated by: Codex (GPT-5.3-Codex)
 - Last updated on: 2026-04-10
 
@@ -127,6 +127,43 @@ Smoke tests run:
 
 Notes:
 - Stopped after requested Phase 1 stabilization work.
+
+### Phase 2 — Normalize top-level sidebar architecture
+- Status: complete
+- Date: 2026-04-10
+- Branch: `work`
+
+Summary:
+- Replaced global Basic/Advanced/Voices top-level mode controls with canonical Texts/Voices/Experimental mode buttons in sidebar markup.
+- Normalized sidebar mode state to a single top-level model (`texts`, `voices`, `experimental`) with legacy `basic`/`advanced` values mapped into `texts`.
+- Removed stacked late-override mode logic and duplicate `setSidebarMode` rewrites, keeping one authoritative mode handler.
+- Updated mode-dependent visibility rules so text controls use `texts`, voices behavior remains scoped to `voices`, and experimental mode is recognized without relying on legacy global basic/advanced branches.
+- Updated UI selector contracts and sidebar template snapshot baselines for the new mode architecture.
+
+Files changed:
+- `apps-script/sidebar.page.js.html`
+- `apps-script/sidebar.html`
+- `apps-script/test/ui/contracts/selector-contracts.json`
+- `apps-script/test/ui/snapshots/preferences.html.snap`
+- `apps-script/test/ui/snapshots/sidebar.html.snap`
+- `CODEX_PROGRESS.md`
+
+Decisions locked:
+- Top-level sidebar mode model is now `texts | voices | experimental`; legacy `basic`/`advanced` are compatibility aliases only.
+- There is now a single authoritative `setSidebarMode` implementation; late layered overrides were removed.
+- Mode-specific UI visibility is keyed to top-level mode only (`texts`, `voices`, `experimental`) and not to global basic/advanced state.
+
+Deferred / remaining risks:
+- Experimental mode now exists in the mode system and nav, but its full dedicated sidebar DOM/workflow remains incomplete and is deferred to Phase 3.
+- AI Shiur internals are not yet sidebar-native accordion workflows; this remains Phase 5 scope.
+- Preferences/session-state authority alignment is still partial and remains Phase 4 scope.
+
+Smoke tests run:
+- `cd apps-script && npm run test:ui` (pass)
+- `cd apps-script && npm test` (pass)
+
+Notes:
+- Stopped after requested Phase 2 mode architecture work.
 
 ## Phase template for future updates
 
