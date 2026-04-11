@@ -21,11 +21,11 @@ After every phase, Codex must update:
 
 ## Current status
 
-- Active branch: refactor/sidebar-phase-7-extensions-menu
-- Last completed phase: **Phase 7 — Extensions menu**
-- Next planned phase: **Phase 8 — Module split**
+- Active branch: refactor/sidebar-phase-8-module-split
+- Last completed phase: **Phase 8 — Module split**
+- Next planned phase: **Phase 9 — Final verification**
 - Last updated by: Codex (GPT-5.3-Codex)
-- Last updated on: 2026-04-10
+- Last updated on: 2026-04-11
 
 ---
 
@@ -357,3 +357,36 @@ Smoke tests run:
 
 Notes:
 - Stopped after requested Phase 7 work.
+
+
+### Phase 8 — Module split
+- Status: complete
+- Date: 2026-04-11
+- Branch: `refactor/sidebar-phase-8-module-split`
+
+Summary:
+- Extracted reusable title fallback resolution into shared UI core helper (`getPrimaryTitle`) so voices/title-like rendering no longer depends on page-local duplicate helper code.
+- Extracted sidebar preference state bootstrap and effective-preference merge helpers into `ui_state.js.html` to move state-shaping concerns out of the monolithic sidebar page module.
+- Updated `sidebar.page.js.html` to consume shared state/core helpers (`initializePreferenceState`, `mergeEffectivePreferences`, `hasSessionPreferenceOverrides`, `getPrimaryTitle`) while preserving existing behavior and contracts.
+
+Files changed:
+- `apps-script/ui_core.js.html`
+- `apps-script/ui_state.js.html`
+- `apps-script/sidebar.page.js.html`
+- `CODEX_PROGRESS.md`
+
+Decisions locked:
+- Shared fallback title logic is now centralized in `ui_core.js.html` via `getPrimaryTitle`, and sidebar voices/session rendering paths must use that helper instead of redefining local fallback chains.
+- Sidebar preference-state shaping (bootstrap extraction + effective merge policy) now lives in `ui_state.js.html`; `sidebar.page.js.html` should consume these helpers rather than rebuilding preference merge logic inline.
+- This phase is intentionally incremental: no behavior-level UX changes were introduced beyond module boundary cleanup and reuse.
+
+Deferred / remaining risks:
+- `sidebar.page.js.html` remains large; additional extraction of DOM/event orchestration into smaller page-focused modules is still needed to fully realize the target structure.
+- Shared helper surface is currently consumed primarily by sidebar code; follow-up should expand cross-page reuse only where stable to avoid premature abstraction.
+- Final cross-feature verification (Phase 9) is still required to confirm no hidden runtime regressions in live Apps Script environments.
+
+Smoke tests run:
+- `cd apps-script && npm run test:ui` (pass)
+
+Notes:
+- Stopped after requested Phase 8 work.

@@ -29,14 +29,11 @@ function isAdvancedSessionMode() {
   return appMode === 'texts';
 }
 
-function hasSessionOverrides() {
-  return Object.keys(sessionPreferences || {}).length > 0;
-}
 
 function syncSessionOverrideButtons() {
   var hasSelectedTextResult = appMode !== 'voices' && !!selectedResultKey;
   $('.session-override-actions').toggle(hasSelectedTextResult);
-  $('.reset-session-overrides-button, .save-session-defaults-button').prop('disabled', !hasSessionOverrides());
+  $('.reset-session-overrides-button, .save-session-defaults-button').prop('disabled', !hasSessionPreferenceOverrides(sessionPreferences));
   $('#open-session-library').prop('disabled', false).attr('aria-disabled', 'false');
 }
 
@@ -63,7 +60,7 @@ function applyEffectivePreferencesToUI() {
 function saveAccountPreference(payload, onDone) {
   google.script.run.withSuccessHandler(function (updated) {
     accountPreferences = clonePlainObject(updated || accountPreferences);
-    effectivePreferences = isAdvancedSessionMode() ? mergePreferenceLayers(accountPreferences, sessionPreferences) : mergePreferenceLayers(accountPreferences, {});
+    effectivePreferences = mergeEffectivePreferences(accountPreferences, sessionPreferences, isAdvancedSessionMode());
     syncSessionOverrideButtons();
     if (typeof onDone === 'function') onDone(updated);
   }).setAccountPreferences(payload || {});
@@ -76,7 +73,7 @@ function saveSessionPreference(payload, onDone) {
   }
   google.script.run.withSuccessHandler(function (updated) {
     sessionPreferences = clonePlainObject(updated || sessionPreferences);
-    effectivePreferences = mergePreferenceLayers(accountPreferences, sessionPreferences);
+    effectivePreferences = mergeEffectivePreferences(accountPreferences, sessionPreferences, true);
     syncSessionOverrideButtons();
     if (typeof onDone === 'function') onDone(updated);
   }).setSidebarSessionState(sidebarSessionId, payload || {});
@@ -94,7 +91,7 @@ function resetSessionOverrides(onDone) {
   if (!sidebarSessionId) return;
   google.script.run.withSuccessHandler(function () {
     sessionPreferences = {};
-    effectivePreferences = mergePreferenceLayers(accountPreferences, {});
+    effectivePreferences = mergeEffectivePreferences(accountPreferences, {}, false);
     applyEffectivePreferencesToUI();
     if (hasResolvedReference && data && data.ref) refreshSelectedResult();
     updateModeDependentSections();
@@ -107,7 +104,7 @@ function saveSessionAsDefaults(onDone) {
   google.script.run.withSuccessHandler(function (updated) {
     accountPreferences = clonePlainObject(updated || accountPreferences);
     sessionPreferences = {};
-    effectivePreferences = mergePreferenceLayers(accountPreferences, {});
+    effectivePreferences = mergeEffectivePreferences(accountPreferences, {}, false);
     applyEffectivePreferencesToUI();
     updateModeDependentSections();
     if (typeof onDone === 'function') onDone(updated);
@@ -178,11 +175,6 @@ function getSidebarTransliterationLabel(value) {
   return labels[value] || labels.simple_english;
 }
 
-
-function getVoiceItemTitle(item) {
-  if (!item) return '';
-  return item.label || item.title || item.sheet_title || item.name || (item.sheet && item.sheet.title) || item.ref || '';
-}
 
 function closeSidebarTransliterationMenu() {
   $('#sidebar-transliteration-menu').addClass('hidden');
@@ -259,10 +251,11 @@ function bindSidebarCompositionCard() {
 }
 
 google.script.run.withSuccessHandler(function (bootstrap) {
-  sidebarSessionId = (bootstrap && bootstrap.sessionId) || null;
-  accountPreferences = clonePlainObject((bootstrap && (bootstrap.accountPreferences || bootstrap.preferences)) || {});
-  sessionPreferences = clonePlainObject((bootstrap && bootstrap.sessionState) || {});
-  effectivePreferences = clonePlainObject((bootstrap && (bootstrap.effectivePreferences || bootstrap.preferences)) || accountPreferences);
+  var initialized = initializePreferenceState(bootstrap);
+  sidebarSessionId = initialized.sidebarSessionId;
+  accountPreferences = initialized.accountPreferences;
+  sessionPreferences = initialized.sessionPreferences;
+  effectivePreferences = initialized.effectivePreferences;
   var bootstrapMode = (bootstrap && bootstrap.mode) || window.INITIAL_SIDEBAR_MODE || 'texts';
   setSidebarMode(bootstrapMode, true);
   applyEffectivePreferencesToUI();
@@ -1106,7 +1099,7 @@ function renderResultGroup(selector, items, groupName) {
     var metaLine = "<div class='result-meta'><span>" + escapeHTML(cluster) + "</span><span> • </span><span>" + escapeHTML(describeResultLanguages(item)) + "</span></div>";
     var subtitle = item.subtitle ? "<div class='result-subtitle'>" + escapeHTML(item.subtitle) + "</div>" : '';
     var snippet = item.snippet ? "<div class='result-snippet'>" + item.snippet + "</div>" : subtitle;
-    var titleText = appMode === 'voices' ? getVoiceItemTitle(item) : (groupName === 'Search results' && item.ref ? item.ref : (item.label || item.ref));
+    var titleText = appMode === 'voices' ? getPrimaryTitle(item) : (groupName === 'Search results' && item.ref ? item.ref : (item.label || item.ref));
     $list.append("<li class='result-item result-row " + accentClass + " " + selectedClass + "' data-key='" + escapeHTML(item.key) + "' data-ref='" + escapeHTML(item.ref) + "' role='button' tabindex='0' aria-pressed='" + (item.key === selectedResultKey ? 'true' : 'false') + "'><div class='result-row-main'><button type='button' class='result-pin-button" + (isPinnedRef(item.ref) ? " is-pinned" : "") + "' data-ref='" + escapeHTML(item.ref) + "' data-label='" + escapeHTML(titleText) + "' aria-label='" + (isPinnedRef(item.ref) ? "Unpin result" : "Pin result") + "' title='" + (isPinnedRef(item.ref) ? "Unpin result" : "Pin result") + "'>📌</button><div class='result-title'>" + escapeHTML(titleText) + "</div></div>" + metaLine + snippet + "</li>");
   });
 }
@@ -1628,12 +1621,12 @@ $('.results-panel').on('click keydown', '.result-item', function (event) {
   if (!item) return;
 
   selectedResultKey = item.key;
-  selectedResultSummary = { label: appMode === 'voices' ? getVoiceItemTitle(item) : (item.label || item.ref), subtitle: item.subtitle || '' };
+  selectedResultSummary = { label: appMode === 'voices' ? getPrimaryTitle(item) : (item.label || item.ref), subtitle: item.subtitle || '' };
   resultsCollapsed = true;
   $('.result-item').removeClass('selected').attr('aria-pressed', 'false');
   $(this).addClass('selected').attr('aria-pressed', 'true');
   updateResultsVisibility();
-  resolveSelectedResult(item.ref, appMode === 'voices' ? getVoiceItemTitle(item) : (item.label || item.ref));
+  resolveSelectedResult(item.ref, appMode === 'voices' ? getPrimaryTitle(item) : (item.label || item.ref));
 });
 
 $('.results-panel').on('click', '.result-group-remove', function (event) {
@@ -2438,7 +2431,7 @@ resolveSelectedResult = function(selectedRef, inputLabel) {
     $('#open-on-sefaria').prop('disabled', !(item && item.url));
     if (item) {
       var snippet = normalizeOptionText(item.snippet || item.summary || '');
-      var previewHtml = "<div class='voice-preview'><div class='voice-preview-title'>" + escapeHTML(getVoiceItemTitle(item) || 'Source sheet') + "</div>";
+      var previewHtml = "<div class='voice-preview'><div class='voice-preview-title'>" + escapeHTML(getPrimaryTitle(item) || 'Source sheet') + "</div>";
       if (snippet) previewHtml += "<div class='voice-preview-snippet'>" + escapeHTML(snippet) + "</div>";
       if (item.url) previewHtml += "<div class='voice-preview-link'>Open on Sefaria with the footer button.</div>";
       previewHtml += "</div>";
@@ -2465,10 +2458,10 @@ function handleInsertAction() {
     $('.hide').fadeIn('150');
     google.script.run.withSuccessHandler(function () {
       $('.hide').fadeOut('150');
-      upsertSessionEntry('inserted', buildSessionEntry(selectedVoiceItem.ref, getVoiceItemTitle(selectedVoiceItem), 'Source Sheets', {
+      upsertSessionEntry('inserted', buildSessionEntry(selectedVoiceItem.ref, getPrimaryTitle(selectedVoiceItem), 'Source Sheets', {
         mode: 'voices',
         url: selectedVoiceItem.url,
-        query: getVoiceItemTitle(selectedVoiceItem)
+        query: getPrimaryTitle(selectedVoiceItem)
       }));
     }).withFailureHandler(function (error) {
       $('.hide').fadeOut('150');
@@ -2592,10 +2585,10 @@ $('.results-panel').off('click', '.result-pin-button').on('click', '.result-pin-
   var item = queryState.libraryMatches.concat(queryState.searchResults).concat(queryState.rawLibraryMatches).concat(queryState.rawSearchResults).find(function(result){ return result && result.ref === ref; });
   if (!item) return;
   if (isPinnedRef(ref)) removeSessionEntry('pinned', ref);
-  else upsertSessionEntry('pinned', buildSessionEntry(item.ref, appMode === 'voices' ? getVoiceItemTitle(item) : item.label, getResultCorpusLabel(item, appMode === 'voices' ? 'Source Sheets' : 'Other'), {
+  else upsertSessionEntry('pinned', buildSessionEntry(item.ref, appMode === 'voices' ? getPrimaryTitle(item) : item.label, getResultCorpusLabel(item, appMode === 'voices' ? 'Source Sheets' : 'Other'), {
     mode: appMode === 'voices' ? 'voices' : 'text',
     url: item.url || '',
-    query: (appMode === 'voices' ? getVoiceItemTitle(item) : item.label) || item.ref
+    query: (appMode === 'voices' ? getPrimaryTitle(item) : item.label) || item.ref
   }));
   renderResults();
 });

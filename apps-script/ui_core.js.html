@@ -25,4 +25,10 @@
       return raw ? raw.split(',').map(function (part) { return String(part || '').trim(); }).filter(Boolean) : fallback.slice();
     }
   }
+
+  function getPrimaryTitle(item) {
+    if (!item) return '';
+    return item.label || item.title || item.sheet_title || item.name || (item.sheet && item.sheet.title) || item.ref || '';
+  }
+
 </script>
