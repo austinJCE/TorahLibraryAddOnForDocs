@@ -21,9 +21,9 @@ After every phase, Codex must update:
 
 ## Current status
 
-- Active branch: refactor/sidebar-phase-8-module-split
-- Last completed phase: **Phase 8 — Module split**
-- Next planned phase: **Phase 9 — Final verification**
+- Active branch: refactor/sidebar-phase-9-verification
+- Last completed phase: **Phase 9 — Final verification**
+- Next planned phase: **Completed (all planned phases through Phase 9)**
 - Last updated by: Codex (GPT-5.3-Codex)
 - Last updated on: 2026-04-11
 
@@ -390,3 +390,32 @@ Smoke tests run:
 
 Notes:
 - Stopped after requested Phase 8 work.
+
+### Phase 9 — Final verification
+- Status: complete
+- Date: 2026-04-11
+- Branch: `refactor/sidebar-phase-9-verification`
+
+Summary:
+- Ran final UI contract/snapshot verification and full test pass to confirm no syntax/runtime blockers in sidebar JavaScript and no contract drift across page modules.
+- Verified sidebar mode architecture remains canonical (`texts | voices | experimental`) with one authoritative `setSidebarMode` flow and legacy `basic/advanced` values normalized to `texts`.
+- Verified AI Shiur retains internal Basic/Advanced mode only inside the Experimental accordion state, without restoring any global sidebar Basic/Advanced mode paths.
+- Verified Experimental visibility remains preference-gated and that experimental quick actions/sections are tied to real sidebar DOM nodes rather than dead hooks.
+
+Files changed:
+- `CODEX_PROGRESS.md`
+
+Decisions locked:
+- Final verification passed without requiring additional production-code changes; prior phase architecture and state-model decisions remain in force.
+- Phase 9 is closed with test-backed confirmation that no duplicate/layered `setSidebarMode` implementation was reintroduced.
+
+Deferred / remaining risks:
+- Verification in this phase is test-driven and static/contract-based; a live Google Docs Apps Script smoke run is still recommended to validate behavior under real auth/runtime conditions.
+- Existing npm environment warning (`Unknown env config "http-proxy"`) is non-blocking but should be cleaned up in developer environments to reduce test noise.
+
+Smoke tests run:
+- `cd apps-script && npm run test:ui` (pass)
+- `cd apps-script && npm test` (pass)
+
+Notes:
+- Stopped after requested Phase 9 verification work.
