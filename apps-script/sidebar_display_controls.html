@@ -13,13 +13,6 @@
   });
 })();
 
-// Close all display/layout <details> when clicking outside them.
-$(document).on('click', function(e) {
-  if (!$(e.target).closest('.display-choice-detail').length) {
-    $('.display-choice-detail').removeAttr('open');
-  }
-});
-
 function updateBilingualLayoutVisibility() {
   var outputMode = $('.output-mode-selection').val();
   $('.bilingual-layout-wrapper').toggle(outputMode === 'both');
