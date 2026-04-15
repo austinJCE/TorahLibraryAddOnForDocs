@@ -4187,6 +4187,42 @@
   background: #ffffff !important;
 }
 
+/* Language filter chips in result-filter-strip */
+.lang-filter-strip-label {
+  font-size: 11px;
+  color: var(--muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.lang-filter-chip {
+  background: #eef2ff;
+  border-left-color: var(--selected, #18345d);
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+.lang-filter-chip:hover {
+  background: #d8e4ff;
+}
+
+.lang-filter-clear-chip {
+  background: #f0f0f0;
+  border-left-color: transparent;
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  color: var(--muted, #666);
+}
+
+.lang-filter-clear-chip:hover {
+  background: #e0e0e0;
+}
+
 /* Experimental inline form controls */
 .experimental-inline-form {
   display: flex;

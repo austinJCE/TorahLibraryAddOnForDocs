@@ -280,6 +280,39 @@ $('.close').click(function () {
   google.script.host.close();
 });
 
+$(document).on('click', '.lang-filter-chip', function (event) {
+  event.preventDefault();
+  var lang = $(this).attr('data-lang-filter');
+  if (!lang) return;
+  $('.translation-language-option').each(function () {
+    if ($(this).val() === lang) $(this).prop('checked', false);
+  });
+  if (!$('.translation-language-option:checked').length) {
+    $('.translation-language-any').prop('checked', true);
+  }
+  updateTranslationLanguageVisibility();
+  saveLastUsedSearchSettings();
+  if (getAllRawResults().length) {
+    reprocessAndRenderResults();
+  } else if (($('.input').val() || '').trim()) {
+    runUnifiedQuery();
+  }
+});
+
+$(document).on('click', '.lang-filter-clear-chip', function (event) {
+  event.preventDefault();
+  $('.translation-language-any').prop('checked', true);
+  $('.translation-language-option').prop('checked', false);
+  syncCompactTranslationLanguageUI();
+  updateTranslationLanguageVisibility();
+  saveLastUsedSearchSettings();
+  if (getAllRawResults().length) {
+    reprocessAndRenderResults();
+  } else if (($('.input').val() || '').trim()) {
+    runUnifiedQuery();
+  }
+});
+
 $('#sm-inline-launch').on('click', function () {
   var term = ($('#sm-inline-term').val() || '').trim();
   var count = parseInt($('#sm-inline-count').val(), 10);
