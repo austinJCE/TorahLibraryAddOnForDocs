@@ -10,7 +10,21 @@ function setResultsLoading(isLoading) {
   if (!$('.results-loading-indicator').length) {
     $('.results-header').append("<div class='results-loading-indicator' aria-live='polite' style='display:none;'><span class='preview-loading-spinner' aria-hidden='true'></span><span>Searching…</span></div>");
   }
-  $('.results-loading-indicator').toggle(resultsLoading);
+  if (isLoading) {
+    var skeletonHtml = '';
+    for (var i = 0; i < 4; i++) {
+      skeletonHtml += "<li class='skeleton-result-item' aria-hidden='true'>" +
+        "<div class='skeleton-bar skeleton-title'></div>" +
+        "<div class='skeleton-bar skeleton-subtitle'></div>" +
+        "<div class='skeleton-bar skeleton-meta'></div>" +
+        "</li>";
+    }
+    $('.library-results').html(skeletonHtml);
+    $('.search-results').empty();
+  } else {
+    $('.skeleton-result-item').remove();
+  }
+  $('.results-loading-indicator').hide();
 }
 
 

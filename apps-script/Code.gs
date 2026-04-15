@@ -1798,50 +1798,6 @@ const AI_PROVIDER_OPTIONS_ = {
   }
 };
 
-function legacy_getAiLessonBootstrapData_() {
-  const prefs = getPreferences();
-  const userProperties = PropertiesService.getUserProperties();
-  const defaults = getDefaultPreferences();
-  const provider = normalizeAiProvider_(prefs.ai_provider_default || defaults.ai_provider_default);
-  const model = String(prefs.ai_model_default || defaults.ai_model_default || '');
-  const keyStrategy = String(prefs.ai_key_strategy_default || defaults.ai_key_strategy_default || 'auto');
-  const providers = Object.keys(AI_PROVIDER_OPTIONS_).map(function(key) {
-    return {
-      key: key,
-      label: AI_PROVIDER_OPTIONS_[key].label,
-      models: AI_PROVIDER_OPTIONS_[key].models,
-      defaultModel: AI_PROVIDER_OPTIONS_[key].defaultModel,
-      managedKeyAvailable: hasManagedAiKey_(key),
-      savedKeyAvailable: hasSavedAiKey_(key)
-    };
-  });
-
-  return {
-    enabled: prefs.experimental_ai_source_sheet_enabled == 'true',
-    defaults: {
-      provider: provider,
-      model: model || '',
-      keyStrategy: keyStrategy,
-      duration: 45,
-      audience: 'Adult learners',
-      lessonStyle: 'Interactive shiur',
-      includeOriginal: true,
-      includeTranslation: true,
-      includeEducatorNotes: true,
-      includeDiscussionPrompts: true
-    },
-    providers: providers,
-    managedKeyPolicy: {
-      cooldownSeconds: getManagedAiCooldownSeconds_()
-    },
-    savedDefaults: {
-      audience: userProperties.getProperty('ai_audience_default') || 'Adult learners',
-      lessonStyle: userProperties.getProperty('ai_lesson_style_default') || 'Interactive shiur',
-      duration: Number(userProperties.getProperty('ai_duration_default') || 45)
-    }
-  };
-}
-
 function saveAiLessonDefaults_(payload) {
   const userProperties = PropertiesService.getUserProperties();
   const requestedProvider = String(payload && payload.provider || '').toLowerCase().trim();
@@ -1887,77 +1843,6 @@ function maskApiKey_(value) {
   if (!raw) return '';
   if (raw.length <= 8) return '••••••••';
   return raw.slice(0, 4) + '••••••••' + raw.slice(-4);
-}
-
-function legacy_generateAiLessonDraft_(payload) {
-  assertExperimentalAiEnabled_();
-
-  const request = normalizeAiLessonRequest_(payload || {});
-  saveAiLessonDefaults_(request);
-  persistUserAiKeyIfRequested_(request);
-  const keyInfo = resolveAiCredential_(request);
-  const lesson = generateLessonDraftViaProvider_(request, keyInfo);
-  const enrichedLesson = enrichLessonWithSefariaTexts_(lesson, request);
-  const insertion = insertGeneratedLessonIntoDoc_(enrichedLesson, request);
-
-  return {
-    ok: true,
-    title: enrichedLesson.lessonTitle,
-    sourceCount: (enrichedLesson.sources || []).length,
-    insertedAt: insertion.insertedAt,
-    provider: AI_PROVIDER_OPTIONS_[request.provider].label,
-    model: request.model,
-    keySource: keyInfo.source,
-    warnings: enrichedLesson.warnings || []
-  };
-}
-
-function legacy_runQuickActionLearningCycleByType_(kind) {
-  assertExperimentalAiEnabled_();
-  const context = buildTodaysLearningCycleContext_();
-  const provider = pickAvailableAiProvider_();
-  if (!provider) {
-    throw new Error('No AI provider is ready yet. Open “Generate Shiur Draft (experimental)” and either paste your API key or ask an admin to configure a managed key.');
-  }
-  const normalizedKind = String(kind || '').toLowerCase();
-  const filteredItems = context.items.filter(function(item){
-    if (normalizedKind === 'daf') return /daf yomi/i.test(item.label);
-    if (normalizedKind === '929') return /929/.test(item.label);
-    if (normalizedKind === 'parashah') return /parash/i.test(item.label);
-    return true;
-  });
-  if (!filteredItems.length) throw new Error('That learning-cycle item is unavailable today.');
-  const defaultModel = PropertiesService.getUserProperties().getProperty('ai_model_default');
-  return generateAiLessonDraft({
-    provider: provider,
-    model: sanitizeAiModel_(provider, defaultModel),
-    keyStrategy: 'auto',
-    topic: filteredItems.map(function(item){ return item.label + ': ' + item.ref; }).join(' | '),
-    audience: String(getPreferences().ai_audience_default || 'Adult learners'),
-    duration: Math.max(10, Math.min(120, Number(getPreferences().ai_duration_default || 45))),
-    lessonStyle: String(getPreferences().ai_lesson_style_default || 'Interactive shiur'),
-    additionalInstructions: 'Create a teachable 45-minute lesson grounded in this current learning-cycle text. Keep the flow practical and suitable for live teaching. Review before sharing.',
-    includeOriginal: true,
-    includeTranslation: true,
-    includeEducatorNotes: true,
-    includeDiscussionPrompts: true,
-    contextMode: 'learning_cycle',
-    learningCycleContext: { items: filteredItems, topicLine: filteredItems.map(function(item){ return item.label + ': ' + item.ref; }).join(' | ') }
-  });
-}
-
-function legacy_runQuickActionTodaysDafLessonMenu_(){ return runQuickActionLearningCycleMenu_('daf', "today's Daf lesson"); }
-function legacy_runQuickActionTodays929LessonMenu_(){ return runQuickActionLearningCycleMenu_('929', "today's 929 lesson"); }
-function legacy_runQuickActionThisWeeksParashahLessonMenu_(){ return runQuickActionLearningCycleMenu_('parashah', "this week's Parashah lesson"); }
-function legacy_runQuickActionLearningCycleMenu_(kind, label) {
-  try {
-    const result = runQuickActionLearningCycleByType(kind);
-    DocumentApp.getUi().alert('Generated and inserted: ' + result.title);
-    return result;
-  } catch (error) {
-    DocumentApp.getUi().alert(error && error.message ? error.message : ('Unable to generate ' + label + '.'));
-    throw error;
-  }
 }
 
 function assertExperimentalAiEnabled_() {

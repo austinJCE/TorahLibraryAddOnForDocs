@@ -140,7 +140,43 @@ if not bad:
     print("OK: sidebar_*.html delimiter counts are balanced.")
 PY
 
-blue "-- 7) Search wiring smoke check --"
+blue "-- 7) Duplicate function detection --"
+while IFS= read -r line; do
+  case "$line" in
+    FAIL:*) note_fail "${line#FAIL: }" ;;
+    WARN:*) note_warn "${line#WARN: }" ;;
+    OK:*)   note_ok   "${line#OK: }" ;;
+  esac
+done < <(python3 - <<'PY'
+import re, glob
+from pathlib import Path
+from collections import defaultdict
+
+NAMED_FUNC = re.compile(r'\bfunction\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*\(')
+func_to_files = defaultdict(set)
+
+for path in sorted(glob.glob("*.html")):
+    text = Path(path).read_text(encoding="utf-8")
+    parts = re.findall(r'<script[^>]*>(.*?)</script>', text, flags=re.S | re.I)
+    body = "\n".join(parts)
+    for m in NAMED_FUNC.finditer(body):
+        func_to_files[m.group(1)].add(path)
+
+for path in sorted(glob.glob("*.js")):
+    text = Path(path).read_text(encoding="utf-8")
+    for m in NAMED_FUNC.finditer(text):
+        func_to_files[m.group(1)].add(path)
+
+dups = {name: sorted(files) for name, files in func_to_files.items() if len(files) > 1}
+if dups:
+    for name, files in sorted(dups.items()):
+        print(f"FAIL: duplicate function '{name}' in: {', '.join(files)}")
+else:
+    print("OK: No duplicate named function definitions across files.")
+PY
+)
+
+blue "-- 8) Search wiring smoke check --"
 missing=0
 for pat in '#run-sefaria' 'runUnifiedQuery' 'findReference' 'findSearchAdvanced'; do
   if ! grep -ql "$pat" *.html Code.gs 2>/dev/null; then
@@ -150,7 +186,45 @@ for pat in '#run-sefaria' 'runUnifiedQuery' 'findReference' 'findSearchAdvanced'
 done
 [ "$missing" -eq 0 ] && note_ok "Core search wiring tokens are present."
 
-blue "-- 8) Optional: clasp status --"
+blue "-- 9) Orphaned file detection --"
+while IFS= read -r line; do
+  case "$line" in
+    FAIL:*) note_fail "${line#FAIL: }" ;;
+    WARN:*) note_warn "${line#WARN: }" ;;
+    OK:*)   note_ok   "${line#OK: }" ;;
+  esac
+done < <(python3 - <<'PY'
+import re, glob
+from pathlib import Path
+
+TOP_LEVEL = {
+    'sidebar.html', 'preferences.html', 'ai_lesson.html',
+    'surprise-me.html', 'help.html', 'support.html', 'release-notes.html'
+}
+
+INCLUDE_RE = re.compile(r"""include\s*\(\s*['"]([^'"]+)['"]\s*\)""")
+referenced = set()
+
+for path in sorted(glob.glob("*.html") + glob.glob("*.gs") + glob.glob("*.js")):
+    text = Path(path).read_text(encoding="utf-8")
+    for m in INCLUDE_RE.finditer(text):
+        referenced.add(m.group(1).strip())
+
+all_html = {Path(p).name for p in glob.glob("*.html")}
+candidates = sorted(all_html - TOP_LEVEL)
+
+found_orphan = False
+for f in candidates:
+    stem = Path(f).stem
+    if stem not in referenced:
+        print(f"WARN: possibly orphaned file: {f}")
+        found_orphan = True
+if not found_orphan:
+    print("OK: All non-template HTML files are referenced by an include() directive.")
+PY
+)
+
+blue "-- 10) Optional: clasp status --"
 if command -v clasp >/dev/null 2>&1; then
   if clasp status >/dev/null 2>&1; then
     note_ok "clasp status succeeded."
