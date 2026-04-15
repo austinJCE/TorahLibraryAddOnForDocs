@@ -18,9 +18,17 @@ function saveSessionLibrary() {
   setFooterButtonStates();
 }
 
-function buildSessionEntry(ref, label, corpusLabel) {
+function buildSessionEntry(ref, label, corpusLabel, extra) {
   var rawLabel = String(label || ref || '').split(' › ')[0].split(',')[0].trim();
-  return { ref: ref, label: rawLabel || ref, corpusLabel: String(corpusLabel || 'Other') };
+  extra = extra || {};
+  return {
+    ref: ref,
+    label: rawLabel || ref,
+    corpusLabel: String(corpusLabel || 'Other'),
+    mode: extra.mode || (typeof appMode !== 'undefined' && appMode === 'voices' ? 'voices' : 'text'),
+    url: extra.url || '',
+    query: extra.query || label || ref
+  };
 }
 
 function upsertSessionEntry(listName, entry) {

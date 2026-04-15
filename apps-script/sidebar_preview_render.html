@@ -40,12 +40,4 @@ function refreshSidebarLivePreview() {
   updateSuggestion(data, selectedResultSummary ? selectedResultSummary.label : data.ref);
 }
 
-(function(){
-  if (typeof updateSuggestion !== 'function') return;
-  var __origUpdateSuggestion = updateSuggestion;
-  updateSuggestion = function(dataIn, inputTitle) {
-    __origUpdateSuggestion(dataIn, inputTitle);
-    renderPreviewTransliteration(dataIn);
-  };
-})();
 </script>

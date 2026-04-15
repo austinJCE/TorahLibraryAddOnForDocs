@@ -34,10 +34,12 @@ function hasSessionOverrides() {
 }
 
 function syncSessionOverrideButtons() {
-  var isAdvanced = isAdvancedSessionMode();
-  $('.session-override-actions').toggle(isAdvanced);
-  $('.reset-session-overrides-button, .save-session-defaults-button').prop('disabled', !isAdvanced || !hasSessionOverrides());
-  $('#open-session-library').prop('disabled', !isAdvanced);
+  var isTexts = isAdvancedSessionMode();
+  var hasSelectedTextResult = isTexts && !!selectedResultKey;
+  $('.session-override-actions').toggle(isTexts);
+  $('.reset-session-overrides-button, .save-session-defaults-button').prop('disabled', !isTexts || !hasSessionOverrides());
+  $('.inline-session-settings').toggle(isTexts && hasSelectedTextResult);
+  $('#open-session-library').prop('disabled', false).attr('aria-disabled', 'false');
 }
 
 function syncAiQuickActionState() {
@@ -190,17 +192,24 @@ function updateSidebarCompositionCard() {
   var transliterationOn = $('.include-transliteration').is(':checked');
   var linkOn = $('.insert-sefaria-link').is(':checked');
   var citationOn = $('.insert-citation').is(':checked');
+  var linesOn = $('.wants-pesukim').is(':checked');
+  var detailsOn = $('.include-translation-source-info').is(':checked');
   var scheme = transliterationOn ? getSidebarTransliterationScheme() : 'none';
 
-  $('#sidebar-composition-title-toggle').toggleClass('is-linked', linkOn).attr('aria-pressed', linkOn ? 'true' : 'false');
-  $('#sidebar-vowels-toggle').toggleClass('is-off', !vowelsOn).attr('aria-pressed', vowelsOn ? 'true' : 'false');
-  $('#sidebar-cantillation-toggle').toggleClass('is-off', !cantOn).attr('aria-pressed', cantOn ? 'true' : 'false');
+  $('#sidebar-composition-title-toggle').toggleClass('is-linked is-active', linkOn).attr('aria-pressed', linkOn ? 'true' : 'false');
+  $('#sidebar-citation-toggle').toggleClass('is-active', citationOn).attr('aria-pressed', citationOn ? 'true' : 'false');
+  $('#sidebar-vowels-toggle').toggleClass('is-off', !vowelsOn).toggleClass('is-active', vowelsOn).attr('aria-pressed', vowelsOn ? 'true' : 'false');
+  $('#sidebar-cantillation-toggle').toggleClass('is-off', !cantOn).toggleClass('is-active', cantOn).attr('aria-pressed', cantOn ? 'true' : 'false');
+  $('#sidebar-transliteration-pill').toggleClass('is-active', transliterationOn).attr('aria-pressed', transliterationOn ? 'true' : 'false');
+  $('#sidebar-lines-toggle').toggleClass('is-active', linesOn).attr('aria-pressed', linesOn ? 'true' : 'false');
+  $('#sidebar-translation-details-toggle').toggleClass('is-active', detailsOn).attr('aria-pressed', detailsOn ? 'true' : 'false');
 
   $('.sidebar-composition-hebrew-text--full').prop('hidden', !(vowelsOn && cantOn));
   $('.sidebar-composition-hebrew-text--no-cantillation').prop('hidden', !(vowelsOn && !cantOn));
   $('.sidebar-composition-hebrew-text--consonants').prop('hidden', !!vowelsOn);
 
-  $('#sidebar-transliteration-toggle').text(getSidebarTransliterationLabel(scheme)).toggleClass('is-none', scheme === 'none').attr('data-value', scheme);
+  var translitLabel = transliterationOn ? getSidebarTransliterationLabel(scheme) : 'Aא Translit';
+  $('#sidebar-transliteration-toggle').text(translitLabel).toggleClass('is-none', !transliterationOn).attr('data-value', scheme);
   $('.sidebar-transliteration-option').each(function () {
     $(this).toggleClass('is-selected', $(this).attr('data-value') === scheme);
   });
@@ -214,21 +223,39 @@ function updateSidebarCompositionCard() {
   );
 }
 
+function refreshCompositionAndPreview() {
+  updateSidebarCompositionCard();
+  if (typeof refreshSidebarLivePreview === 'function') refreshSidebarLivePreview();
+}
+
 function bindSidebarCompositionCard() {
   $('#sidebar-composition-title-toggle').off('click').on('click', function () {
-    $('.insert-sefaria-link').prop('checked', !$('.insert-sefaria-link').is(':checked'));
-    updateSidebarCompositionCard();
-    $('.insert-sefaria-link').trigger('change');
+    $('.insert-sefaria-link').prop('checked', !$('.insert-sefaria-link').is(':checked')).trigger('change');
+    refreshCompositionAndPreview();
+  });
+  $('#sidebar-citation-toggle').off('click').on('click', function () {
+    $('.insert-citation').prop('checked', !$('.insert-citation').is(':checked')).trigger('change');
+    refreshCompositionAndPreview();
   });
   $('#sidebar-vowels-toggle').off('click').on('click', function () {
-    $('.wants-vowels').prop('checked', !$('.wants-vowels').is(':checked'));
-    updateSidebarCompositionCard();
-    $('.wants-vowels').trigger('change');
+    $('.wants-vowels').prop('checked', !$('.wants-vowels').is(':checked')).trigger('change');
+    refreshCompositionAndPreview();
   });
   $('#sidebar-cantillation-toggle').off('click').on('click', function () {
-    $('.wants-cantillation').prop('checked', !$('.wants-cantillation').is(':checked'));
-    updateSidebarCompositionCard();
-    $('.wants-cantillation').trigger('change');
+    $('.wants-cantillation').prop('checked', !$('.wants-cantillation').is(':checked')).trigger('change');
+    refreshCompositionAndPreview();
+  });
+  $('#sidebar-transliteration-pill').off('click').on('click', function () {
+    $('.include-transliteration').prop('checked', !$('.include-transliteration').is(':checked')).trigger('change');
+    refreshCompositionAndPreview();
+  });
+  $('#sidebar-lines-toggle').off('click').on('click', function () {
+    $('.wants-pesukim').prop('checked', !$('.wants-pesukim').is(':checked')).trigger('change');
+    refreshCompositionAndPreview();
+  });
+  $('#sidebar-translation-details-toggle').off('click').on('click', function () {
+    $('.include-translation-source-info').prop('checked', !$('.include-translation-source-info').is(':checked')).trigger('change');
+    refreshCompositionAndPreview();
   });
   $('#sidebar-transliteration-toggle').off('click').on('click', function (event) {
     event.preventDefault();
@@ -241,19 +268,20 @@ function bindSidebarCompositionCard() {
     if (value === 'none') {
       $('.include-transliteration').prop('checked', false);
       effectivePreferences.transliteration_scheme = getSidebarTransliterationScheme();
-      updateSidebarCompositionCard();
+      $('.include-transliteration').trigger('change');
+      refreshCompositionAndPreview();
       saveSidebarPreference({ include_transliteration_default: false }, function () {
         effectivePreferences.transliteration_scheme = getSidebarTransliterationScheme();
-        updateSidebarCompositionCard();
+        refreshCompositionAndPreview();
         if (hasResolvedReference && data && data.ref) refreshSelectedResult();
       });
     } else {
       $('.include-transliteration').prop('checked', true);
       effectivePreferences.transliteration_scheme = value;
-      updateSidebarCompositionCard();
+      refreshCompositionAndPreview();
       saveSidebarPreference({ include_transliteration_default: true, transliteration_scheme: value }, function () {
         effectivePreferences.transliteration_scheme = value;
-        updateSidebarCompositionCard();
+        refreshCompositionAndPreview();
         if (hasResolvedReference && data && data.ref) refreshSelectedResult();
       });
     }
@@ -263,6 +291,11 @@ function bindSidebarCompositionCard() {
     if ($(event.target).closest('.sidebar-composition-transliteration-wrap').length) return;
     closeSidebarTransliterationMenu();
   });
+  $('.include-transliteration, .insert-sefaria-link, .insert-citation, .wants-vowels, .wants-cantillation, .wants-pesukim, .include-translation-source-info')
+    .off('change.compositionMatch')
+    .on('change.compositionMatch', function () {
+      refreshCompositionAndPreview();
+    });
 }
 
 function focusResultByIndex(index) {
@@ -397,9 +430,11 @@ function setInsertButtonState(enabled) {
 }
 
 function setFooterButtonStates() {
-  var hasSelection = !!((appMode === 'voices' && selectedVoiceItem && selectedVoiceItem.url) || (hasResolvedReference && data && data.ref && !$('#open-on-sefaria').prop('disabled')));
+  var canInsert = !!((appMode === 'voices' && selectedVoiceItem && selectedVoiceItem.ref) || (appMode === 'texts' && hasResolvedReference && data && data.ref));
+  var canOpen = !!((appMode === 'voices' && selectedVoiceItem && selectedVoiceItem.url) || (appMode === 'texts' && hasResolvedReference && data && data.ref));
   var hasHistoryItems = !!(((sessionLibrary && sessionLibrary.pinned) || []).length || ((sessionLibrary && sessionLibrary.inserted) || []).length);
-  $('#open-on-sefaria').toggleClass('is-active', hasSelection);
+  $('#insert-source').prop('disabled', !canInsert).toggleClass('is-active', canInsert);
+  $('#open-on-sefaria').toggleClass('is-active', canOpen).prop('disabled', !canOpen);
   $('#open-session-library').toggleClass('is-active', hasHistoryItems);
 }
 
@@ -970,6 +1005,8 @@ function updateQueryIntel(input) { return; }
 // Session library and results rendering extracted to sidebar_session_library and sidebar_results_render.
 
 function runUnifiedQuery() {
+  if (appMode === 'voices') return runVoicesQuery();
+  updateModeDependentSections();
   var input = normalizeUnifiedReferenceInput(($('.input').val() || '').trim());
   $('.input').val(input);
   clearSelectedResult();
@@ -1115,6 +1152,29 @@ function runUnifiedQuery() {
 }
 
 function resolveSelectedResult(selectedRef, inputLabel) {
+  if (appMode === 'voices') {
+    var item = queryState.searchResults.concat(queryState.libraryMatches).find(function(result){ return result && result.ref === selectedRef; }) || null;
+    selectedVoiceItem = item;
+    selectedRefValue = selectedRef;
+    hasResolvedReference = false;
+    if (selectedResultSummary) {
+      selectedResultSummary.status = item ? 'Ready to insert' : '';
+      updateResultsVisibility();
+    }
+    setInsertButtonState(!!item);
+    $('#open-on-sefaria').prop('disabled', !(item && item.url));
+    if (item) {
+      var snippet = normalizeOptionText(item.snippet || item.summary || '');
+      var previewHtml = "<div class='voice-preview'><div class='voice-preview-title'>" + escapeHTML(item.label || item.ref || 'Source sheet') + "</div>";
+      if (snippet) previewHtml += "<div class='voice-preview-snippet'>" + escapeHTML(snippet) + "</div>";
+      if (item.url) previewHtml += "<div class='voice-preview-link'>Open on Sefaria with the button below.</div>";
+      previewHtml += "</div>";
+      $('.suggestions').html(previewHtml);
+    }
+    updateModeDependentSections();
+    return;
+  }
+  selectedVoiceItem = null;
   selectedRefValue = selectedRef;
   var requestId = ++latestResolveRequestId;
   hasResolvedReference = false;
@@ -1165,6 +1225,10 @@ function resolveSelectedResult(selectedRef, inputLabel) {
 }
 
 function refreshSelectedResult() {
+  if (appMode === 'voices') {
+    updateModeDependentSections();
+    return;
+  }
   if (!selectedRefValue) return;
   var fallbackLabel = selectedResultSummary && selectedResultSummary.label ? selectedResultSummary.label : selectedRefValue;
   resolveSelectedResult(selectedRefValue, fallbackLabel);
@@ -1737,6 +1801,7 @@ function updateSuggestion(dataIn, inputTitle) {
 
   updateVersionControlsVisibility();
   updateModeDependentSections();
+  if (typeof renderPreviewTransliteration === 'function') renderPreviewTransliteration(dataIn);
 }
 
 
@@ -1885,10 +1950,6 @@ $('.close').click(function () {
 
 var appMode = window.INITIAL_SIDEBAR_MODE || 'texts';
 var selectedVoiceItem = null;
-var originalTextRunUnifiedQuery = runUnifiedQuery;
-var originalResolveSelectedResult = resolveSelectedResult;
-var originalRefreshSelectedResult = refreshSelectedResult;
-var originalBuildSessionEntry = buildSessionEntry;
 
 function normalizeSidebarMode(mode) {
   return (mode === 'voices' || mode === 'experimental') ? mode : 'texts';
@@ -1991,19 +2052,6 @@ function updateModeDependentSections() {
   renderSessionLibrary();
 }
 
-// TODO (P1-1): Consolidate into a single definition. The canonical base is in
-// sidebar_session_library.html; this override adds mode/url/query fields via the
-// originalBuildSessionEntry save-and-wrap pattern the PRD prohibits. Merge both
-// bodies into one function there and remove originalBuildSessionEntry entirely.
-function buildSessionEntry(ref, label, corpusLabel, extra) {
-  var entry = originalBuildSessionEntry(ref, label, corpusLabel);
-  extra = extra || {};
-  entry.mode = extra.mode || (appMode === 'voices' ? 'voices' : 'text');
-  entry.url = extra.url || '';
-  entry.query = extra.query || label || ref;
-  return entry;
-}
-
 function runVoicesQuery() {
   var input = normalizeUnifiedReferenceInput(($('.input').val() || '').trim());
   $('.input').val(input);
@@ -2035,66 +2083,6 @@ function runVoicesQuery() {
     setResultsLoading(false);
   }).searchVoices(input, {});
 }
-
-runUnifiedQuery = function() {
-  if (appMode === 'voices') {
-    return runVoicesQuery();
-  }
-  updateModeDependentSections();
-  return originalTextRunUnifiedQuery();
-};
-
-resolveSelectedResult = function(selectedRef, inputLabel) {
-  if (appMode === 'voices') {
-    var item = queryState.searchResults.concat(queryState.libraryMatches).find(function(result){ return result && result.ref === selectedRef; }) || null;
-    selectedVoiceItem = item;
-    selectedRefValue = selectedRef;
-    hasResolvedReference = false;
-    if (selectedResultSummary) {
-      selectedResultSummary.status = item ? 'Ready to insert' : '';
-      updateResultsVisibility();
-    }
-    setInsertButtonState(!!item);
-    $('#open-on-sefaria').prop('disabled', !(item && item.url));
-    if (item) {
-      var snippet = normalizeOptionText(item.snippet || item.summary || '');
-      var previewHtml = "<div class='voice-preview'><div class='voice-preview-title'>" + escapeHTML(item.label || item.ref || 'Source sheet') + "</div>";
-      if (snippet) previewHtml += "<div class='voice-preview-snippet'>" + escapeHTML(snippet) + "</div>";
-      if (item.url) previewHtml += "<div class='voice-preview-link'>Open on Sefaria with the button below.</div>";
-      previewHtml += "</div>";
-      $('.suggestions').html(previewHtml);
-    }
-    updateModeDependentSections();
-    return;
-  }
-  selectedVoiceItem = null;
-  return originalResolveSelectedResult(selectedRef, inputLabel);
-};
-
-refreshSelectedResult = function() {
-  if (appMode === 'voices') {
-    updateModeDependentSections();
-    return;
-  }
-  return originalRefreshSelectedResult();
-};
-
-syncSessionOverrideButtons = function() {
-  var isTexts = appMode === 'texts';
-  var hasSelectedTextResult = isTexts && !!selectedResultKey;
-  $('.reset-session-overrides-button, .save-session-defaults-button').prop('disabled', !isTexts || !hasSessionOverrides());
-  $('.inline-session-settings').toggle(isTexts && hasSelectedTextResult);
-  $('#open-session-library').prop('disabled', false).attr('aria-disabled', 'false');
-};
-
-setFooterButtonStates = function () {
-  var canInsert = !!((appMode === 'voices' && selectedVoiceItem && selectedVoiceItem.ref) || (appMode === 'texts' && hasResolvedReference && data && data.ref));
-  var canOpen = !!((appMode === 'voices' && selectedVoiceItem && selectedVoiceItem.url) || (appMode === 'texts' && hasResolvedReference && data && data.ref));
-  var hasHistoryItems = !!(((sessionLibrary && sessionLibrary.pinned) || []).length || ((sessionLibrary && sessionLibrary.inserted) || []).length);
-  $('#insert-source').prop('disabled', !canInsert).toggleClass('is-active', canInsert);
-  $('#open-on-sefaria').toggleClass('is-active', canOpen).prop('disabled', !canOpen);
-  $('#open-session-library').toggleClass('is-active', hasHistoryItems);
-};
 
 $('.mode-switch-button, .experimental-menu-button').off('click').on('click', function () {
   var nextMode = $(this).attr('data-sidebar-mode');
