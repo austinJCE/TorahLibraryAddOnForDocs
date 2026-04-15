@@ -316,6 +316,23 @@ function compareByCategory(a, b) {
   return labelA.localeCompare(labelB);
 }
 
+function sortByRecentSession(items) {
+  var list = (typeof sessionLibrary !== 'undefined' && sessionLibrary && Array.isArray(sessionLibrary.inserted)) ? sessionLibrary.inserted : [];
+  var refIndexMap = {};
+  list.forEach(function(entry, i) { if (entry && entry.ref) refIndexMap[entry.ref] = i; });
+  var recent = [];
+  var other = [];
+  items.forEach(function(item) {
+    if (item && item.ref && refIndexMap.hasOwnProperty(item.ref)) {
+      recent.push(item);
+    } else {
+      other.push(item);
+    }
+  });
+  recent.sort(function(a, b) { return refIndexMap[a.ref] - refIndexMap[b.ref]; });
+  return recent.concat(other);
+}
+
 function sortLibraryItems(items, sortMode) {
   var direct = [];
   var rest = [];
@@ -328,8 +345,10 @@ function sortLibraryItems(items, sortMode) {
     rest.sort(function(a, b) { return compareResultsAlphabetically(a, b, 'desc'); });
   } else if (sortMode === 'category') {
     rest.sort(compareByCategory);
+  } else if (sortMode === 'recent') {
+    rest = sortByRecentSession(rest);
   }
-  // 'recent' and 'relevance': preserve existing order
+  // 'relevance': preserve existing order
   return direct.concat(rest);
 }
 
@@ -341,8 +360,10 @@ function sortSearchItems(items, sortMode) {
     out.sort(function(a, b) { return compareResultsAlphabetically(a, b, 'desc'); });
   } else if (sortMode === 'category') {
     out.sort(compareByCategory);
+  } else if (sortMode === 'recent') {
+    out = sortByRecentSession(out);
   }
-  // 'recent' and 'relevance': preserve existing order
+  // 'relevance': preserve existing order
   return out;
 }
 
