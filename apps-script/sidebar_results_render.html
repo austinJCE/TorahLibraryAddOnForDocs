@@ -48,8 +48,35 @@ function ensureResultFilterUI() {
 
 function renderResultFilterStrip() {
   ensureResultFilterUI();
-  $('.result-filter-strip').hide().empty();
+  var $strip = $('.result-filter-strip');
+  $strip.hide().empty();
   syncRestoreCorpusButton();
+
+  var params = getSearchParameters();
+  var activeLangs = params.translationLanguages;
+  if (!activeLangs || !activeLangs.length) return;
+
+  // Build label lookup from the existing checkbox DOM
+  var langLabels = {};
+  $('.translation-language-option').each(function () {
+    var code = $(this).val();
+    var label = $(this).closest('label').find('span').text() || code;
+    langLabels[code] = label;
+  });
+
+  var html = "<span class='lang-filter-strip-label'>Language:</span>";
+  activeLangs.forEach(function (code) {
+    var label = langLabels[code] || code;
+    html += "<button type='button' class='result-filter-chip lang-filter-chip'" +
+      " data-lang-filter='" + escapeHTML(code) + "'" +
+      " title='Remove " + escapeHTML(label) + " filter'>" +
+      escapeHTML(label) + " <span aria-hidden='true'>\u00d7</span></button>";
+  });
+  if (activeLangs.length > 1) {
+    html += "<button type='button' class='result-filter-chip lang-filter-clear-chip'" +
+      " title='Clear all language filters'>Clear all \u00d7</button>";
+  }
+  $strip.html(html).show();
 }
 
 function resetSelectedResultView() {
