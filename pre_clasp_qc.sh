@@ -123,38 +123,32 @@ else
   note_warn "node not found; skipped raw JS file syntax checks."
 fi
 
-blue "-- 6) Brace/paren/bracket sanity for sidebar_js.html --"
-if [ -f "./sidebar_js.html" ]; then
-  python3 - <<'PY'
+blue "-- 6) Brace/paren/bracket sanity for sidebar HTML modules --"
+python3 - <<'PY'
+import glob
 from pathlib import Path
-text = Path("sidebar_js.html").read_text(encoding="utf-8")
 pairs = [('(',')'),('{','}'),('[',']')]
 bad = False
-for a,b in pairs:
-    ca, cb = text.count(a), text.count(b)
-    if ca != cb:
-        print(f"FAIL: sidebar_js.html unmatched counts: {a}={ca} {b}={cb}")
-        bad = True
+for path in sorted(glob.glob("sidebar_*.html")):
+    text = Path(path).read_text(encoding="utf-8")
+    for a, b in pairs:
+        ca, cb = text.count(a), text.count(b)
+        if ca != cb:
+            print(f"FAIL: {path} unmatched counts: {a}={ca} {b}={cb}")
+            bad = True
 if not bad:
-    print("OK: sidebar_js.html delimiter counts are balanced.")
+    print("OK: sidebar_*.html delimiter counts are balanced.")
 PY
-else
-  note_warn "sidebar_js.html not found; skipped delimiter sanity check."
-fi
 
 blue "-- 7) Search wiring smoke check --"
-if [ -f "./sidebar_js.html" ]; then
-  missing=0
-  for pat in '#run-sefaria' 'runUnifiedQuery' 'findReference' 'findSearchAdvanced'; do
-    if ! grep -q "$pat" sidebar_js.html Code.gs 2>/dev/null; then
-      note_fail "Could not find expected search token: $pat"
-      missing=1
-    fi
-  done
-  [ "$missing" -eq 0 ] && note_ok "Core search wiring tokens are present."
-else
-  note_warn "sidebar_js.html missing; skipped search wiring smoke check."
-fi
+missing=0
+for pat in '#run-sefaria' 'runUnifiedQuery' 'findReference' 'findSearchAdvanced'; do
+  if ! grep -ql "$pat" *.html Code.gs 2>/dev/null; then
+    note_fail "Could not find expected search token: $pat"
+    missing=1
+  fi
+done
+[ "$missing" -eq 0 ] && note_ok "Core search wiring tokens are present."
 
 blue "-- 8) Optional: clasp status --"
 if command -v clasp >/dev/null 2>&1; then
