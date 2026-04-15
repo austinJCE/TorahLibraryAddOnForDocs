@@ -106,18 +106,20 @@
           </select>
         </div>
 
-        <button
-          type="button"
-          class="results-tool restore-corpus-button text-mode-only"
-          id="restore-corpus-button"
-          aria-label="Restore Corpus"
-          title="Restore Corpus"
-          style="display:none;">⤦</button>
-
-        <label class="visually-hidden" for="restore-corpus-select">Restore removed corpus</label>
-        <select class="results-tool restore-corpus-select visually-hidden" id="restore-corpus-select" aria-label="Restore removed corpus">
-          <option value="">Restore…</option>
-        </select>
+        <div id="restore-corpus-menu-wrap" style="position:relative;display:inline-block;">
+          <button
+            type="button"
+            class="results-tool restore-corpus-button text-mode-only"
+            id="restore-corpus-button"
+            aria-label="Restore Corpus"
+            aria-haspopup="true"
+            aria-expanded="false"
+            title="Restore Corpus"
+            style="display:none;">⤦</button>
+          <div id="restore-corpus-menu" class="hidden restore-corpus-menu" role="menu" aria-label="Restore hidden corpora">
+            <div id="restore-corpus-menu-items"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -270,9 +272,6 @@
           </details>
         </section>
 
-        
-      </div>
-
         <section class="experimental-section" style="display:none;">
           <details class="sidebar-accordion experimental-accordion" open>
             <summary class="section-label accordion-summary">Experimental Features</summary>
@@ -329,6 +328,8 @@
           </details>
         </section>
 
+
+      </div>
 
       <select class="output-mode-selection visually-hidden" aria-hidden="true">
         <option value="both" selected>Original with Translation</option>

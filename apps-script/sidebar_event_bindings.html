@@ -336,6 +336,27 @@ $('#sm-inline-launch').on('click', function () {
     .insertSurpriseMe(payload);
 });
 
+$('#restore-corpus-button').off('click').on('click', function (event) {
+  event.preventDefault();
+  event.stopPropagation();
+  var menu = $('#restore-corpus-menu');
+  if (menu.hasClass('hidden')) openRestoreCorpusMenu();
+  else closeRestoreCorpusMenu();
+});
+
+$(document).on('click', function (event) {
+  if (!$(event.target).closest('#restore-corpus-menu-wrap').length) {
+    closeRestoreCorpusMenu();
+  }
+});
+
+$(document).on('click', '.restore-corpus-menu-item', function (event) {
+  event.preventDefault();
+  var corpusKey = $(this).attr('data-corpus-key');
+  if (!corpusKey) return;
+  toggleCorpusVisibility(corpusKey);
+});
+
 $('#ai-inline-generate').on('click', function () {
   var topic = ($('#ai-inline-topic').val() || '').trim();
   var payload = {
