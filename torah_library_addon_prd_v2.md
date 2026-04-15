@@ -245,6 +245,50 @@ The following must always stay synchronized:
 - footer readiness states where relevant
 - experimental visibility states
 
+## 8.5 Settings Parity Contract
+
+### The Paradigm
+
+Every **insertion-impacting setting** must exist in **both** of the following surfaces with consistent semantics and identical behavior:
+
+1. **Preferences modal** — controls the saved user default, applied at sidebar load
+2. **More Options panel in the sidebar** — controls the current session override, applied immediately and reversibly
+
+The user must be able to look at the Preferences composition preview and the sidebar More Options composition card and recognize they are controlling the same settings with the same logical groupings.
+
+### Canonical List of Insertion-Impacting Settings
+
+The following settings are **insertion-impacting** and must participate in the parity contract. Font settings (`*_font`, `*_font_size`, `*_font_style`) and transliteration character-override maps (`transliteration_overrides`) are excluded from parity because they require specialized UI that does not belong in the compact sidebar.
+
+| Preference Key | Preferences Label | More Options Label | UI Type |
+|---|---|---|---|
+| `insert_sefaria_link_default` | Link source title before inserted text | 🔗 Title | Toggle pill |
+| `insert_citation_default` | Include source citation after inserted text | 🧾 Citation | Toggle pill |
+| `nekudot` | Vowels (niqqud) | ◌ְ Vowels | Toggle pill |
+| `teamim` | Cantillation (teamim) | ◌֑ Cantillation | Toggle pill |
+| `include_transliteration_default` | Include transliteration | Aא Translit | Toggle pill |
+| `transliteration_scheme` | Transliteration scheme | Scheme selector (attached to Translit pill) | Compact dropdown |
+| `show_line_markers_default` | Line markers | ¶ Lines | Toggle pill |
+| `include_translation_source_info` | Translation details | ⓘ Details | Toggle pill |
+| `output_mode_default` | Display mode (Original / Bilingual / Translation) | Display chooser | Card selector |
+| `bilingual_layout_default` | Bilingual layout (Stacked / Right–Left / Left–Right) | Layout chooser | Card selector |
+
+### Rules for Parity
+
+1. Every setting in the table above must be editable in **both** Preferences and More Options.
+2. A change in **More Options** must write to `sessionPreferences` and update `effectivePreferences` immediately without touching `accountPreferences`.
+3. A change in **Preferences** must write to `accountPreferences` and must not silently overwrite `sessionPreferences` or `effectivePreferences` without an explicit apply action.
+4. The sidebar's `effectivePreferences` is always `merge(accountPreferences, sessionPreferences)`.
+5. **"Save as Defaults"** in More Options must promote all session overrides for settings in this table to `accountPreferences` and then clear `sessionPreferences`.
+6. **"Reset to Defaults"** in More Options must clear `sessionPreferences` for all settings in this table and re-derive `effectivePreferences` from `accountPreferences`.
+7. Both surfaces must use the **same preference key names** when reading and writing.
+8. `mergePreferenceDefaults()` must correctly populate the sidebar's hidden checkbox state for every key in this table.
+9. Every pill toggle in More Options must have a corresponding backing DOM element whose state drives the preference write. The backing state model must not be implicit in the pill's visual state alone.
+
+### Enforcement
+
+The `SETTINGS` array in `Code.gs` must include all preference keys in this table. Any key missing from `SETTINGS` will not be saved or loaded through the standard preferences engine and must be treated as a defect.
+
 ---
 
 # 9. Functional Requirements: Preferences Modal
@@ -299,19 +343,25 @@ Preferences must define default voice-related settings using the same pattern as
 
 This section is the sole gatekeeper for experimental system-level activation.
 
-It must include:
+It must include, in this order:
 
-- **Enable Experimental Features** master toggle
-- **AI Mode** toggle
-- **Surprise Me** toggle
+- **Enable Experimental Features** — master toggle (gates visibility of all items below)
+- **AI Mode** — toggle, visible only when master is on
+- **Surprise Me** — toggle, visible only when master is on
 
-### Behavior
-Enabling relevant experimental features must:
+### Master Toggle Behavior
 
-- immediately set the state flag
-- cause the Experimental sidebar tab to appear
+The master toggle must:
+- When turned **off**: hide and disable all child experimental toggles; mark all experimental flags as disabled; remove the Experimental sidebar tab
+- When turned **on**: reveal the AI Mode and Surprise Me child toggles in their last-saved state; the Experimental sidebar tab appears only if at least one child toggle is also on
+
+### Child Toggle Behavior
+Enabling a child toggle must:
+
+- immediately set the state flag in `accountPreferences`
+- cause the Experimental sidebar tab to appear (if not already visible)
 - update footer action behavior as required
-- remove ambiguity that the toggle did nothing
+- produce a visible, immediate UI change — a toggle must never appear to do nothing
 
 Experimental features must **not** be activated only from ad hoc sidebar-only controls.
 
@@ -460,6 +510,28 @@ Therefore:
 - persistence may happen in the background
 
 The Sidebar must not feel slower or more confusing than Preferences.
+
+## 10.6 Sidebar Display Bounds and Overflow Prevention
+
+The sidebar operates inside Google Docs' sidebar iframe, which is **300px wide** and constrained to the available browser window height. Everything the user needs to see and interact with must fit within this frame.
+
+### Hard Requirements
+
+- **No element may render outside the sidebar frame.** This includes dropdowns, popup menus, transliteration scheme selectors, and any accordion or panel that expands.
+- **All scrollable content must be inside `.sidebar-scroll`.** This is the sole scroll container. Every section — including the experimental section — must be a child of `.sidebar-scroll` so it participates in scrolling rather than clipping or overflowing.
+- **Absolute-positioned panels must be contained.** Display/Layout choosers, the transliteration scheme dropdown, the restore-corpus menu, and any other inline panel must use `position: absolute` within a `position: relative` parent that is itself inside the sidebar frame. They must not use `position: fixed`.
+- **`overflow: hidden` on the outer container is not a substitute for correct layout.** Content hidden by overflow clipping is inaccessible and must be treated as a bug.
+
+### Overflow Prevention Rules
+
+- The `<main>` container uses `height: 100vh; overflow: hidden` only as a frame boundary. All user-accessible content must be inside `.sidebar-scroll` with `overflow-y: auto`.
+- No section may be placed between `.sidebar-scroll`'s closing tag and `</main>`. Doing so creates a non-scrollable dead zone.
+- Menus and dropdowns that would overflow the sidebar's right or bottom edge must be repositioned (e.g., right-aligned or scrolled into view) rather than clipped.
+- The experimental section, which may contain multiple form accordions, must scroll with the rest of the sidebar content.
+
+### Minimum Interaction Target Size
+
+All interactive controls (buttons, pill toggles, checkboxes, select controls) must present a minimum clickable area of **28 × 28 px** to support users with reduced fine motor precision. Label-clicking via `<label for>` counts toward this target.
 
 ---
 
@@ -1170,6 +1242,12 @@ The product is considered correct for this PRD milestone only when:
 
 ## P0
 - shared state model and sync correctness
+- **settings parity contract enforced** — all insertion-impacting settings in both Preferences and More Options, with correct backing DOM elements
+- **vowels and cantillation pill toggles functional** — `.wants-vowels` and `.wants-cantillation` DOM elements present and wired
+- **transliteration on/off pill functional** — `#sidebar-transliteration-pill` or equivalent DOM element present and wired
+- **restore-corpus dropdown DOM present** — `#restore-corpus-menu`, `#restore-corpus-menu-wrap`, `#restore-corpus-menu-items` in sidebar.html
+- **experimental tab appears after bootstrap** — `applyEffectivePreferencesToUI()` calls `syncExperimentalAvailability()`
+- **no element renders outside sidebar frame** — experimental section inside `.sidebar-scroll`, all panels contained
 - stable sidebar layout
 - immediate trustworthy preview
 - search reliability
@@ -1179,16 +1257,22 @@ The product is considered correct for this PRD milestone only when:
 - balanced output tags and no duplicate `</style>`
 
 ## P1
+- master experimental toggle in Preferences (gates child toggles)
 - Experimental tab/accordion architecture
 - modular ownership cleanup
-- Session Library stability
+- Session Library accessible in experimental mode
+- `insert_citation_default` in SETTINGS array verified
+- duplicate event handler cleanup (mode-card, layout-option)
+- dead code removal (unused `initializePreferenceState`, redundant IIFE)
 - filter/sort/grouping polish
-- preflight hardening checks
+- preflight hardening checks extended to DOM element existence
 
 ## P2
+- "Recent" sort implemented with actual recency ordering
 - further visual refinement
 - advanced domain-specific search/grouping enhancements
 - additional progressive disclosure improvements
+- three-column grid enforcement for More Options control rows
 
 ---
 
