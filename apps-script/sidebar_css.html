@@ -4187,4 +4187,52 @@
   background: #ffffff !important;
 }
 
+/* Experimental inline form controls */
+.experimental-inline-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.experimental-inline-input,
+.experimental-inline-number {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #ffffff;
+}
+
+.experimental-inline-number {
+  width: 72px;
+}
+
+.experimental-inline-input:focus,
+.experimental-inline-number:focus {
+  outline: none;
+  border-color: var(--selected, #18345d);
+}
+
+.experimental-inline-status {
+  margin: 4px 0 0;
+}
+
+.experimental-advanced-link {
+  margin-top: 4px;
+}
+
+.experimental-advanced-link .link-button {
+  font-size: 12px;
+  color: var(--selected, #18345d);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 </style>

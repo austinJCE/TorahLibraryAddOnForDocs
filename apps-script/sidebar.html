@@ -273,16 +273,50 @@
             <div class="accordion-panel more-options-card">
               <details class="feature-accordion" open>
                 <summary>AI Shiur</summary>
-                <div class="helper-text">Open the experimental AI lesson generator workflow.</div>
+                <p class="helper-text">Generate a lesson draft and insert it directly into your document.</p>
+                <div class="experimental-inline-form">
+                  <label class="compact-section-label" for="ai-inline-topic">Topic or reference</label>
+                  <input id="ai-inline-topic" type="text" class="experimental-inline-input" placeholder="Berakhot 2a, teshuvah, gratitude…" autocomplete="off">
+                  <label class="compact-section-label" for="ai-inline-audience">Audience</label>
+                  <select id="ai-inline-audience" class="translation-version-select">
+                    <option value="Adult learners">Adult learners</option>
+                    <option value="High school students">High school students</option>
+                    <option value="Middle school students">Middle school students</option>
+                    <option value="Intro / beginners">Intro / beginners</option>
+                    <option value="Educators">Educators</option>
+                  </select>
+                  <label class="compact-section-label" for="ai-inline-style">Style</label>
+                  <select id="ai-inline-style" class="translation-version-select">
+                    <option value="Interactive shiur">Interactive shiur</option>
+                    <option value="Source-sheet chavruta">Source-sheet chavruta</option>
+                    <option value="Text-study seminar">Text-study seminar</option>
+                    <option value="Accessible intro session">Accessible intro session</option>
+                    <option value="Drash">Drash</option>
+                  </select>
+                </div>
                 <div class="footer-button-row">
-                  <button type="button" class="footer-action-button open-ai-lesson-tool">Open AI Shiur</button>
+                  <button type="button" id="ai-inline-generate" class="footer-action-button">Generate &amp; Insert</button>
+                </div>
+                <p class="helper-text experimental-inline-status" id="ai-inline-status" hidden></p>
+                <div class="footer-button-row experimental-advanced-link">
+                  <button type="button" class="link-button open-ai-lesson-tool">Advanced options…</button>
                 </div>
               </details>
               <details class="feature-accordion">
                 <summary>Surprise Me</summary>
-                <div class="helper-text">Launch the Surprise Me experimental workflow.</div>
+                <p class="helper-text">Insert random matching sources. Leave blank for a random Hebrew seed word.</p>
+                <div class="experimental-inline-form">
+                  <label class="compact-section-label" for="sm-inline-term">Search term</label>
+                  <input id="sm-inline-term" type="text" class="experimental-inline-input" placeholder="Optional — blank for random" autocomplete="off">
+                  <label class="compact-section-label" for="sm-inline-count">How many sources</label>
+                  <input id="sm-inline-count" type="number" class="experimental-inline-number" min="1" max="10" value="5">
+                </div>
                 <div class="footer-button-row">
-                  <button type="button" class="footer-action-button open-surprise-tool">Open Surprise Me</button>
+                  <button type="button" id="sm-inline-launch" class="footer-action-button">Insert Sources</button>
+                </div>
+                <p class="helper-text experimental-inline-status" id="sm-inline-status" hidden></p>
+                <div class="footer-button-row experimental-advanced-link">
+                  <button type="button" class="link-button open-surprise-tool">Advanced options…</button>
                 </div>
               </details>
             </div>

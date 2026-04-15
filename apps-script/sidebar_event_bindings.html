@@ -279,4 +279,65 @@ $('.layout-option').on('click keydown', function (event) {
 $('.close').click(function () {
   google.script.host.close();
 });
+
+$('#sm-inline-launch').on('click', function () {
+  var term = ($('#sm-inline-term').val() || '').trim();
+  var count = parseInt($('#sm-inline-count').val(), 10);
+  var payload = {
+    term: term,
+    count: Math.max(1, Math.min(10, isNaN(count) ? 5 : count)),
+    corpuses: ['Tanakh', 'Mishnah', 'Talmud', 'Midrash', 'Halakhah'],
+    sortMode: 'relevance'
+  };
+  var $btn = $(this);
+  var $status = $('#sm-inline-status');
+  $btn.prop('disabled', true);
+  $status.text(term ? 'Searching and shuffling sources…' : 'Picking a seed word and searching…').removeAttr('hidden');
+  google.script.run
+    .withSuccessHandler(function (result) {
+      $btn.prop('disabled', false);
+      $status.text((result && result.message) ? result.message : 'Done.');
+    })
+    .withFailureHandler(function (error) {
+      $btn.prop('disabled', false);
+      $status.text((error && error.message) ? error.message : 'Something went wrong.');
+    })
+    .insertSurpriseMe(payload);
+});
+
+$('#ai-inline-generate').on('click', function () {
+  var topic = ($('#ai-inline-topic').val() || '').trim();
+  var payload = {
+    provider: 'default',
+    model: '',
+    keyStrategy: 'auto',
+    apiKey: '',
+    topic: topic,
+    contextMode: 'topic',
+    audience: $('#ai-inline-audience').val() || 'Adult learners',
+    duration: 45,
+    lessonStyle: $('#ai-inline-style').val() || 'Interactive shiur',
+    additionalInstructions: '',
+    includeOriginal: true,
+    includeTranslation: true,
+    includeTransliteration: false,
+    includeEducatorNotes: true,
+    includeDiscussionPrompts: true
+  };
+  var $btn = $(this);
+  var $status = $('#ai-inline-status');
+  $btn.prop('disabled', true);
+  $status.text('Generating and inserting your draft…').removeAttr('hidden');
+  google.script.run
+    .withSuccessHandler(function (result) {
+      $btn.prop('disabled', false);
+      var title = (result && result.title) ? result.title : 'lesson';
+      $status.text('Inserted "' + title + '".');
+    })
+    .withFailureHandler(function (error) {
+      $btn.prop('disabled', false);
+      $status.text((error && error.message) ? error.message : 'Something went wrong.');
+    })
+    .generateAiLessonDraft(payload);
+});
 </script>
