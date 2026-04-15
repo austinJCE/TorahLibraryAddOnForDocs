@@ -3769,6 +3769,34 @@
   animation: restorePulse 0.25s ease;
 }
 
+.restore-corpus-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 20;
+  min-width: 140px;
+  max-width: 220px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  padding: 4px 0;
+}
+.restore-corpus-menu.hidden { display: none; }
+.restore-corpus-menu-item {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text);
+}
+.restore-corpus-menu-item:hover {
+  background: var(--selected-soft);
+}
 
   /* ===== Compact results toolbar + stable restore ===== */
   .restore-corpus-row,
