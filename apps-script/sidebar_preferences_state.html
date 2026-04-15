@@ -60,6 +60,8 @@ function applyEffectivePreferencesToUI() {
   updateTranslationLanguageVisibility();
   syncSessionOverrideButtons();
   syncAiQuickActionState();
+  syncExperimentalAvailability();
+  updateQuickActionsForMode();
 }
 
 function saveAccountPreference(payload, onDone) {
