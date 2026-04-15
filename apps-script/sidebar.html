@@ -191,6 +191,10 @@
                   </div>
 
                   <div class="sidebar-composition-transliteration-wrap">
+                    <button type="button" class="sidebar-mark-pill"
+                      id="sidebar-transliteration-pill"
+                      aria-pressed="false"
+                      title="Toggle transliteration">Translit</button>
                     <button type="button" class="sidebar-composition-transliteration" id="sidebar-transliteration-toggle" aria-haspopup="listbox" aria-expanded="false">ha-sefer kol-ha'am</button>
 
                     <div class="sidebar-composition-transliteration-menu hidden" id="sidebar-transliteration-menu" role="listbox">
@@ -338,6 +342,8 @@
       </select>
       <input type="checkbox" class="translation-only-filter ui-hidden-checkbox" aria-hidden="true">
       <input type="checkbox" class="wants-relevance ui-hidden-checkbox" aria-hidden="true" checked>
+      <input type="checkbox" class="wants-vowels ui-hidden-checkbox" aria-hidden="true" checked>
+      <input type="checkbox" class="wants-cantillation ui-hidden-checkbox" aria-hidden="true" checked>
     
       <div class="modal-backdrop session-library-modal-backdrop" id="session-library-modal" hidden>
         <div class="modal-card session-library-modal-card" role="dialog" aria-modal="true" aria-labelledby="session-library-modal-title">
