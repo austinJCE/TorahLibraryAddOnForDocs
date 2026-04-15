@@ -5,6 +5,7 @@
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/smoothness/jquery-ui.css" />
     <script>window.APP_CONFIG = <?= appConfigJson ?>;</script>
     <?!= HtmlService.createHtmlOutputFromFile('preferences_css').getContent(); ?>
+    <?!= include('composition_card_css'); ?>
   </head>
   <body>
     <aside class="hide"><img src="https://www.sefaria.org/static/img/ajax-loader.gif" name="loading"></aside>
@@ -230,42 +231,8 @@
             <div class="subsection-card subsection-card--preview">
               <div class="subsection-title">Interactive preview</div>
               <p class="subsection-note">Use this live preview to set defaults for vowels, cantillation, and transliteration.</p>
-            <div class="composition-card" id="composition_card" aria-label="Interactive text composition preview">
-              <div class="composition-card-header">
-                <div class="composition-card-label">Interactive Preview</div>
-                <div class="composition-card-help">Use the preview controls to set vowels, cantillation, and transliteration defaults.</div>
-              </div>
-
-              <div class="composition-surface">
-                <div class="composition-hebrew-stage">
-                  <button type="button" id="composition-cantillation-toggle" class="mark-pill mark-pill--top" aria-pressed="true" title="Toggle cantillation">Cantillation</button>
-
-                  <div id="composition-hebrew-preview" class="composition-hebrew" dir="rtl" lang="he" aria-label="Hebrew preview">
-                    <span class="composition-hebrew-text composition-hebrew-text--full">הַסֵּ֙פֶר֙ כָל־הָעָ֔ם</span>
-                    <span class="composition-hebrew-text composition-hebrew-text--no-cantillation" hidden>הַסֵּפֶר כָל־הָעָם</span>
-                    <span class="composition-hebrew-text composition-hebrew-text--consonants" hidden>הספר כל־העם</span>
-                  </div>
-
-                  <button type="button" id="composition-vowels-toggle" class="mark-pill mark-pill--bottom" aria-pressed="true" title="Toggle vowels">Vowels</button>
-                </div>
-
-                <div class="composition-transliteration-wrap">
-                  <button type="button" id="composition-transliteration-toggle" class="composition-transliteration" aria-haspopup="listbox" aria-expanded="false">ha-sefer kol-ha'am</button>
-
-                  <div id="composition-transliteration-menu" class="composition-transliteration-menu" role="listbox" hidden>
-                    <button type="button" class="composition-transliteration-option" data-value="none">None</button>
-                    <button type="button" class="composition-transliteration-option" data-value="simple_english">Simple English</button>
-                    <button type="button" class="composition-transliteration-option" data-value="traditional">Traditional</button>
-                    <button type="button" class="composition-transliteration-option" data-value="modern_israeli">Modern Israeli</button>
-                    <button type="button" class="composition-transliteration-option" data-value="ashkenazi">Ashkenazi</button>
-                    <button type="button" class="composition-transliteration-option" data-value="academic_full">Academic (Full)</button>
-                    <button type="button" class="composition-transliteration-option" data-value="ipa_modern">IPA (Modern Israeli)</button>
-                    <button type="button" class="composition-transliteration-option" data-value="ipa_tiberian">IPA (Tiberian-ish)</button>
-                  </div>
-                </div>
-
-                <div class="composition-status" id="composition-status" aria-live="polite">Cantillation on · Vowels on · Transliteration: off</div>
-              </div>
+            <div class="cc-card" id="composition-card-container" data-cc-features="header,status" aria-label="Interactive text composition preview">
+              <?!= include('composition_card_markup') ?>
             </div>
             </div>
 
@@ -670,6 +637,7 @@
     <?!= include('ui_dom'); ?>
     <?!= include('ui_feedback'); ?>
     <?!= include('ui_state'); ?>
+    <?!= include('composition_card_shared'); ?>
     <?!= HtmlService.createHtmlOutputFromFile('preferences_js').getContent(); ?>
   </body>
 </html>

@@ -2669,112 +2669,6 @@
   .result-row.corpus-accent-apocrypha, .result-group-header.corpus-accent-apocrypha { background: rgba(136, 95, 72, 0.08); }
   .result-row.corpus-accent-tanaitic, .result-group-header.corpus-accent-tanaitic { background: rgba(111, 122, 79, 0.08); }
 
-  .sidebar-composition-card {
-    margin: 4px 0 10px;
-    padding: 12px 10px 10px;
-    background: #fcfcfb;
-    border: 1px solid #ece7df;
-    border-radius: 12px;
-    text-align: center;
-  }
-  .sidebar-composition-title {
-    display: inline-block;
-    margin: 0 0 14px;
-    padding: 2px 6px;
-    cursor: pointer;
-    background: transparent;
-    border: 0;
-    border-radius: 6px;
-    color: #18345d;
-    font-family: "EB Garamond", Georgia, serif;
-    font-size: 18px;
-    line-height: 1.2;
-  }
-  .sidebar-composition-title.is-linked { text-decoration: underline; }
-  .sidebar-composition-hebrew-stage {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 84px;
-    padding: 14px 8px;
-  }
-  .sidebar-composition-hebrew {
-    min-width: 250px;
-    min-height: 48px;
-    color: #222;
-    font-family: "Frank Ruhl Libre", "Noto Sans Hebrew", serif;
-    font-size: 28px;
-    line-height: 1.55;
-    user-select: none;
-  }
-  .sidebar-composition-hebrew-text { display: block; white-space: nowrap; }
-  .sidebar-mark-pill {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    height: 22px;
-    padding: 0 9px;
-    cursor: pointer;
-    background: #fff;
-    border: 1px solid #d8d2c8;
-    border-radius: 999px;
-    color: #445267;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 20px;
-    white-space: nowrap;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  }
-  .sidebar-mark-pill--top { top: 0; }
-  .sidebar-mark-pill--bottom { bottom: 0; }
-  .sidebar-mark-pill.is-off { color: #8b8b8b; background: #f3f3f3; }
-  .sidebar-composition-transliteration-wrap { position: relative; margin-top: 8px; }
-  .sidebar-composition-transliteration {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 26px;
-    padding: 0 8px;
-    cursor: pointer;
-    background: transparent;
-    border: 1px dashed transparent;
-    border-radius: 8px;
-    color: #4b5563;
-    font-size: 13px;
-    line-height: 1.35;
-  }
-  .sidebar-composition-transliteration:hover { background: #f8f8f7; border-color: #d8d2c8; }
-  .sidebar-composition-transliteration.is-none { color: #999; font-style: italic; }
-  .sidebar-composition-transliteration-menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 50%;
-    z-index: 50;
-    display: grid;
-    min-width: 210px;
-    padding: 6px;
-    background: #fff;
-    border: 1px solid #d8d2c8;
-    border-radius: 10px;
-    box-shadow: 0 8px 18px rgba(0,0,0,0.12);
-    transform: translateX(-50%);
-  }
-  .sidebar-composition-transliteration-menu.hidden { display: none; }
-  .sidebar-transliteration-option {
-    padding: 8px 10px;
-    cursor: pointer;
-    background: transparent;
-    border: 0;
-    border-radius: 8px;
-    color: #243b67;
-    font-size: 12px;
-    font-weight: 600;
-    text-align: left;
-  }
-  .sidebar-transliteration-option:hover,
-  .sidebar-transliteration-option.is-selected { background: #e8eef7; color: #1f3b68; }
-  .sidebar-composition-status { margin-top: 8px; color: #6b7280; font-size: 11px; line-height: 1.35; }
 
   .sidebar-footer .session-library-primary-button .footer-icon {
   font-size: 17px;
@@ -3083,20 +2977,6 @@
   transform: scale(1.05);
 }
 
-.sidebar-composition-hebrew-text[hidden] {
-  display: none !important;
-}
-
-.sidebar-mark-pill[aria-pressed='true'] {
-  color: #18345d;
-  background: #e4edf8;
-  border-color: #b7c8e2;
-}
-
-.sidebar-mark-pill[aria-pressed='false'],
-.sidebar-composition-title.is-linked {
-  color: #4a586b;
-}
 
 .session-library-modal-card {
   width: min(560px, calc(100vw - 24px));
@@ -4088,7 +3968,7 @@
 
 .more-options-shell .options-panel,
 .more-options-shell .more-options-card,
-.sidebar-composition-card {
+.cc-card {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;

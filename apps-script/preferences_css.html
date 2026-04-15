@@ -868,184 +868,6 @@
 
 
 
-/* ================================
-   Interactive Composition Preview
-   ================================ */
-
-.composition-card {
-  margin: 12px 0 8px;
-  padding: 12px;
-  background: linear-gradient(180deg, #fcfbf9 0%, #f7f4ef 100%);
-  border: 1px solid #e3dfd8;
-  border-radius: 12px;
-}
-
-.composition-card-header {
-  margin-bottom: 10px;
-}
-
-.composition-card-label {
-  color: #333;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.composition-card-help {
-  margin-top: 2px;
-  color: #666;
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-.composition-surface {
-  position: relative;
-  padding: 14px 10px 10px;
-  background: rgba(255,255,255,0.72);
-  border: 1px solid #e7e1d7;
-  border-radius: 10px;
-  text-align: center;
-}
-
-.composition-hebrew-stage {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 88px;
-  padding: 16px 8px;
-}
-
-.composition-hebrew {
-  position: relative;
-  min-width: 280px;
-  min-height: 56px;
-  font-size: 30px;
-  line-height: 1.6;
-  letter-spacing: 0;
-  user-select: none;
-}
-
-.composition-hebrew-text {
-  display: block;
-  white-space: nowrap;
-  color: #1f1f1f;
-}
-
-.composition-hebrew-text[hidden] {
-  display: none !important;
-}
-
-.mark-pill {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 24px;
-  padding: 0 10px;
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid #d7d1c8;
-  border-radius: 999px;
-  color: #444;
-  font-size: 13px;
-  line-height: 22px;
-  white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-}
-
-.mark-pill:focus-visible,
-.composition-transliteration:focus-visible,
-.composition-transliteration-option:focus-visible {
-  outline: 2px solid rgba(31, 59, 104, 0.35);
-  outline-offset: 2px;
-}
-
-.mark-pill--top { top: 0; }
-.mark-pill--bottom { bottom: 0; }
-
-.mark-pill.is-off {
-  color: #888;
-  background: #f4f4f4;
-}
-
-.composition-transliteration-wrap {
-  position: relative;
-  margin-top: 10px;
-}
-
-.composition-transliteration {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 28px;
-  padding: 0 10px;
-  cursor: pointer;
-  background: transparent;
-  border: 1px dashed transparent;
-  border-radius: 10px;
-  color: #444;
-  font-size: 14px;
-  line-height: 1.35;
-}
-
-.composition-transliteration:hover {
-  border-color: #d2d0ca;
-  background: rgba(255,255,255,0.55);
-}
-
-.composition-transliteration.is-none {
-  color: #9a9a9a;
-  font-style: italic;
-}
-
-.composition-transliteration-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 50%;
-  z-index: 120;
-  display: grid;
-  min-width: 220px;
-  padding: 6px;
-  background: #fff;
-  border: 1px solid #d2d0ca;
-  border-radius: 10px;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.12);
-  transform: translateX(-50%);
-}
-
-.composition-transliteration-menu[hidden] {
-  display: none !important;
-}
-
-.composition-transliteration-option {
-  padding: 8px 10px;
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-  border-radius: 10px;
-  color: #333;
-  font-size: 12px;
-  text-align: left;
-}
-
-.composition-transliteration-option:hover,
-.composition-transliteration-option.is-selected {
-  background: #e8eef7;
-  color: #1f3b68;
-}
-
-.composition-status {
-  margin-top: 10px;
-  color: #6b6b6b;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.composition-state-inputs[hidden] {
-  display: none !important;
-}
-
-
   .title-links-citation-toggle {
     margin-top: 12px;
   }
@@ -1058,7 +880,7 @@
 
   *, *::before, *::after { box-sizing: border-box; }
 
-  .preferences-shell, .section-card-body, .subsection-card, .inline-preview, .composition-card, .save-bar { min-width: 0; }
+  .preferences-shell, .section-card-body, .subsection-card, .inline-preview, .cc-card, .save-bar { min-width: 0; }
 
   .subsection-card {
     margin: 0 0 14px;
@@ -1113,13 +935,13 @@
     line-height: 1.6;
   }
 
-  .composition-card {
+  .cc-card {
     padding: 0;
     background: transparent;
     border: 0;
   }
 
-  .composition-surface {
+  .cc-surface {
     max-width: 100%;
     overflow: hidden;
     padding: 14px;
@@ -1128,7 +950,7 @@
     border-radius: 12px;
   }
 
-  .composition-hebrew, .composition-transliteration, .composition-status {
+  .cc-hebrew, .cc-translit-button, .cc-status {
     overflow-wrap: anywhere;
     word-break: normal;
   }

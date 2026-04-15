@@ -62,6 +62,7 @@ function applyEffectivePreferencesToUI() {
   syncAiQuickActionState();
   syncExperimentalAvailability();
   updateQuickActionsForMode();
+  if (typeof updateCompositionCard === 'function') updateCompositionCard();
 }
 
 function saveAccountPreference(payload, onDone) {
@@ -150,17 +151,6 @@ function getSidebarTransliterationScheme() {
   return String((effectivePreferences && effectivePreferences.transliteration_scheme) || 'simple_english');
 }
 
-function getSidebarTransliterationLabel(value) {
-  var labels = {
-    none: 'None',
-    simple_english: "ha-sefer kol-ha'am",
-    traditional: "ha-sēfer kol-hā-ʿam",
-    modern_israeli: "ha-sefer kol-ha'am",
-    ashkenazi: "ha-seifer kol-ho'om",
-    academic_full: "ha-sēfer kol-hā-ʿām",
-    ipa_modern: "haˈsefeʁ kol haˈʔam",
-    ipa_tiberian: "hasˈseːfɛr kɔl hɔːˈʕɔm"
-  };
-  return labels[value] || labels.simple_english;
-}
+// getSidebarTransliterationLabel() removed — label data is now in
+// CC_TRANSLIT_LABELS in composition_card_shared.html.
 </script>

@@ -1,122 +1,115 @@
 <script>
-function closeSidebarTransliterationMenu() {
-  $('#sidebar-transliteration-menu').addClass('hidden');
-  $('#sidebar-transliteration-toggle').attr('aria-expanded', 'false');
-}
+// Sidebar adapter for the shared composition card component.
+// Bridges sidebar hidden-checkbox state and saveSidebarPreference() persistence
+// to the generic composition card controller.
 
-function updateSidebarCompositionCard() {
+function _sidebarCompositionGetState() {
   var vowelsOn = $('.wants-vowels').is(':checked');
   var cantOn = $('.wants-cantillation').is(':checked');
   var transliterationOn = $('.include-transliteration').is(':checked');
-  var linkOn = $('.insert-sefaria-link').is(':checked');
-  var linesOn = $('.wants-pesukim').is(':checked');
-  var detailsOn = $('.include-translation-source-info').is(':checked');
   var scheme = transliterationOn ? getSidebarTransliterationScheme() : 'none';
+  return {
+    vowelsOn: vowelsOn,
+    cantillationOn: cantOn,
+    transliterationOn: transliterationOn,
+    scheme: scheme,
+    linkOn: $('.insert-sefaria-link').is(':checked'),
+    linesOn: $('.wants-pesukim').is(':checked'),
+    detailsOn: $('.include-translation-source-info').is(':checked')
+  };
+}
 
-  $('#sidebar-composition-title-toggle')
-    .text(linkOn ? 'Linked Title: On' : 'Linked Title: Off')
-    .toggleClass('is-linked is-active', linkOn)
-    .attr('aria-pressed', linkOn ? 'true' : 'false');
-  $('#sidebar-vowels-toggle')
-    .text(vowelsOn ? 'Vowels: On' : 'Vowels: Off')
-    .toggleClass('is-off', !vowelsOn).toggleClass('is-active', vowelsOn)
-    .attr('aria-pressed', vowelsOn ? 'true' : 'false');
-  $('#sidebar-cantillation-toggle')
-    .text(cantOn ? 'Cantillation: On' : 'Cantillation: Off')
-    .toggleClass('is-off', !cantOn).toggleClass('is-active', cantOn)
-    .attr('aria-pressed', cantOn ? 'true' : 'false');
-  $('#sidebar-transliteration-pill')
-    .text(transliterationOn ? 'Translit: On' : 'Translit: Off')
-    .toggleClass('is-active', transliterationOn)
-    .attr('aria-pressed', transliterationOn ? 'true' : 'false');
-  $('#sidebar-lines-toggle')
-    .text(linesOn ? 'Lines: On' : 'Lines: Off')
-    .toggleClass('is-active', linesOn)
-    .attr('aria-pressed', linesOn ? 'true' : 'false');
-  $('#sidebar-translation-details-toggle')
-    .text(detailsOn ? 'Details: On' : 'Details: Off')
-    .toggleClass('is-active', detailsOn)
-    .attr('aria-pressed', detailsOn ? 'true' : 'false');
+function _sidebarCompositionOnToggle(key) {
+  if (key === 'vowels') {
+    var $el = $('.wants-vowels');
+    $el.prop('checked', !$el.is(':checked'));
+    saveSidebarPreference({
+      nekudot: $el.is(':checked'),
+      teamim: $('.wants-cantillation').is(':checked')
+    }, function () {
+      updateCompositionCard();
+      if (hasResolvedReference && data && data.ref) refreshSelectedResult();
+    });
+  } else if (key === 'cantillation') {
+    var $el = $('.wants-cantillation');
+    $el.prop('checked', !$el.is(':checked'));
+    saveSidebarPreference({
+      nekudot: $('.wants-vowels').is(':checked'),
+      teamim: $el.is(':checked')
+    }, function () {
+      updateCompositionCard();
+      if (hasResolvedReference && data && data.ref) refreshSelectedResult();
+    });
+  } else if (key === 'translit') {
+    var $el = $('.include-transliteration');
+    $el.prop('checked', !$el.is(':checked'));
+    saveSidebarPreference({
+      include_transliteration_default: $el.is(':checked')
+    }, function () {
+      updateCompositionCard();
+      if (hasResolvedReference && data && data.ref) refreshSelectedResult();
+    });
+  } else if (key === 'link') {
+    var $el = $('.insert-sefaria-link');
+    $el.prop('checked', !$el.is(':checked'));
+    saveSidebarPreference({
+      insert_sefaria_link_default: $el.is(':checked')
+    }, function () {
+      updateCompositionCard();
+    });
+  } else if (key === 'lines') {
+    var $el = $('.wants-pesukim');
+    $el.prop('checked', !$el.is(':checked'));
+    saveSidebarPreference({
+      show_line_markers_default: $el.is(':checked')
+    });
+  } else if (key === 'details') {
+    var $el = $('.include-translation-source-info');
+    $el.prop('checked', !$el.is(':checked'));
+    saveSidebarPreference({
+      include_translation_source_info: $el.is(':checked')
+    });
+  }
+  if (typeof refreshSidebarLivePreview === 'function') refreshSidebarLivePreview();
+}
 
-  $('.sidebar-composition-hebrew-text--full').prop('hidden', !(vowelsOn && cantOn));
-  $('.sidebar-composition-hebrew-text--no-cantillation').prop('hidden', !(vowelsOn && !cantOn));
-  $('.sidebar-composition-hebrew-text--consonants').prop('hidden', !!vowelsOn);
+function _sidebarCompositionOnSchemeSelect(value) {
+  if (value === 'none') {
+    $('.include-transliteration').prop('checked', false);
+    effectivePreferences.transliteration_scheme = getSidebarTransliterationScheme();
+    saveSidebarPreference({ include_transliteration_default: false }, function () {
+      effectivePreferences.transliteration_scheme = getSidebarTransliterationScheme();
+      updateCompositionCard();
+      if (hasResolvedReference && data && data.ref) refreshSelectedResult();
+    });
+  } else {
+    $('.include-transliteration').prop('checked', true);
+    effectivePreferences.transliteration_scheme = value;
+    saveSidebarPreference({ include_transliteration_default: true, transliteration_scheme: value }, function () {
+      effectivePreferences.transliteration_scheme = value;
+      updateCompositionCard();
+      if (hasResolvedReference && data && data.ref) refreshSelectedResult();
+    });
+  }
+  if (typeof refreshSidebarLivePreview === 'function') refreshSidebarLivePreview();
+}
 
-  var translitLabel = transliterationOn ? getSidebarTransliterationLabel(scheme) : 'Aא Translit';
-  $('#sidebar-transliteration-toggle').text(translitLabel).toggleClass('is-none', !transliterationOn).attr('data-value', scheme);
-  $('.sidebar-transliteration-option').each(function () {
-    $(this).toggleClass('is-selected', $(this).attr('data-value') === scheme);
-  });
+// Thin wrappers so sidebar_bootstrap.html and other callers don't need to change.
+function updateSidebarCompositionCard() {
+  updateCompositionCard();
 }
 
 function refreshCompositionAndPreview() {
-  updateSidebarCompositionCard();
+  updateCompositionCard();
   if (typeof refreshSidebarLivePreview === 'function') refreshSidebarLivePreview();
 }
 
 function bindSidebarCompositionCard() {
-  $('#sidebar-composition-title-toggle').off('click').on('click', function () {
-    $('.insert-sefaria-link').prop('checked', !$('.insert-sefaria-link').is(':checked')).trigger('change');
-    refreshCompositionAndPreview();
+  initCompositionCard({
+    containerId: 'composition-card-container',
+    getState: _sidebarCompositionGetState,
+    onToggle: _sidebarCompositionOnToggle,
+    onSchemeSelect: _sidebarCompositionOnSchemeSelect
   });
-  $('#sidebar-vowels-toggle').off('click').on('click', function () {
-    $('.wants-vowels').prop('checked', !$('.wants-vowels').is(':checked')).trigger('change');
-    refreshCompositionAndPreview();
-  });
-  $('#sidebar-cantillation-toggle').off('click').on('click', function () {
-    $('.wants-cantillation').prop('checked', !$('.wants-cantillation').is(':checked')).trigger('change');
-    refreshCompositionAndPreview();
-  });
-  $('#sidebar-transliteration-pill').off('click').on('click', function () {
-    $('.include-transliteration').prop('checked', !$('.include-transliteration').is(':checked')).trigger('change');
-    refreshCompositionAndPreview();
-  });
-  $('#sidebar-lines-toggle').off('click').on('click', function () {
-    $('.wants-pesukim').prop('checked', !$('.wants-pesukim').is(':checked')).trigger('change');
-    refreshCompositionAndPreview();
-  });
-  $('#sidebar-translation-details-toggle').off('click').on('click', function () {
-    $('.include-translation-source-info').prop('checked', !$('.include-translation-source-info').is(':checked')).trigger('change');
-    refreshCompositionAndPreview();
-  });
-  $('#sidebar-transliteration-toggle').off('click').on('click', function (event) {
-    event.preventDefault();
-    event.stopPropagation();
-    $('#sidebar-transliteration-menu').toggleClass('hidden');
-    $(this).attr('aria-expanded', $('#sidebar-transliteration-menu').hasClass('hidden') ? 'false' : 'true');
-  });
-  $('.sidebar-transliteration-option').off('click').on('click', function () {
-    var value = $(this).attr('data-value');
-    if (value === 'none') {
-      $('.include-transliteration').prop('checked', false);
-      effectivePreferences.transliteration_scheme = getSidebarTransliterationScheme();
-      $('.include-transliteration').trigger('change');
-      refreshCompositionAndPreview();
-      saveSidebarPreference({ include_transliteration_default: false }, function () {
-        effectivePreferences.transliteration_scheme = getSidebarTransliterationScheme();
-        refreshCompositionAndPreview();
-        if (hasResolvedReference && data && data.ref) refreshSelectedResult();
-      });
-    } else {
-      $('.include-transliteration').prop('checked', true);
-      effectivePreferences.transliteration_scheme = value;
-      refreshCompositionAndPreview();
-      saveSidebarPreference({ include_transliteration_default: true, transliteration_scheme: value }, function () {
-        effectivePreferences.transliteration_scheme = value;
-        refreshCompositionAndPreview();
-        if (hasResolvedReference && data && data.ref) refreshSelectedResult();
-      });
-    }
-    closeSidebarTransliterationMenu();
-  });
-  $(document).off('click.sidebarCompositionDismiss').on('click.sidebarCompositionDismiss', function (event) {
-    if ($(event.target).closest('.sidebar-composition-transliteration-wrap').length) return;
-    closeSidebarTransliterationMenu();
-  });
-  $('.include-transliteration, .insert-sefaria-link, .wants-vowels, .wants-cantillation, .wants-pesukim, .include-translation-source-info')
-    .off('change.compositionMatch')
-    .on('change.compositionMatch', function () {
-      refreshCompositionAndPreview();
-    });
 }
 </script>

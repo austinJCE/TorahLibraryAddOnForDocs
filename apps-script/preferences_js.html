@@ -150,32 +150,18 @@
     }
 
 
-    function getCompositionState() {
-      const vowelsOn = byId('nekudot') ? byId('nekudot').value !== 'false' : true;
-      const cantillationOn = byId('teamim') ? byId('teamim').value !== 'false' : true;
-      const includeTransliteration = byId('include_transliteration_default') ? !!byId('include_transliteration_default').checked : false;
-      const scheme = byId('transliteration_scheme') ? byId('transliteration_scheme').value : 'simple_english';
-      return {
-        vowelsOn: vowelsOn,
-        cantillationOn: cantillationOn,
-        includeTransliteration: includeTransliteration,
-        includeLinkedTitle: byId('insert_sefaria_link_default') ? !!byId('insert_sefaria_link_default').checked : false,
-        includeCitation: byId('insert_citation_default') ? !!byId('insert_citation_default').checked : false,
-        scheme: scheme || 'simple_english'
-      };
-    }
-
-    function setCompositionVowels(on) {
+    // Composition card state helpers — used by the shared composition card adapter below.
+    function _prefSetCompositionVowels(on) {
       if (byId('nekudot')) byId('nekudot').value = on ? 'true' : 'false';
       if (byId('nekudot_filter')) byId('nekudot_filter').value = on ? 'always' : 'false';
     }
 
-    function setCompositionCantillation(on) {
+    function _prefSetCompositionCantillation(on) {
       if (byId('teamim')) byId('teamim').value = on ? 'true' : 'false';
       if (byId('teamim_filter')) byId('teamim_filter').value = on ? 'available' : 'false';
     }
 
-    function setCompositionTransliteration(value) {
+    function _prefSetCompositionTransliteration(value) {
       const normalized = value || 'none';
       const include = normalized !== 'none';
       if (byId('include_transliteration_default')) byId('include_transliteration_default').checked = include;
@@ -185,111 +171,57 @@
       }
     }
 
-    function updateCompositionPreview() {
-      const card = byId('composition_card');
-      if (!card) return;
-
-      const state = getCompositionState();
-      const full = card.querySelector('.composition-hebrew-text--full');
-      const noCant = card.querySelector('.composition-hebrew-text--no-cantillation');
-      const consonants = card.querySelector('.composition-hebrew-text--consonants');
-      if (full) full.hidden = !(state.vowelsOn && state.cantillationOn);
-      if (noCant) noCant.hidden = !(state.vowelsOn && !state.cantillationOn);
-      if (consonants) consonants.hidden = !!state.vowelsOn;
-
-      const vowelsBtn = byId('composition-vowels-toggle');
-      const cantBtn = byId('composition-cantillation-toggle');
-      if (vowelsBtn) {
-        vowelsBtn.setAttribute('aria-pressed', state.vowelsOn ? 'true' : 'false');
-        vowelsBtn.classList.toggle('is-off', !state.vowelsOn);
-      }
-      if (cantBtn) {
-        cantBtn.setAttribute('aria-pressed', state.cantillationOn ? 'true' : 'false');
-        cantBtn.classList.toggle('is-off', !state.cantillationOn);
-      }
-
-      const translitBtn = byId('composition-transliteration-toggle');
-      const scheme = state.includeTransliteration ? state.scheme : 'none';
-      const sample = scheme === 'none' ? 'Transliteration off' : (transliterationExamples[scheme] || transliterationExamples.simple_english);
-      if (translitBtn) {
-        translitBtn.textContent = sample;
-        translitBtn.classList.toggle('is-none', scheme === 'none');
-        const fontMetaEntry = fontMeta[(byId('transliteration_font') || {}).value || ''];
-        translitBtn.style.fontFamily = fontMetaEntry ? fontMetaEntry.stack : '';
-        const sizeInput = byId('transliteration_font_size');
-        if (sizeInput && sizeInput.value) translitBtn.style.fontSize = Number(sizeInput.value) + 'px';
-        else translitBtn.style.fontSize = '';
-        applyPreviewStyles('composition-transliteration-toggle', 'transliteration_font_style');
-      }
-
-      const menu = byId('composition-transliteration-menu');
-      if (menu) {
-        menu.querySelectorAll('.composition-transliteration-option').forEach(function(option) {
-          option.classList.toggle('is-selected', option.getAttribute('data-value') === scheme);
-        });
-      }
-
-      const status = byId('composition-status');
-      if (status) {
-        status.textContent = 'Cantillation ' + (state.cantillationOn ? 'on' : 'off') + ' · Vowels ' + (state.vowelsOn ? 'on' : 'off') + ' · Transliteration: ' + (scheme === 'none' ? 'off' : scheme);
-      }
-    }
-
-    function bindCompositionPreview() {
-      const card = byId('composition_card');
-      if (!card || card.dataset.boundCompositionPreview === 'true') return;
-      card.dataset.boundCompositionPreview = 'true';
-
-      const cantBtn = byId('composition-cantillation-toggle');
-      const vowelsBtn = byId('composition-vowels-toggle');
-      const translitBtn = byId('composition-transliteration-toggle');
-      const menu = byId('composition-transliteration-menu');
-
-      if (cantBtn) {
-        cantBtn.addEventListener('click', function() {
-          const state = getCompositionState();
-          setCompositionCantillation(!state.cantillationOn);
-          updateCompositionPreview();
-        });
-      }
-
-      if (vowelsBtn) {
-        vowelsBtn.addEventListener('click', function() {
-          const state = getCompositionState();
-          setCompositionVowels(!state.vowelsOn);
-          updateCompositionPreview();
-        });
-      }
-
-      if (translitBtn && menu) {
-        translitBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const willOpen = menu.hidden;
-          menu.hidden = !willOpen;
-          translitBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        });
-
-        menu.querySelectorAll('.composition-transliteration-option').forEach(function(option) {
-          option.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            setCompositionTransliteration(option.getAttribute('data-value'));
-            menu.hidden = true;
-            translitBtn.setAttribute('aria-expanded', 'false');
-            updateCompositionPreview();
-            updateTransliterationPreview();
-          });
-        });
-      }
-
-      document.addEventListener('click', function(event) {
-        const menuNode = byId('composition-transliteration-menu');
-        const buttonNode = byId('composition-transliteration-toggle');
-        if (!menuNode || !buttonNode) return;
-        if (menuNode.hidden) return;
-        if (menuNode.contains(event.target) || buttonNode.contains(event.target)) return;
-        menuNode.hidden = true;
-        buttonNode.setAttribute('aria-expanded', 'false');
+    // Preferences adapter for the shared composition card component.
+    function _initPreferencesCompositionCard() {
+      initCompositionCard({
+        containerId: 'composition-card-container',
+        getState: function () {
+          var vowelsOn = byId('nekudot') ? byId('nekudot').value !== 'false' : true;
+          var cantillationOn = byId('teamim') ? byId('teamim').value !== 'false' : true;
+          var translitCheck = byId('include_transliteration_default');
+          var transliterationOn = translitCheck ? translitCheck.checked : false;
+          var scheme = byId('transliteration_scheme') ? byId('transliteration_scheme').value : 'simple_english';
+          return {
+            vowelsOn: vowelsOn,
+            cantillationOn: cantillationOn,
+            transliterationOn: transliterationOn,
+            scheme: transliterationOn ? (scheme || 'simple_english') : 'none',
+            linkOn: false,
+            linesOn: false,
+            detailsOn: false
+          };
+        },
+        onToggle: function (key) {
+          if (key === 'vowels') {
+            var on = byId('nekudot') ? byId('nekudot').value !== 'false' : true;
+            _prefSetCompositionVowels(!on);
+          } else if (key === 'cantillation') {
+            var on = byId('teamim') ? byId('teamim').value !== 'false' : true;
+            _prefSetCompositionCantillation(!on);
+          } else if (key === 'translit') {
+            var check = byId('include_transliteration_default');
+            if (check) check.checked = !check.checked;
+          }
+        },
+        onSchemeSelect: function (value) {
+          _prefSetCompositionTransliteration(value);
+          updateTransliterationPreview();
+        },
+        getTranslitLabel: function (on, scheme) {
+          if (!on) return 'Transliteration off';
+          return transliterationExamples[scheme] || transliterationExamples.simple_english;
+        },
+        afterUpdate: function () {
+          // Apply font styling to transliteration button (preferences-specific)
+          var translitBtn = byId('cc-translit-toggle');
+          if (!translitBtn) return;
+          var fontMetaEntry = fontMeta[(byId('transliteration_font') || {}).value || ''];
+          translitBtn.style.fontFamily = fontMetaEntry ? fontMetaEntry.stack : '';
+          var sizeInput = byId('transliteration_font_size');
+          if (sizeInput && sizeInput.value) translitBtn.style.fontSize = Number(sizeInput.value) + 'px';
+          else translitBtn.style.fontSize = '';
+          applyPreviewStyles('cc-translit-toggle', 'transliteration_font_style');
+        }
       });
     }
 
@@ -591,7 +523,7 @@
               updateStandardPreview('source_title_font', 'source_title_preview', 'source_title_font_style');
               updateStandardPreview('sefaria_link_font', 'sefaria_link_preview', 'sefaria_link_font_style');
               updateTransliterationPreview();
-              updateCompositionPreview();
+              updateCompositionCard();
               updateSheimotSummary();
               renderOverrideGrid();
               renderOverrideList();
@@ -700,16 +632,16 @@
         if (!el) return;
         el.addEventListener('change', function() {
           updateStandardPreview(id, previewMap[id][0], previewMap[id][1]);
-          updateCompositionPreview();
+          updateCompositionCard();
         });
       });
     }
 
-    byId('transliteration_font').addEventListener('change', function(){ updateTransliterationPreview(); updateCompositionPreview(); });
-    byId('transliteration_scheme').addEventListener('change', function(){ syncCustomSelect(byId('transliteration_scheme')); updateTransliterationPreview(); updateCompositionPreview(); });
-    if (byId('include_transliteration_default')) byId('include_transliteration_default').addEventListener('change', function(){ updateCompositionPreview(); });
-    if (byId('insert_sefaria_link_default')) byId('insert_sefaria_link_default').addEventListener('change', function(){ updateCompositionPreview(); });
-    if (byId('insert_citation_default')) byId('insert_citation_default').addEventListener('change', function(){ updateCompositionPreview(); });
+    byId('transliteration_font').addEventListener('change', function(){ updateTransliterationPreview(); updateCompositionCard(); });
+    byId('transliteration_scheme').addEventListener('change', function(){ syncCustomSelect(byId('transliteration_scheme')); updateTransliterationPreview(); updateCompositionCard(); });
+    if (byId('include_transliteration_default')) byId('include_transliteration_default').addEventListener('change', function(){ updateCompositionCard(); });
+    if (byId('insert_sefaria_link_default')) byId('insert_sefaria_link_default').addEventListener('change', function(){ updateCompositionCard(); });
+    // insert_citation_default removed — citation feature was dropped.
 
     ['hebrew_font_size','translation_font_size','transliteration_font_size','source_title_font_size','sefaria_link_font_size'].forEach(function(id) {
       const el = byId(id);
@@ -721,7 +653,7 @@
         else if (id.indexOf('sefaria_link_') === 0) updateStandardPreview('sefaria_link_font', 'sefaria_link_preview', 'sefaria_link_font_style');
         else if (id.indexOf('translation_') === 0) updateStandardPreview('translation_font', 'translation_font_preview', 'translation_font_style');
         else updateStandardPreview('hebrew_font', 'hebrew_font_preview', 'hebrew_font_style');
-        updateCompositionPreview();
+        updateCompositionCard();
       }
       el.addEventListener('blur', updateForField);
       el.addEventListener('change', updateForField);
@@ -815,8 +747,7 @@
       });
       loadSavedAiKeyPreview();
     }
-    bindCompositionPreview();
-    updateCompositionPreview();
+    _initPreferencesCompositionCard();
     loadPreferencesIntoForm();
   });
 </script>

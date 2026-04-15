@@ -3,6 +3,7 @@
   <head>
     <?!= include('ui_head'); ?>
     <?!= include('sidebar_css'); ?>
+    <?!= include('composition_card_css'); ?>
     <script>
       window.APP_CONFIG = <?= appConfigJson ?>;
       window.INITIAL_SIDEBAR_MODE = '<?= initialMode ?>';
@@ -176,45 +177,9 @@
                 </details>
                 <div class="subsection-label">🔗 Text &amp; Links</div>
 
-                <div class="sidebar-composition-card hebrew-options-row" id="sidebar-composition-card" aria-label="Interactive text preview">
-                  <button type="button" class="sidebar-composition-title sidebar-mark-pill" id="sidebar-composition-title-toggle" aria-pressed="false" title="Toggle linked title">Linked Title: Off</button>
-
-                  <div class="sidebar-composition-hebrew-stage">
-                    <button type="button" class="sidebar-mark-pill sidebar-mark-pill--top" id="sidebar-cantillation-toggle" aria-pressed="true" title="Toggle cantillation">Cantillation: On</button>
-
-                    <div class="sidebar-composition-hebrew" id="sidebar-composition-hebrew" dir="rtl" lang="he" aria-label="Hebrew preview">
-                      <span class="sidebar-composition-hebrew-text sidebar-composition-hebrew-text--full">הַסֵּ֙פֶר֙ כָל־הָעָ֔ם</span>
-                      <span class="sidebar-composition-hebrew-text sidebar-composition-hebrew-text--no-cantillation" hidden>הַסֵּפֶר כָל־הָעָם</span>
-                      <span class="sidebar-composition-hebrew-text sidebar-composition-hebrew-text--consonants" hidden>הספר כל־העם</span>
-                    </div>
-
-                    <button type="button" class="sidebar-mark-pill sidebar-mark-pill--bottom" id="sidebar-vowels-toggle" aria-pressed="true" title="Toggle vowels">Vowels: On</button>
-                  </div>
-
-                  <div class="sidebar-composition-transliteration-wrap">
-                    <button type="button" class="sidebar-mark-pill"
-                      id="sidebar-transliteration-pill"
-                      aria-pressed="false"
-                      title="Toggle transliteration">Translit: Off</button>
-                    <button type="button" class="sidebar-composition-transliteration" id="sidebar-transliteration-toggle" aria-haspopup="listbox" aria-expanded="false">ha-sefer kol-ha'am</button>
-
-                    <div class="sidebar-composition-transliteration-menu hidden" id="sidebar-transliteration-menu" role="listbox">
-                      <button type="button" class="sidebar-transliteration-option" data-value="none">None</button>
-                      <button type="button" class="sidebar-transliteration-option" data-value="simple_english">Simple English</button>
-                      <button type="button" class="sidebar-transliteration-option" data-value="traditional">Traditional</button>
-                      <button type="button" class="sidebar-transliteration-option" data-value="modern_israeli">Modern Israeli</button>
-                      <button type="button" class="sidebar-transliteration-option" data-value="ashkenazi">Ashkenazi</button>
-                      <button type="button" class="sidebar-transliteration-option" data-value="academic_full">Academic (Full)</button>
-                      <button type="button" class="sidebar-transliteration-option" data-value="ipa_modern">IPA (Modern Israeli)</button>
-                      <button type="button" class="sidebar-transliteration-option" data-value="ipa_tiberian">IPA (Tiberian-ish)</button>
-                    </div>
-                  </div>
-
+                <div class="cc-card hebrew-options-row" id="composition-card-container" data-cc-features="linkedTitle,secondaryPills" aria-label="Interactive text preview">
+                  <?!= include('composition_card_markup') ?>
                 </div>
-
-                <div class="sidebar-secondary-pills" aria-label="Secondary options">
-                  <button type="button" class="sidebar-mark-pill sidebar-secondary-pill" id="sidebar-lines-toggle" aria-pressed="true" title="Toggle line markers">Lines: On</button>
-                  <button type="button" class="sidebar-mark-pill sidebar-secondary-pill" id="sidebar-translation-details-toggle" aria-pressed="false" title="Toggle translation details">Details: Off</button>
                 </div>
 
               </div>
@@ -416,6 +381,7 @@
     <?!= include('sidebar_event_bindings'); ?>
     <?!= include('sidebar_bootstrap'); ?>
     <?!= include('sidebar_preview_render'); ?>
+    <?!= include('composition_card_shared'); ?>
     <?!= include('sidebar_composition_controls'); ?>
   </body>
 </html>
