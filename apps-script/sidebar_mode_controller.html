@@ -171,6 +171,10 @@ $('#open-session-library').off('click').on('click', function (event) {
   $('#session-library-modal').removeAttr('hidden');
 });
 
+$('#close-session-library').on('click', function () {
+  $('#session-library-modal').attr('hidden', true);
+});
+
 $('#open-session-library-experimental').on('click', function () {
   setSidebarMode('texts');
   $('#open-session-library').trigger('click');
