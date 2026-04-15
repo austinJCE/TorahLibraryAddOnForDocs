@@ -8,7 +8,11 @@
       "#display-choice-summary-text",
       "#layout-choice-summary-text",
       "data-sidebar-mode=\"texts\"",
-      "data-sidebar-mode=\"experimental\""
+      "data-sidebar-mode=\"experimental\"",
+      "#ai-inline-generate",
+      "#ai-inline-topic",
+      "#sm-inline-launch",
+      "#sm-inline-term"
     ]
   },
   "preferences": {
