@@ -127,7 +127,6 @@ function mergePreferenceDefaults(preferences) {
   $('.wants-cantillation').prop('checked', preferences.teamim !== "false");
   $('.include-transliteration').prop('checked', String(preferences.include_transliteration_default) === "true");
   $('.insert-sefaria-link').prop('checked', preferences.insert_sefaria_link_default !== "false");
-  $('.insert-citation').prop('checked', String(preferences.insert_citation_default) === "true");
   $('.wants-pesukim').prop('checked', preferences.show_line_markers_default !== "false");
   $('.output-mode-selection').val(preferences.output_mode_default || 'both');
   $('.bilingual-layout-selection').val(preferences.bilingual_layout_default || 'he-right');

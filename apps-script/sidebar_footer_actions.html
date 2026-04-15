@@ -23,7 +23,6 @@ $('#insert-source').click(function () {
   var showPesukim = Boolean($('.wants-pesukim').prop('checked'));
   var includeTranslationSourceInfo = $('.include-translation-source-info').is(':checked');
   var insertSefariaLink = $('.insert-sefaria-link').is(':checked');
-  var insertCitation = $('.insert-citation').is(':checked');
   var input = $('.input').val();
 
   $('.hide').add($('.warning')).fadeIn('1000');
@@ -43,7 +42,7 @@ $('#insert-source').click(function () {
       bilingualLayout,
       insertSefariaLink,
       $('.include-transliteration').is(':checked'),
-      insertCitation
+      false
     );
 });
 

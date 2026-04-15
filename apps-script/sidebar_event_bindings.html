@@ -25,15 +25,6 @@ $('.insert-sefaria-link').on('change', function () {
   });
 });
 
-$('.insert-citation').on('change', function () {
-  updateSidebarCompositionCard();
-  saveSidebarPreference({
-    insert_citation_default: $('.insert-citation').is(':checked')
-  }, function () {
-    updateSidebarCompositionCard();
-  });
-});
-
 $('.wants-pesukim').on('change', function () {
   saveSidebarPreference({
     show_line_markers_default: $('.wants-pesukim').is(':checked')
@@ -391,5 +382,19 @@ $('#ai-inline-generate').on('click', function () {
       $status.text((error && error.message) ? error.message : 'Something went wrong.');
     })
     .generateAiLessonDraft(payload);
+});
+
+$(document).on('click', '.reset-session-overrides-button', function () {
+  if ($(this).prop('disabled')) return;
+  resetSessionOverrides(function () {
+    showSidebarToast('Session settings reverted.');
+  });
+});
+
+$(document).on('click', '.save-session-defaults-button', function () {
+  if ($(this).prop('disabled')) return;
+  saveSessionAsDefaults(function () {
+    showSidebarToast('Session settings saved as defaults.');
+  });
 });
 </script>
