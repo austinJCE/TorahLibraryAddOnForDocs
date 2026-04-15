@@ -25,20 +25,6 @@ var accountPreferences = {};
 var sessionPreferences = {};
 var effectivePreferences = {};
 
-function clonePlainObject(value) {
-  var out = {};
-  value = value || {};
-  Object.keys(value).forEach(function (key) { out[key] = value[key]; });
-  return out;
-}
-
-function mergePreferenceLayers(base, override) {
-  var merged = clonePlainObject(base);
-  override = override || {};
-  Object.keys(override).forEach(function (key) { merged[key] = override[key]; });
-  return merged;
-}
-
 function isAdvancedSessionMode() {
   return appMode === 'texts';
 }
@@ -145,28 +131,6 @@ var corpusColorClassMap = {
   apocrypha: 'corpus-accent-apocrypha',
   tanaitic: 'corpus-accent-tanaitic'
 };
-
-function escapeHTML(value) {
-  return String(value || "")
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function parseStoredArrayPreference(value, fallback) {
-  fallback = Array.isArray(fallback) ? fallback : [];
-  if (Array.isArray(value)) return value.filter(Boolean);
-  var raw = String(value || '').trim();
-  if (!raw) return fallback.slice();
-  try {
-    var parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter(Boolean) : fallback.slice();
-  } catch (error) {
-    return raw ? raw.split(',').map(function (part) { return String(part || '').trim(); }).filter(Boolean) : fallback.slice();
-  }
-}
 
 function mergePreferenceDefaults(preferences) {
   preferences = preferences || {};
@@ -2027,6 +1991,10 @@ function updateModeDependentSections() {
   renderSessionLibrary();
 }
 
+// TODO (P1-1): Consolidate into a single definition. The canonical base is in
+// sidebar_session_library.html; this override adds mode/url/query fields via the
+// originalBuildSessionEntry save-and-wrap pattern the PRD prohibits. Merge both
+// bodies into one function there and remove originalBuildSessionEntry entirely.
 function buildSessionEntry(ref, label, corpusLabel, extra) {
   var entry = originalBuildSessionEntry(ref, label, corpusLabel);
   extra = extra || {};
