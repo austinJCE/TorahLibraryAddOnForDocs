@@ -1337,6 +1337,17 @@ $('.open-divine-name-preferences, .open-preferences-tool').on('click', function 
   google.script.run.preferencesPopup();
 });
 
+$('.open-actions-panel').on('click', function (event) {
+  event.stopPropagation();
+  $('#footer-actions-panel').toggle();
+});
+
+$(document).on('click', function (event) {
+  if (!$(event.target).closest('.open-actions-panel, #footer-actions-panel').length) {
+    $('#footer-actions-panel').hide();
+  }
+});
+
 $('.open-divine-names-tool').on('click', function () {
   $('.hide').fadeIn('200');
   google.script.run.withSuccessHandler(function () {
@@ -1955,6 +1966,7 @@ function updateQuickActionsForMode() {
   var experimentalMode = appMode === 'experimental';
   $('.standard-quick-actions').toggle(!experimentalMode);
   $('.experimental-quick-actions').toggle(experimentalMode);
+  if (experimentalMode) { $('#footer-actions-panel').hide(); }
 }
 
 function setSidebarMode(mode, skipPreferenceSave) {
@@ -2102,7 +2114,6 @@ refreshSelectedResult = function() {
 syncSessionOverrideButtons = function() {
   var isTexts = appMode === 'texts';
   var hasSelectedTextResult = isTexts && !!selectedResultKey;
-  $('.session-override-actions').toggle(isTexts);
   $('.reset-session-overrides-button, .save-session-defaults-button').prop('disabled', !isTexts || !hasSessionOverrides());
   $('.inline-session-settings').toggle(isTexts && hasSelectedTextResult);
   $('#open-session-library').prop('disabled', false).attr('aria-disabled', 'false');
@@ -2132,11 +2143,6 @@ $('#open-session-library').off('click').on('click', function (event) {
   if (event) event.preventDefault();
   renderSessionLibrary();
   $('#session-library-modal').removeAttr('hidden');
-});
-
-$('#run-sefaria').off('click').on('click', function (event) {
-  if (event) event.preventDefault();
-  runUnifiedQuery();
 });
 
 $('.open-surprise-tool').off('click').on('click', function (event) {
