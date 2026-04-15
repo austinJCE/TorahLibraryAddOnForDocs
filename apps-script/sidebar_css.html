@@ -4271,4 +4271,46 @@
   text-decoration: underline;
 }
 
+/* Skeleton loaders */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.skeleton-result-item {
+  display: block;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  border: 1px solid #e8ecf2;
+  border-radius: 4px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.skeleton-bar {
+  border-radius: 3px;
+  background: linear-gradient(90deg, #eaecef 25%, #f5f6f7 50%, #eaecef 75%);
+  background-size: 400px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  margin-bottom: 6px;
+}
+
+.skeleton-bar.skeleton-title {
+  width: 70%;
+  height: 13px;
+}
+
+.skeleton-bar.skeleton-subtitle {
+  width: 45%;
+  height: 11px;
+}
+
+.skeleton-bar.skeleton-meta {
+  width: 30%;
+  height: 9px;
+  opacity: 0.6;
+  margin-bottom: 0;
+}
+
 </style>
