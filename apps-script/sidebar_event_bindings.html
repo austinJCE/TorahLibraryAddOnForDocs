@@ -1,55 +1,8 @@
 <script>
-$('.include-translation-source-info').on('change', function () {
-  saveSidebarPreference({
-    include_translation_source_info: $('.include-translation-source-info').is(':checked')
-  });
-});
-
-$('.include-transliteration').on('change', function () {
-  updateSidebarCompositionCard();
-  saveSidebarPreference({
-    include_transliteration_default: $('.include-transliteration').is(':checked')
-  }, function () {
-    updateSidebarCompositionCard();
-    if (hasResolvedReference && data && data.ref) refreshSelectedResult();
-  });
-});
-
-
-$('.insert-sefaria-link').on('change', function () {
-  updateSidebarCompositionCard();
-  saveSidebarPreference({
-    insert_sefaria_link_default: $('.insert-sefaria-link').is(':checked')
-  }, function () {
-    updateSidebarCompositionCard();
-  });
-});
-
-$('.insert-citation').on('change', function () {
-  updateSidebarCompositionCard();
-  saveSidebarPreference({
-    insert_citation_default: $('.insert-citation').is(':checked')
-  }, function () {
-    updateSidebarCompositionCard();
-  });
-});
-
-$('.wants-pesukim').on('change', function () {
-  saveSidebarPreference({
-    show_line_markers_default: $('.wants-pesukim').is(':checked')
-  });
-});
-
-$('.wants-vowels, .wants-cantillation').on('change', function () {
-  updateSidebarCompositionCard();
-  saveSidebarPreference({
-    nekudot: $('.wants-vowels').is(':checked'),
-    teamim: $('.wants-cantillation').is(':checked')
-  }, function () {
-    updateSidebarCompositionCard();
-    if (hasResolvedReference && data && data.ref) refreshSelectedResult();
-  });
-});
+// Composition card toggle persistence is now handled by the shared composition
+// card adapter in sidebar_composition_controls.html. The change handlers for
+// .wants-vowels, .wants-cantillation, .include-transliteration, .insert-sefaria-link,
+// .wants-pesukim, and .include-translation-source-info have been removed.
 
 $('#run-sefaria').off('click').on('click', runUnifiedQuery);
 
@@ -391,5 +344,19 @@ $('#ai-inline-generate').on('click', function () {
       $status.text((error && error.message) ? error.message : 'Something went wrong.');
     })
     .generateAiLessonDraft(payload);
+});
+
+$(document).on('click', '.reset-session-overrides-button', function () {
+  if ($(this).prop('disabled')) return;
+  resetSessionOverrides(function () {
+    showSidebarToast('Session settings reverted.');
+  });
+});
+
+$(document).on('click', '.save-session-defaults-button', function () {
+  if ($(this).prop('disabled')) return;
+  saveSessionAsDefaults(function () {
+    showSidebarToast('Session settings saved as defaults.');
+  });
 });
 </script>
