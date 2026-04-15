@@ -301,6 +301,51 @@ function bindSidebarCompositionCard() {
   });
 }
 
+function focusResultByIndex(index) {
+  var $items = $('.result-item');
+  var count = $items.length;
+  if (count === 0) return;
+  var clamped = Math.max(0, Math.min(index, count - 1));
+  keyboardResultIndex = clamped;
+  $items.removeClass('is-nav-target');
+  var $target = $items.eq(clamped);
+  $target.addClass('is-nav-target');
+  if ($target[0] && $target[0].scrollIntoView) {
+    $target[0].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function showSidebarNotice(message, onConfirm) {
+  var $notice = $('#sidebar-notice');
+  if (!$notice.length) return;
+  $('#sidebar-notice-message').html(escapeHTML(message || ''));
+  $notice.removeAttr('hidden');
+  $('#sidebar-notice-ok').off('click.sidebarNotice').on('click.sidebarNotice', function () {
+    $notice.attr('hidden', true);
+    if (typeof onConfirm === 'function') onConfirm();
+  });
+  $('#sidebar-notice-cancel').off('click.sidebarNotice').on('click.sidebarNotice', function () {
+    $notice.attr('hidden', true);
+  });
+}
+
+function showSidebarToast(message) {
+  var $toast = $('#sidebar-toast');
+  if (!$toast.length) return;
+  $toast.html(escapeHTML(message || ''));
+  $toast.removeAttr('hidden');
+  setTimeout(function () {
+    $toast.attr('hidden', true);
+  }, 3000);
+}
+
+function openPreferencesWithHint(sectionHint) {
+  if (sectionHint) {
+    console.log('[sidebar] openPreferencesWithHint:', sectionHint);
+  }
+  google.script.run.preferencesPopup();
+}
+
 google.script.run.withSuccessHandler(function (bootstrap) {
   sidebarSessionId = (bootstrap && bootstrap.sessionId) || null;
   accountPreferences = clonePlainObject((bootstrap && (bootstrap.accountPreferences || bootstrap.preferences)) || {});
