@@ -56,7 +56,6 @@ $('#run-sefaria').off('click').on('click', runUnifiedQuery);
 // Debounced unified search replaces legacy autocomplete dropdown.
 $('.input').on('input', function () {
   var value = $(this).val() || '';
-  updateQueryIntel(value);
   if (searchDebounceHandle) clearTimeout(searchDebounceHandle);
   searchDebounceHandle = setTimeout(function () {
     if ((value || '').trim().length >= 2) runUnifiedQuery();
@@ -175,7 +174,6 @@ $(document).on('click', '.results-suggestion-button', function (event) {
   event.preventDefault();
   var suggestion = $(this).attr('data-suggested-query') || $(this).text();
   $('.input').val(suggestion);
-  updateQueryIntel(suggestion);
   runUnifiedQuery();
 });
 
