@@ -1,0 +1,677 @@
+<script>
+// no need for $(document).ready() since this script is loaded at the end of the page
+// Input stays enabled; legacy disabling removed.
+var data = {};
+var titles = [];
+var latestResolveRequestId = 0;
+var latestQueryRequestId = 0;
+var latestDirectRefValidationRequestId = 0;
+var selectedResultKey = null;
+var selectedResultSummary = null;
+var selectedRefValue = null;
+var queryState = { rawLibraryMatches: [], rawSearchResults: [], libraryMatches: [], searchResults: [] };
+var resultPostProcessState = { availableCorpora: [], removedCorpora: [] };
+var resultsCollapsed = false;
+var pendingPreferredVersions = null;
+var translationAvailabilityByRef = {};
+var hasResolvedReference = false;
+var searchDebounceHandle = null;
+var keyboardResultIndex = -1;
+var resultsLoading = false;
+var MAX_FUZZY_SUGGESTIONS = 3;
+var preferredTranslationLanguage = "en";
+var sidebarSessionId = null;
+var accountPreferences = {};
+var sessionPreferences = {};
+var effectivePreferences = {};
+var appMode = window.INITIAL_SIDEBAR_MODE || 'texts';
+var selectedVoiceItem = null;
+
+function clonePlainObject(value) {
+  var out = {};
+  value = value || {};
+  Object.keys(value).forEach(function (key) { out[key] = value[key]; });
+  return out;
+}
+
+function mergePreferenceLayers(base, override) {
+  var merged = clonePlainObject(base);
+  override = override || {};
+  Object.keys(override).forEach(function (key) { merged[key] = override[key]; });
+  return merged;
+}
+
+function isAdvancedSessionMode() {
+  return appMode === 'texts';
+}
+
+function hasSessionOverrides() {
+  return Object.keys(sessionPreferences || {}).length > 0;
+}
+
+function syncAiQuickActionState() {
+  var enabled = String((effectivePreferences || {}).experimental_ai_source_sheet_enabled) === 'true' || (effectivePreferences || {}).experimental_ai_source_sheet_enabled === true;
+  $('.open-ai-lesson-tool').prop('disabled', !enabled).attr('aria-disabled', enabled ? 'false' : 'true');
+}
+
+function applyEffectivePreferencesToUI() {
+  mergePreferenceDefaults(effectivePreferences);
+  syncDisplayModeCards();
+  syncLayoutCards();
+  updateBilingualLayoutVisibility();
+  updateTranslationDetailsVisibility();
+  updateHebrewOptionsVisibility();
+  updateVersionControlsVisibility();
+  updateTransliterationVisibility();
+  updateInsertionModeVisibility();
+  updateTranslationLanguageVisibility();
+  syncSessionOverrideButtons();
+  syncAiQuickActionState();
+}
+
+function saveAccountPreference(payload, onDone) {
+  google.script.run.withSuccessHandler(function (updated) {
+    accountPreferences = clonePlainObject(updated || accountPreferences);
+    effectivePreferences = isAdvancedSessionMode() ? mergePreferenceLayers(accountPreferences, sessionPreferences) : mergePreferenceLayers(accountPreferences, {});
+    syncSessionOverrideButtons();
+    if (typeof onDone === 'function') onDone(updated);
+  }).setAccountPreferences(payload || {});
+}
+
+function saveSessionPreference(payload, onDone) {
+  if (!sidebarSessionId) {
+    if (typeof onDone === 'function') onDone(sessionPreferences);
+    return;
+  }
+  google.script.run.withSuccessHandler(function (updated) {
+    sessionPreferences = clonePlainObject(updated || sessionPreferences);
+    effectivePreferences = mergePreferenceLayers(accountPreferences, sessionPreferences);
+    syncSessionOverrideButtons();
+    if (typeof onDone === 'function') onDone(updated);
+  }).setSidebarSessionState(sidebarSessionId, payload || {});
+}
+
+function saveSidebarPreference(payload, onDone, forceAccountSave) {
+  if (forceAccountSave || !isAdvancedSessionMode()) {
+    saveAccountPreference(payload, onDone);
+  } else {
+    saveSessionPreference(payload, onDone);
+  }
+}
+
+function resetSessionOverrides(onDone) {
+  if (!sidebarSessionId) return;
+  google.script.run.withSuccessHandler(function () {
+    sessionPreferences = {};
+    effectivePreferences = mergePreferenceLayers(accountPreferences, {});
+    applyEffectivePreferencesToUI();
+    if (hasResolvedReference && data && data.ref) refreshSelectedResult();
+    updateModeDependentSections();
+    if (typeof onDone === 'function') onDone();
+  }).clearSidebarSessionState(sidebarSessionId);
+}
+
+function saveSessionAsDefaults(onDone) {
+  if (!sidebarSessionId) return;
+  google.script.run.withSuccessHandler(function (updated) {
+    accountPreferences = clonePlainObject(updated || accountPreferences);
+    sessionPreferences = {};
+    effectivePreferences = mergePreferenceLayers(accountPreferences, {});
+    applyEffectivePreferencesToUI();
+    updateModeDependentSections();
+    if (typeof onDone === 'function') onDone(updated);
+  }).saveSidebarSessionAsAccountDefaults(sidebarSessionId);
+}
+
+var corpusColorClassMap = {
+  tanakh: 'corpus-accent-tanakh',
+  mishnah: 'corpus-accent-mishnah',
+  talmud: 'corpus-accent-talmud',
+  midrash: 'corpus-accent-midrash',
+  halakhah: 'corpus-accent-halakhah',
+  liturgy: 'corpus-accent-liturgy',
+  kabbalah: 'corpus-accent-kabbalah',
+  philosophy: 'corpus-accent-philosophy',
+  chasidut: 'corpus-accent-chasidut',
+  musar: 'corpus-accent-musar',
+  commentary: 'corpus-accent-commentary',
+  reference: 'corpus-accent-reference',
+  'modern-works': 'corpus-accent-modernworks',
+  apocrypha: 'corpus-accent-apocrypha',
+  tanaitic: 'corpus-accent-tanaitic'
+};
+
+function escapeHTML(value) {
+  return String(value || "")
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function parseStoredArrayPreference(value, fallback) {
+  fallback = Array.isArray(fallback) ? fallback : [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  var raw = String(value || '').trim();
+  if (!raw) return fallback.slice();
+  try {
+    var parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : fallback.slice();
+  } catch (error) {
+    return raw ? raw.split(',').map(function (part) { return String(part || '').trim(); }).filter(Boolean) : fallback.slice();
+  }
+}
+
+function mergePreferenceDefaults(preferences) {
+  preferences = preferences || {};
+  if (preferences.include_translation_source_info == "true") {
+    $('.include-translation-source-info').prop('checked', true);
+  }
+  $('.wants-vowels').prop('checked', preferences.nekudot !== "false");
+  $('.wants-cantillation').prop('checked', preferences.teamim !== "false");
+  $('.include-transliteration').prop('checked', String(preferences.include_transliteration_default) === "true");
+  $('.insert-sefaria-link').prop('checked', preferences.insert_sefaria_link_default !== "false");
+  $('.insert-citation').prop('checked', String(preferences.insert_citation_default) === "true");
+  $('.wants-pesukim').prop('checked', preferences.show_line_markers_default !== "false");
+  $('.output-mode-selection').val(preferences.output_mode_default || 'both');
+  $('.bilingual-layout-selection').val(preferences.bilingual_layout_default || 'he-right');
+  $('.translation-only-filter').prop('checked', preferences.last_translation_only_filter === "true");
+  $('.search-sort-select').val(preferences.last_search_sort_mode || 'relevance');
+  $('.wants-relevance').prop('checked', preferences.last_search_relevance_sort !== "false");
+
+  preferredTranslationLanguage = String(preferences.preferred_translation_language || 'en').toLowerCase();
+  var savedTranslationLanguages = parseStoredArrayPreference(preferences.last_translation_languages, ['en']);
+  $('.translation-language-option').prop('checked', false);
+  var useAnyTranslationLanguage = !savedTranslationLanguages.length || savedTranslationLanguages.indexOf('any') >= 0;
+  $('.translation-language-any').prop('checked', useAnyTranslationLanguage);
+  if (!useAnyTranslationLanguage) {
+    savedTranslationLanguages.forEach(function (value) {
+      $('.translation-language-option[value="' + value.replace(/([\"'])/g, '\$1') + '"]').prop('checked', true);
+    });
+  }
+}
+
+function saveLastUsedSearchSettings() {
+  saveSidebarPreference({
+    last_translation_languages: JSON.stringify(getCheckedValues('.translation-language-option')),
+    last_translation_only_filter: $('.translation-only-filter').is(':checked'),
+    last_search_sort_mode: $('.search-sort-select').val() || 'relevance',
+    last_search_relevance_sort: $('.wants-relevance').length ? $('.wants-relevance').is(':checked') : true
+  });
+}
+
+function buildPreviewLoadingHTML(message) {
+  var text = String(message || 'Loading preview…').trim();
+  return "<div class='preview-loading' role='status' aria-live='polite'><span class='preview-loading-spinner' aria-hidden='true'></span><span>" + escapeHTML(text) + "</span></div>";
+}
+
+
+function updatePesukimAvailability(response) {
+  var supportsLineMarkers = !!(response && (Array.isArray(response.he) || Array.isArray(response.text) || response.lineMarkersAvailable === true));
+  $('.pesukim-wrapper').toggle(supportsLineMarkers);
+  $('.wants-pesukim').prop('disabled', !supportsLineMarkers);
+  if (!supportsLineMarkers) {
+    $('.wants-pesukim').prop('checked', false);
+    $('.pesukim-help').text('Line markers are unavailable for this selection (single-block text).');
+  } else {
+    if (!$('.wants-pesukim').prop('checked')) {
+      $('.wants-pesukim').prop('checked', true);
+    }
+    $('.pesukim-help').text('Applies to segmented refs (e.g., verse/line ranges).');
+  }
+}
+
+function updateBilingualLayoutVisibility() {
+  var outputMode = $('.output-mode-selection').val();
+  $('.bilingual-layout-wrapper').toggle(outputMode === 'both');
+}
+
+function updateTranslationDetailsVisibility() {
+  var outputMode = $('.output-mode-selection').val();
+  $('.translation-details-row, .translation-details-help').toggle(outputMode === 'both' || outputMode === 'en');
+}
+
+function updateHebrewOptionsVisibility() {
+  var outputMode = $('.output-mode-selection').val();
+  $('.hebrew-options-row').toggle(outputMode !== 'en');
+}
+
+function updateVersionControlsVisibility() {
+  var outputMode = $('.output-mode-selection').val();
+  var hideTranslations = $('.translation-version-select option:not(:disabled)').length <= 1;
+  $('.translation-version-control').toggle(outputMode !== 'he' && appMode !== 'voices' && !hideTranslations);
+  $('.advanced-version-details').toggle(outputMode !== 'en' && appMode === 'texts');
+  $('.versions-section').toggleClass('single-translation', hideTranslations);
+  if (appMode !== 'voices' && !!selectedResultKey) {
+    $('.versions-section').toggle(!hideTranslations);
+  }
+}
+
+function updateTransliterationVisibility() {
+  var outputMode = $('.output-mode-selection').val();
+  $('.transliteration-row, .transliteration-help, .transliteration-options-row').toggle(outputMode !== 'en');
+}
+
+
+function updateInsertionModeVisibility() {
+}
+
+function normalizeOptionText(value) {
+  return String(value || '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, '')
+    .replace(/^[\s\-–—:•·]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function showInsertWarning(message) {
+  var warningText = String(message || 'Could not insert at the current selection. Place the cursor where you want the source inserted, then try again.').trim();
+  $('.insert-warning').remove();
+  $('.suggestions').prepend("<div class='insert-warning' role='alert' aria-live='assertive'>" + escapeHTML(warningText) + "</div>");
+}
+
+function buildSefariaOpenUrl() {
+  if (!data || !data.ref) {
+    return '';
+  }
+  var refSlug = encodeURIComponent(data.ref).replace(/%20/g, '_');
+  var params = new URLSearchParams();
+  var outputMode = $('.output-mode-selection').val();
+  if (outputMode === 'he') params.set('lang', 'he');
+  else if (outputMode === 'en') params.set('lang', 'en');
+  else params.set('lang', 'bi');
+
+  var selectedTranslationVersion = $('.translation-version-select').val() || data.versionTitle || '';
+  var selectedSourceVersion = $('.he-version-selection').val() || data.heVersionTitle || '';
+  if (outputMode !== 'he' && selectedTranslationVersion) params.set('ven', selectedTranslationVersion);
+  if (outputMode !== 'en' && selectedSourceVersion) params.set('vhe', selectedSourceVersion);
+
+  var query = params.toString();
+  return query ? "https://www.sefaria.org/" + refSlug + "?" + query : "https://www.sefaria.org/" + refSlug;
+}
+
+function normalizeUnifiedReferenceInput(value) {
+  var normalized = String(value || '').trim();
+  if (!normalized) return '';
+  normalized = normalized
+    .replace(/[־‐-―]/g, '-')
+    .replace(/[“”„‟″״]/g, '"')
+    .replace(/[‘’‚‛′׳]/g, "'")
+    .replace(/[‎‏‪-‮]/g, '')
+    .replace(/׃/g, ':')
+    .replace(/\s*[:：]\s*/g, ':')
+    .replace(/\s*[-–—]\s*/g, '-')
+    .replace(/([֐-׿])["'׳״]+(?=[\s:.-]|$)/g, '$1')
+    .replace(/([֐-׿])["'׳״]+(?=[֐-׿])/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return normalized;
+}
+
+function isLikelyHebrewScriptInput(value) {
+  var normalized = String(value || '').trim();
+  return /[\u0590-\u05FF]/.test(normalized) && !/[A-Za-z]/.test(normalized);
+}
+
+function normalizeLatinLookupTitleCase(value) {
+  var input = String(value || '').trim();
+  if (!input || !/[A-Za-z]/.test(input) || /[\u0590-\u05FF]/.test(input) || !Array.isArray(titles)) {
+    return input;
+  }
+
+  var lowerInput = input.toLowerCase();
+  var bestMatch = '';
+  var bestMatchLength = 0;
+
+  titles.forEach(function (title) {
+    var candidate = String(title || '').trim();
+    if (!candidate || !/[A-Za-z]/.test(candidate)) return;
+    var lowerCandidate = candidate.toLowerCase();
+    if (lowerInput !== lowerCandidate && lowerInput.indexOf(lowerCandidate + " ") !== 0 && lowerInput.indexOf(lowerCandidate + ":") !== 0) {
+      return;
+    }
+    if (candidate.length > bestMatchLength) {
+      bestMatch = candidate;
+      bestMatchLength = candidate.length;
+    }
+  });
+
+  if (!bestMatch) return input;
+  return bestMatch + input.slice(bestMatchLength);
+}
+
+function mapSefariaRefSlugToLookupRef(slug) {
+  var decoded = String(slug || '').trim();
+  if (!decoded) return '';
+  try {
+    decoded = decodeURIComponent(decoded);
+  } catch (error) {}
+  decoded = decoded.replace(/^\/+/, '').replace(/\/+?/g, '/').replace(/_/g, ' ');
+  decoded = decoded.replace(/\/+$/g, '').replace(/\/+/g, '/');
+  var parts = decoded.split('/').filter(Boolean);
+  if (!parts.length) return '';
+  var titlePart = parts[0];
+  var sectionPart = parts.slice(1).join(':');
+  return sectionPart ? titlePart + " " + sectionPart : titlePart;
+}
+
+function parseSefariaUrlInput(inputValue) {
+  var raw = String(inputValue || '').trim();
+  if (!raw) return null;
+
+  var parsedUrl;
+  try {
+    parsedUrl = new URL(raw);
+  } catch (error) {
+    return null;
+  }
+
+  var host = (parsedUrl.hostname || '').toLowerCase();
+  if (host.indexOf('sefaria.org') < 0) return null;
+
+  var path = (parsedUrl.pathname || '').replace(/^\/+/, '');
+  if (!path) return null;
+
+  var blockedRoots = { api: true, texts: true, sheets: true, topics: true, collections: true, account: true, profile: true, help: true };
+  var slug = path.split('/')[0] || '';
+  if (!slug || blockedRoots[slug.toLowerCase()]) return null;
+
+  var ref = mapSefariaRefSlugToLookupRef(path);
+  if (!ref) return null;
+
+  var lang = (parsedUrl.searchParams.get('lang') || '').toLowerCase().trim();
+  var outputMode = 'both';
+  if (lang === 'en') outputMode = 'en';
+  else if (lang === 'he') outputMode = 'he';
+
+  return {
+    ref: ref,
+    outputMode: outputMode,
+    preferredVersions: {
+      en: parsedUrl.searchParams.get('ven') || '',
+      he: parsedUrl.searchParams.get('vhe') || ''
+    }
+  };
+}
+
+function updateActionabilityUI(state) {
+  var isActionable = !!(state && state.isInsertable);
+  $('.display-layout-shell, .display-layout-section, .options-panel, .versions-section').toggleClass('section-muted', !isActionable);
+}
+
+function isResolvedReference(response) {
+  return !!(response && response.ref && response.indexTitle && !response.error);
+}
+
+function hasRenderableText(value) {
+  if (Array.isArray(value)) return value.some(function (part) { return hasRenderableText(part); });
+  if (value === null || value === undefined) return false;
+  var stripped = String(value).replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim();
+  return stripped.length > 0;
+}
+
+function buildDepthPrompt(response) {
+  var sectionNames = (response && Array.isArray(response.sectionNames)) ? response.sectionNames.filter(Boolean) : [];
+  if (sectionNames.length >= 2) return "Enter " + sectionNames[0] + " and optionally a " + sectionNames[1] + ". Specify a range with '-'.";
+  if (sectionNames.length === 1) return "Enter " + sectionNames[0] + ". Specify a range with '-'.";
+  return "Enter a valid reference to insert.";
+}
+
+function getResolvedNodeState(response) {
+  var resolved = isResolvedReference(response);
+  var hasText = hasRenderableText(response && response.text);
+  var hasHebrew = hasRenderableText(response && response.he);
+  var isInsertable = resolved && (hasText || hasHebrew);
+  var isStructural = resolved && !isInsertable;
+  return {
+    resolved: resolved,
+    hasText: hasText,
+    hasHebrew: hasHebrew,
+    isInsertable: isInsertable,
+    isStructural: isStructural,
+    prompt: buildDepthPrompt(response)
+  };
+}
+
+function formatBreadcrumb(refValue) {
+  var ref = String(refValue || '').trim();
+  if (!ref) return '';
+  var commaParts = ref.split(',').map(function (part) { return part.trim(); }).filter(Boolean);
+  if (commaParts.length <= 1) return ref;
+  var title = commaParts[0];
+  var pathPart = commaParts.slice(1).join(', ');
+  var pathPieces = pathPart.split(':').map(function (part) { return part.trim(); }).filter(Boolean);
+  if (!pathPieces.length) return ref;
+  return [title].concat(pathPieces).join(' › ');
+}
+
+function buildPreviewMeta(primaryRef, fallbackRef) {
+  var breadcrumb = formatBreadcrumb(primaryRef);
+  if (!breadcrumb && fallbackRef && fallbackRef.indexTitle && Array.isArray(fallbackRef.sections)) {
+    breadcrumb = [fallbackRef.indexTitle].concat(fallbackRef.sections).join(' › ');
+  }
+  var fallback = '';
+  if (typeof fallbackRef === 'string') fallback = fallbackRef.trim();
+  else if (fallbackRef && typeof fallbackRef === 'object') fallback = String(fallbackRef.ref || fallbackRef.heRef || primaryRef || '').trim();
+  else fallback = String(primaryRef || '').trim();
+  var display = breadcrumb || fallback;
+  return "<div class='preview-meta'>" + escapeHTML(display) + "</div>";
+}
+
+function buildNonInsertableMessage(response) {
+  var state = getResolvedNodeState(response);
+  return buildPreviewMeta(response && (response.ref || response.heRef), response || '') +
+    "<div class='noninsertable-warning'><h4 class='preview-state-title'>This is a section, not a directly insertable text.</h4><p class='preview-state-message'>Choose a subsection or more specific reference to preview and insert.</p><p class='preview-state-message'>" +
+    escapeHTML(state.prompt) + "</p></div>";
+}
+
+function clearVersionSelectors() {
+  $('.translation-version-control').empty();
+  $('.hebrew-version-control').empty();
+}
+
+function setResultsHint(message, allowHtml) {
+  var text = String(message || '').trim();
+  var $hint = $('.results-hint');
+  if (!text) {
+    $hint.hide().empty();
+    return;
+  }
+  if (allowHtml) {
+    $hint.html(message).show();
+  } else {
+    $hint.text(text).show();
+  }
+}
+
+function setResultsLoading(isLoading) {
+  resultsLoading = !!isLoading;
+  $('.results-panel').toggleClass('is-loading', resultsLoading);
+  if (!$('.results-loading-indicator').length) {
+    $('.results-header').append("<div class='results-loading-indicator' aria-live='polite' style='display:none;'><span class='preview-loading-spinner' aria-hidden='true'></span><span>Searching…</span></div>");
+  }
+  $('.results-loading-indicator').toggle(resultsLoading);
+}
+
+function normalizeFuzzyText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[֑-ׇ]/g, '')
+    .replace(/[_.,/#!$%^&*;:{}=\\\-`~()\[\]"'׳״]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function splitReferenceForFuzzy(query) {
+  var raw = String(query || '').trim();
+  if (!raw) return { titlePart: '', suffixPart: '' };
+  var match = raw.match(/^(.*?)(\s+[\d\u05D0-\u05EA].*)$/);
+  if (!match) return { titlePart: raw, suffixPart: '' };
+  return { titlePart: String(match[1] || '').trim(), suffixPart: String(match[2] || '') };
+}
+
+function levenshteinDistance(a, b) {
+  a = String(a || '');
+  b = String(b || '');
+  if (!a) return b.length;
+  if (!b) return a.length;
+  var matrix = [];
+  for (var i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (var j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (i = 1; i <= b.length; i++) {
+    for (j = 1; j <= a.length; j++) {
+      var cost = a.charAt(j - 1) === b.charAt(i - 1) ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return matrix[b.length][a.length];
+}
+
+function getFuzzyReferenceSuggestions(query) {
+  var split = splitReferenceForFuzzy(query);
+  var titlePart = normalizeFuzzyText(split.titlePart);
+  if (!titlePart || titlePart.length < 2 || !Array.isArray(titles) || !titles.length) return [];
+  var queryLooksHebrew = isLikelyHebrewScriptInput(split.titlePart);
+  var firstChar = titlePart.charAt(0);
+  var scored = titles.map(function (title) {
+    var rawTitle = String(title || '').trim();
+    var normalizedTitle = normalizeFuzzyText(rawTitle);
+    if (!normalizedTitle) return null;
+    var titleIsHebrew = isLikelyHebrewScriptInput(rawTitle);
+    if (queryLooksHebrew !== titleIsHebrew) return null;
+    if (firstChar && normalizedTitle.charAt(0) !== firstChar && normalizedTitle.indexOf(titlePart) !== 0 && titlePart.indexOf(normalizedTitle) !== 0) return null;
+    var distance = levenshteinDistance(titlePart, normalizedTitle);
+    var maxLen = Math.max(titlePart.length, normalizedTitle.length, 1);
+    var ratio = distance / maxLen;
+    var startsBonus = normalizedTitle.indexOf(titlePart) === 0 ? -0.25 : 0;
+    var containsBonus = normalizedTitle.indexOf(titlePart) >= 0 ? -0.15 : 0;
+    var score = ratio + startsBonus + containsBonus;
+    if (ratio > 0.55 && normalizedTitle.indexOf(titlePart) < 0 && titlePart.indexOf(normalizedTitle) < 0) return null;
+    return { rawTitle: rawTitle, score: score };
+  }).filter(Boolean).sort(function (a, b) {
+    if (a.score !== b.score) return a.score - b.score;
+    return a.rawTitle.localeCompare(b.rawTitle);
+  });
+
+  var seen = {};
+  return scored.filter(function (entry) {
+    var suggestion = entry.rawTitle + split.suffixPart;
+    if (seen[suggestion]) return false;
+    seen[suggestion] = true;
+    return suggestion.toLowerCase() !== String(query || '').trim().toLowerCase();
+  }).slice(0, MAX_FUZZY_SUGGESTIONS).map(function (entry) {
+    return entry.rawTitle + split.suffixPart;
+  });
+}
+
+function renderFuzzySuggestions(query) {
+  var suggestions = getFuzzyReferenceSuggestions(query);
+  if (!suggestions.length) return;
+  var html = "<div class='results-suggestion-wrap'><div class='results-suggestion-title'>Did you mean</div><div class='results-suggestion-buttons'>" + suggestions.map(function (suggestion) {
+    return "<button type='button' class='results-suggestion-button' data-suggested-query='" + escapeHTML(suggestion) + "'>" + escapeHTML(suggestion) + "</button>";
+  }).join('') + "</div></div>";
+  setResultsHint(html, true);
+}
+
+function maybeShowZeroResultsSuggestions(input) {
+  var hasRawResults = getAllRawResults().length > 0;
+  var currentHint = $.trim($('.results-hint').text());
+  if (!hasRawResults && !currentHint) {
+    renderFuzzySuggestions(input);
+  }
+}
+
+function describeResultLanguages(item) {
+  var available = Array.isArray(item && item.availableLangs) ? item.availableLangs : [];
+  var unique = [];
+  available.forEach(function (lang) {
+    var normalized = String(lang || '').toLowerCase().trim();
+    if (normalized && unique.indexOf(normalized) < 0) unique.push(normalized);
+  });
+  if (unique.length === 1) {
+    var singleMap = { en: 'EN', he: 'HE', es: 'ES', fr: 'FR', de: 'DE', ru: 'RU', ar: 'AR', pt: 'PT', it: 'IT' };
+    return singleMap[unique[0]] || unique[0].toUpperCase();
+  }
+  if (!unique.length) return 'Single version';
+  var labelMap = { en: 'EN', he: 'HE', es: 'ES', fr: 'FR', de: 'DE', ru: 'RU', ar: 'AR', pt: 'PT', it: 'IT' };
+  return unique.map(function (lang) { return labelMap[lang] || lang.toUpperCase(); }).join(', ');
+}
+
+function getCorpusAccentClass(corpusKey) {
+  return corpusColorClassMap[String(corpusKey || '').toLowerCase()] || 'corpus-accent-default';
+}
+
+
+function getCheckedValues(selector) {
+  return $(selector).map(function () {
+    return $(this).is(':checked') ? $(this).val() : null;
+  }).get().filter(Boolean);
+}
+
+function updateMultiSelectButtonLabel(dropdownSelector, values, fallbackText, labelMap) {
+  labelMap = labelMap || null;
+  var labels = values.map(function (value) {
+    return labelMap && labelMap[value] ? labelMap[value] : value;
+  });
+  var text = labels.length ? labels.join(', ') : fallbackText;
+  $(dropdownSelector + ' .multi-select-button-text').text(text);
+}
+
+
+function syncCompactTranslationLanguageUI() {
+  var selected = getCheckedValues('.translation-language-option');
+  var anySelected = !selected.length || $('.translation-language-any').is(':checked');
+  var labelMap = { en: 'EN', he: 'HE', es: 'ES', fr: 'FR', de: 'DE', pt: 'PT', ru: 'RU', ar: 'AR', it: 'IT' };
+  var label = 'Any';
+  if (!anySelected && selected.length) {
+    label = selected.slice(0, 2).map(function(lang){ return labelMap[lang] || String(lang || '').toUpperCase(); }).join(', ');
+    if (selected.length > 2) label += ' +' + (selected.length - 2);
+  }
+  $('#translation-language-toggle').html(
+    '<span class="latin-part" aria-hidden="true">A</span>' +
+    '<span class="alef-part" aria-hidden="true">א</span>' +
+    '<span class="translation-language-button-label">' + escapeHTML(label) + '</span>'
+  );
+}
+
+function updateTranslationLanguageVisibility() {
+  var selectedValues = getCheckedValues('.translation-language-option');
+  var useAny = $('.translation-language-any').is(':checked') || !selectedValues.length;
+
+  if (useAny) {
+    $('.translation-language-any').prop('checked', true);
+    $('.translation-language-option').prop('checked', false);
+    $('.translation-only-filter').prop('checked', false);
+  } else {
+    $('.translation-language-any').prop('checked', false);
+    $('.translation-only-filter').prop('checked', true);
+  }
+
+  syncCompactTranslationLanguageUI();
+}
+
+function getSearchParameters() {
+  var sortMode = $('#search-sort-mode').length ? ($('#search-sort-mode').val() || 'relevance') : 'relevance';
+  var selectedLanguages = getCheckedValues('.translation-language-option');
+  var anySelected = $('.translation-language-any').is(':checked') || !selectedLanguages.length;
+  return {
+    filters: [],
+    relevanceSort: sortMode === 'relevance',
+    sortMode: sortMode,
+    translationOnly: !anySelected,
+    translationLanguages: anySelected ? [] : selectedLanguages
+  };
+}
+
+function updateQueryIntel(input) { return; }
+
+
+// Session library and results rendering extracted to sidebar_session_library and sidebar_results_render.
+</script>

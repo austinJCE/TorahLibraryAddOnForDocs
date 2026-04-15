@@ -1,0 +1,159 @@
+<script>
+function getSidebarTransliterationScheme() {
+  return String((effectivePreferences && effectivePreferences.transliteration_scheme) || 'simple_english');
+}
+function getSidebarTransliterationLabel(value) {
+  var labels = {
+    none: 'None',
+    simple_english: "ha-sefer kol-ha'am",
+    traditional: "ha-sēfer kol-hā-ʿam",
+    modern_israeli: "ha-sefer kol-ha'am",
+    ashkenazi: "ha-seifer kol-ho'om",
+    academic_full: "ha-sēfer kol-hā-ʿām",
+    ipa_modern: "haˈsefeʁ kol haˈʔam",
+    ipa_tiberian: "hasˈseːfɛr kɔl hɔːˈʕɔm"
+  };
+  return labels[value] || labels.simple_english;
+}
+function closeSidebarTransliterationMenu() {
+  $('#sidebar-transliteration-menu').addClass('hidden');
+  $('#sidebar-transliteration-toggle').attr('aria-expanded', 'false');
+}
+function updateSidebarCompositionCard() {
+  var vowelsOn = $('.wants-vowels').is(':checked');
+  var cantOn = $('.wants-cantillation').is(':checked');
+  var transliterationOn = $('.include-transliteration').is(':checked');
+  var linkOn = $('.insert-sefaria-link').is(':checked');
+  var citationOn = $('.insert-citation').is(':checked');
+  var scheme = transliterationOn ? getSidebarTransliterationScheme() : 'none';
+
+  $('#sidebar-composition-title-toggle').toggleClass('is-linked', linkOn).attr('aria-pressed', linkOn ? 'true' : 'false');
+  $('#sidebar-vowels-toggle').toggleClass('is-off', !vowelsOn).attr('aria-pressed', vowelsOn ? 'true' : 'false');
+  $('#sidebar-cantillation-toggle').toggleClass('is-off', !cantOn).attr('aria-pressed', cantOn ? 'true' : 'false');
+
+  $('.sidebar-composition-hebrew-text--full').prop('hidden', !(vowelsOn && cantOn));
+  $('.sidebar-composition-hebrew-text--no-cantillation').prop('hidden', !(vowelsOn && !cantOn));
+  $('.sidebar-composition-hebrew-text--consonants').prop('hidden', !!vowelsOn);
+
+  $('#sidebar-transliteration-toggle').text(getSidebarTransliterationLabel(scheme)).toggleClass('is-none', scheme === 'none').attr('data-value', scheme);
+  $('.sidebar-transliteration-option').each(function () {
+    $(this).toggleClass('is-selected', $(this).attr('data-value') === scheme);
+  });
+
+  $('#sidebar-composition-status').text(
+    'Linked title ' + (linkOn ? 'on' : 'off') +
+    ' · Citation ' + (citationOn ? 'on' : 'off') +
+    ' · Cantillation ' + (cantOn ? 'on' : 'off') +
+    ' · Vowels ' + (vowelsOn ? 'on' : 'off') +
+    ' · Transliteration: ' + (scheme === 'none' ? 'off' : scheme.replace(/_/g, ' '))
+  );
+}
+function bindSidebarCompositionCard() {
+  $('#sidebar-composition-title-toggle').off('click').on('click', function () {
+    $('.insert-sefaria-link').prop('checked', !$('.insert-sefaria-link').is(':checked'));
+    updateSidebarCompositionCard();
+    $('.insert-sefaria-link').trigger('change');
+  });
+  $('#sidebar-vowels-toggle').off('click').on('click', function () {
+    $('.wants-vowels').prop('checked', !$('.wants-vowels').is(':checked'));
+    updateSidebarCompositionCard();
+    $('.wants-vowels').trigger('change');
+  });
+  $('#sidebar-cantillation-toggle').off('click').on('click', function () {
+    $('.wants-cantillation').prop('checked', !$('.wants-cantillation').is(':checked'));
+    updateSidebarCompositionCard();
+    $('.wants-cantillation').trigger('change');
+  });
+  $('#sidebar-transliteration-toggle').off('click').on('click', function (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    $('#sidebar-transliteration-menu').toggleClass('hidden');
+    $(this).attr('aria-expanded', $('#sidebar-transliteration-menu').hasClass('hidden') ? 'false' : 'true');
+  });
+  $('.sidebar-transliteration-option').off('click').on('click', function () {
+    var value = $(this).attr('data-value');
+    if (value === 'none') {
+      $('.include-transliteration').prop('checked', false);
+      effectivePreferences.transliteration_scheme = getSidebarTransliterationScheme();
+      updateSidebarCompositionCard();
+      saveSidebarPreference({ include_transliteration_default: false }, function () {
+        effectivePreferences.transliteration_scheme = getSidebarTransliterationScheme();
+        updateSidebarCompositionCard();
+        if (hasResolvedReference && data && data.ref) refreshSelectedResult();
+      });
+    } else {
+      $('.include-transliteration').prop('checked', true);
+      effectivePreferences.transliteration_scheme = value;
+      updateSidebarCompositionCard();
+      saveSidebarPreference({ include_transliteration_default: true, transliteration_scheme: value }, function () {
+        effectivePreferences.transliteration_scheme = value;
+        updateSidebarCompositionCard();
+        if (hasResolvedReference && data && data.ref) refreshSelectedResult();
+      });
+    }
+    closeSidebarTransliterationMenu();
+  });
+  $(document).off('click.sidebarCompositionDismiss').on('click.sidebarCompositionDismiss', function (event) {
+    if ($(event.target).closest('.sidebar-composition-transliteration-wrap').length) return;
+    closeSidebarTransliterationMenu();
+  });
+}
+
+function refreshCompositionDrivenPreview() {
+  if (typeof updateSidebarCompositionCard === 'function') updateSidebarCompositionCard();
+  if (typeof refreshSidebarLivePreview === 'function') refreshSidebarLivePreview();
+}
+
+function syncCompactCompositionPills() {
+  var linkOn = $('.insert-sefaria-link').is(':checked');
+  var citationOn = $('.insert-citation').is(':checked');
+  var vowelsOn = $('.wants-vowels').is(':checked');
+  var cantOn = $('.wants-cantillation').is(':checked');
+  var translitOn = $('.include-transliteration').is(':checked');
+  var linesOn = $('.wants-pesukim').is(':checked');
+  var detailsOn = $('.include-translation-source-info').is(':checked');
+
+  $('#sidebar-composition-title-toggle').toggleClass('is-linked is-active', linkOn).attr('aria-pressed', linkOn ? 'true' : 'false');
+  $('#sidebar-citation-toggle').toggleClass('is-active', citationOn).attr('aria-pressed', citationOn ? 'true' : 'false');
+  $('#sidebar-vowels-toggle').toggleClass('is-active', vowelsOn).attr('aria-pressed', vowelsOn ? 'true' : 'false');
+  $('#sidebar-cantillation-toggle').toggleClass('is-active', cantOn).attr('aria-pressed', cantOn ? 'true' : 'false');
+  $('#sidebar-transliteration-pill').toggleClass('is-active', translitOn).attr('aria-pressed', translitOn ? 'true' : 'false');
+  $('#sidebar-lines-toggle').toggleClass('is-active', linesOn).attr('aria-pressed', linesOn ? 'true' : 'false');
+  $('#sidebar-translation-details-toggle').toggleClass('is-active', detailsOn).attr('aria-pressed', detailsOn ? 'true' : 'false');
+  var scheme = translitOn ? getSidebarTransliterationLabel(getSidebarTransliterationScheme()) : 'Aא Translit';
+  $('#sidebar-transliteration-toggle').text(scheme).toggleClass('is-none', !translitOn);
+}
+
+function initCompactCompositionControls() {
+  if (typeof bindSidebarCompositionCard !== 'function' || typeof updateSidebarCompositionCard !== 'function') return;
+  $('.include-transliteration, .insert-sefaria-link, .insert-citation, .wants-vowels, .wants-cantillation, .wants-pesukim, .include-translation-source-info')
+    .off('change.compositionMatch')
+    .on('change.compositionMatch', function () {
+      syncCompactCompositionPills();
+      refreshCompositionDrivenPreview();
+    });
+
+  $('#sidebar-composition-title-toggle').off('click.compact').on('click.compact', function () {
+    $('.insert-sefaria-link').prop('checked', !$('.insert-sefaria-link').is(':checked')).trigger('change');
+  });
+  $('#sidebar-citation-toggle').off('click.compact').on('click.compact', function () {
+    $('.insert-citation').prop('checked', !$('.insert-citation').is(':checked')).trigger('change');
+  });
+  $('#sidebar-vowels-toggle').off('click.compact').on('click.compact', function () {
+    $('.wants-vowels').prop('checked', !$('.wants-vowels').is(':checked')).trigger('change');
+  });
+  $('#sidebar-cantillation-toggle').off('click.compact').on('click.compact', function () {
+    $('.wants-cantillation').prop('checked', !$('.wants-cantillation').is(':checked')).trigger('change');
+  });
+  $('#sidebar-transliteration-pill').off('click.compact').on('click.compact', function () {
+    $('.include-transliteration').prop('checked', !$('.include-transliteration').is(':checked')).trigger('change');
+  });
+  $('#sidebar-lines-toggle').off('click.compact').on('click.compact', function () {
+    $('.wants-pesukim').prop('checked', !$('.wants-pesukim').is(':checked')).trigger('change');
+  });
+  $('#sidebar-translation-details-toggle').off('click.compact').on('click.compact', function () {
+    $('.include-translation-source-info').prop('checked', !$('.include-translation-source-info').is(':checked')).trigger('change');
+  });
+  syncCompactCompositionPills();
+}
+</script>

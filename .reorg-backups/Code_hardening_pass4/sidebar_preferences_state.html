@@ -1,0 +1,180 @@
+<script>
+function clonePlainObject(value) {
+  var out = {};
+  value = value || {};
+  Object.keys(value).forEach(function (key) { out[key] = value[key]; });
+  return out;
+}
+
+function mergePreferenceLayers(base, override) {
+  var merged = clonePlainObject(base);
+  override = override || {};
+  Object.keys(override).forEach(function (key) { merged[key] = override[key]; });
+  return merged;
+}
+
+function isAdvancedSessionMode() {
+  return appMode === 'texts';
+}
+
+function hasSessionOverrides() {
+  return Object.keys(sessionPreferences || {}).length > 0;
+}
+
+function syncAiQuickActionState() {
+  var enabled = String((effectivePreferences || {}).experimental_ai_source_sheet_enabled) === 'true' || (effectivePreferences || {}).experimental_ai_source_sheet_enabled === true;
+  $('.open-ai-lesson-tool').prop('disabled', !enabled).attr('aria-disabled', enabled ? 'false' : 'true');
+}
+
+function applyEffectivePreferencesToUI() {
+  mergePreferenceDefaults(effectivePreferences);
+  syncDisplayModeCards();
+  syncLayoutCards();
+  updateBilingualLayoutVisibility();
+  updateTranslationDetailsVisibility();
+  updateHebrewOptionsVisibility();
+  updateVersionControlsVisibility();
+  updateTransliterationVisibility();
+  updateInsertionModeVisibility();
+  updateTranslationLanguageVisibility();
+  syncSessionOverrideButtons();
+  syncAiQuickActionState();
+}
+
+function saveAccountPreference(payload, onDone) {
+  google.script.run.withSuccessHandler(function (updated) {
+    accountPreferences = clonePlainObject(updated || accountPreferences);
+    effectivePreferences = isAdvancedSessionMode() ? mergePreferenceLayers(accountPreferences, sessionPreferences) : mergePreferenceLayers(accountPreferences, {});
+    syncSessionOverrideButtons();
+    if (typeof onDone === 'function') onDone(updated);
+  }).setAccountPreferences(payload || {});
+}
+
+function saveSessionPreference(payload, onDone) {
+  if (!sidebarSessionId) {
+    if (typeof onDone === 'function') onDone(sessionPreferences);
+    return;
+  }
+  google.script.run.withSuccessHandler(function (updated) {
+    sessionPreferences = clonePlainObject(updated || sessionPreferences);
+    effectivePreferences = mergePreferenceLayers(accountPreferences, sessionPreferences);
+    syncSessionOverrideButtons();
+    if (typeof onDone === 'function') onDone(updated);
+  }).setSidebarSessionState(sidebarSessionId, payload || {});
+}
+
+function saveSidebarPreference(payload, onDone, forceAccountSave) {
+  if (forceAccountSave || !isAdvancedSessionMode()) {
+    saveAccountPreference(payload, onDone);
+  } else {
+    saveSessionPreference(payload, onDone);
+  }
+}
+
+function resetSessionOverrides(onDone) {
+  if (!sidebarSessionId) return;
+  google.script.run.withSuccessHandler(function () {
+    sessionPreferences = {};
+    effectivePreferences = mergePreferenceLayers(accountPreferences, {});
+    applyEffectivePreferencesToUI();
+    if (hasResolvedReference && data && data.ref) refreshSelectedResult();
+    updateModeDependentSections();
+    if (typeof onDone === 'function') onDone();
+  }).clearSidebarSessionState(sidebarSessionId);
+}
+
+function saveSessionAsDefaults(onDone) {
+  if (!sidebarSessionId) return;
+  google.script.run.withSuccessHandler(function (updated) {
+    accountPreferences = clonePlainObject(updated || accountPreferences);
+    sessionPreferences = {};
+    effectivePreferences = mergePreferenceLayers(accountPreferences, {});
+    applyEffectivePreferencesToUI();
+    updateModeDependentSections();
+    if (typeof onDone === 'function') onDone(updated);
+  }).saveSidebarSessionAsAccountDefaults(sidebarSessionId);
+}
+
+var corpusColorClassMap = {
+  tanakh: 'corpus-accent-tanakh',
+  mishnah: 'corpus-accent-mishnah',
+  talmud: 'corpus-accent-talmud',
+  midrash: 'corpus-accent-midrash',
+  halakhah: 'corpus-accent-halakhah',
+  liturgy: 'corpus-accent-liturgy',
+  kabbalah: 'corpus-accent-kabbalah',
+  philosophy: 'corpus-accent-philosophy',
+  chasidut: 'corpus-accent-chasidut',
+  musar: 'corpus-accent-musar',
+  commentary: 'corpus-accent-commentary',
+  reference: 'corpus-accent-reference',
+  'modern-works': 'corpus-accent-modernworks',
+  apocrypha: 'corpus-accent-apocrypha',
+  tanaitic: 'corpus-accent-tanaitic'
+};
+
+function escapeHTML(value) {
+  return String(value || "")
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function parseStoredArrayPreference(value, fallback) {
+  fallback = Array.isArray(fallback) ? fallback : [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  var raw = String(value || '').trim();
+  if (!raw) return fallback.slice();
+  try {
+    var parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : fallback.slice();
+  } catch (error) {
+    return raw ? raw.split(',').map(function (part) { return String(part || '').trim(); }).filter(Boolean) : fallback.slice();
+  }
+}
+
+function mergePreferenceDefaults(preferences) {
+  preferences = preferences || {};
+  if (preferences.include_translation_source_info == "true") {
+    $('.include-translation-source-info').prop('checked', true);
+  }
+  $('.wants-vowels').prop('checked', preferences.nekudot !== "false");
+  $('.wants-cantillation').prop('checked', preferences.teamim !== "false");
+  $('.include-transliteration').prop('checked', String(preferences.include_transliteration_default) === "true");
+  $('.insert-sefaria-link').prop('checked', preferences.insert_sefaria_link_default !== "false");
+  $('.insert-citation').prop('checked', String(preferences.insert_citation_default) === "true");
+  $('.wants-pesukim').prop('checked', preferences.show_line_markers_default !== "false");
+  $('.output-mode-selection').val(preferences.output_mode_default || 'both');
+  $('.bilingual-layout-selection').val(preferences.bilingual_layout_default || 'he-right');
+  $('.translation-only-filter').prop('checked', preferences.last_translation_only_filter === "true");
+  $('.search-sort-select').val(preferences.last_search_sort_mode || 'relevance');
+  $('.wants-relevance').prop('checked', preferences.last_search_relevance_sort !== "false");
+
+  preferredTranslationLanguage = String(preferences.preferred_translation_language || 'en').toLowerCase();
+  var savedTranslationLanguages = parseStoredArrayPreference(preferences.last_translation_languages, ['en']);
+  $('.translation-language-option').prop('checked', false);
+  var useAnyTranslationLanguage = !savedTranslationLanguages.length || savedTranslationLanguages.indexOf('any') >= 0;
+  $('.translation-language-any').prop('checked', useAnyTranslationLanguage);
+  if (!useAnyTranslationLanguage) {
+    savedTranslationLanguages.forEach(function (value) {
+      $('.translation-language-option[value="' + value.replace(/([\"'])/g, '\$1') + '"]').prop('checked', true);
+    });
+  }
+}
+
+function saveLastUsedSearchSettings() {
+  saveSidebarPreference({
+    last_translation_languages: JSON.stringify(getCheckedValues('.translation-language-option')),
+    last_translation_only_filter: $('.translation-only-filter').is(':checked'),
+    last_search_sort_mode: $('.search-sort-select').val() || 'relevance',
+    last_search_relevance_sort: $('.wants-relevance').length ? $('.wants-relevance').is(':checked') : true
+  });
+}
+
+function buildPreviewLoadingHTML(message) {
+  var text = String(message || 'Loading preview…').trim();
+  return "<div class='preview-loading' role='status' aria-live='polite'><span class='preview-loading-spinner' aria-hidden='true'></span><span>" + escapeHTML(text) + "</span></div>";
+}
+</script>
