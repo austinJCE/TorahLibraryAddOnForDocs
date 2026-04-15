@@ -595,6 +595,7 @@
               updateSheimotSummary();
               renderOverrideGrid();
               renderOverrideList();
+              syncExperimentalChildToggles();
 
               $(".hide").fadeOut(300);
       } catch (error) {
@@ -604,6 +605,17 @@
         $(".hide").fadeOut(300);
       }
     }
+
+    function syncExperimentalChildToggles() {
+      var masterOn = $('#experimental_features_enabled').is(':checked');
+      $('.experimental-child-toggles').toggleClass('disabled-section', !masterOn);
+      $('.experimental-child-toggles input[type="checkbox"]').prop('disabled', !masterOn);
+      if (!masterOn) {
+        $('.experimental-child-toggles input[type="checkbox"]').prop('checked', false);
+      }
+    }
+
+    $('#experimental_features_enabled').on('change', syncExperimentalChildToggles);
 
     function setResultsMessage(message, isHtml) {
       if (isHtml) $("#results").html(message);

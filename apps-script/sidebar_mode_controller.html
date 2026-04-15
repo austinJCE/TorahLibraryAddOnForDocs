@@ -52,10 +52,15 @@ function normalizeSidebarMode(mode) {
 }
 
 function hasExperimentalFeaturesEnabled() {
-  return String((effectivePreferences || {}).experimental_ai_source_sheet_enabled) === 'true' ||
-    (effectivePreferences || {}).experimental_ai_source_sheet_enabled === true ||
-    String((effectivePreferences || {}).surprise_me_enabled) === 'true' ||
-    (effectivePreferences || {}).surprise_me_enabled === true;
+  var prefs = effectivePreferences || {};
+  if (String(prefs.experimental_features_enabled) !== 'true' &&
+      prefs.experimental_features_enabled !== true) {
+    return false;
+  }
+  return String(prefs.experimental_ai_source_sheet_enabled) === 'true' ||
+    prefs.experimental_ai_source_sheet_enabled === true ||
+    String(prefs.surprise_me_enabled) === 'true' ||
+    prefs.surprise_me_enabled === true;
 }
 
 function isExperimentalAiEnabled() {

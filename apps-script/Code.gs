@@ -34,6 +34,7 @@ const SETTINGS = [
   "meforash_replacement",
   "nekudot",
   "nekudot_filter",
+  "experimental_features_enabled",
   "surprise_me_enabled",
   "teamim",
   "teamim_filter",

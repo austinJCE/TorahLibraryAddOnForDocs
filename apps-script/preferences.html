@@ -499,6 +499,17 @@
           <div class="section-card-body">
             <div class="toggle-row">
               <div class="toggle-copy">
+                <div class="toggle-title">Enable Experimental Features</div>
+                <div class="toggle-help">Turn on to access Surprise Me and AI Lesson Generator features.</div>
+              </div>
+              <label class="switch" for="experimental_features_enabled">
+                <input id="experimental_features_enabled" type="checkbox" name="experimental_features_enabled">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="experimental-child-toggles">
+            <div class="toggle-row">
+              <div class="toggle-copy">
                 <div class="toggle-title">Enable Surprise Me</div>
                 <div class="toggle-help">Modified from Legacy beta feature <a href="https://en.wikipedia.org/wiki/PowerPoint_karaoke">"Popcorn"</a> by Shlomi Helfgot.</div>
               </div>
@@ -517,6 +528,7 @@
                 <span class="slider"></span>
               </label>
             </div>
+            </div> <!-- .experimental-child-toggles -->
 
             <div class="section-note" style="margin-top:10px;">The AI lesson generator remains available as an experimental workflow, and the three lesson quick actions also appear in the add-on’s <strong>Quick Actions</strong> submenu when Experimental AI is enabled.</div>
 
