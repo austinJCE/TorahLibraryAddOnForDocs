@@ -747,6 +747,67 @@
       });
       loadSavedAiKeyPreview();
     }
+
+    function _initPreferencesTabs() {
+      const tabs = Array.from(document.querySelectorAll('.pref-tab'));
+      if (!tabs.length) return;
+      const panels = tabs
+        .map(function (t) { return document.getElementById(t.getAttribute('aria-controls')); })
+        .filter(Boolean);
+      if (!panels.length) return;
+
+      function activate(tab, opts) {
+        const focus = opts && opts.focus;
+        const panelId = tab.getAttribute('aria-controls');
+        tabs.forEach(function (t) {
+          const selected = t === tab;
+          t.setAttribute('aria-selected', selected ? 'true' : 'false');
+          t.tabIndex = selected ? 0 : -1;
+        });
+        panels.forEach(function (p) {
+          p.hidden = (p.id !== panelId);
+        });
+        if (focus) tab.focus();
+      }
+
+      const initial = tabs.find(function (t) {
+        return t.getAttribute('aria-selected') === 'true';
+      }) || tabs[0];
+      activate(initial);
+
+      tabs.forEach(function (tab, idx) {
+        tab.addEventListener('click', function () {
+          activate(tab, { focus: true });
+        });
+        tab.addEventListener('keydown', function (ev) {
+          switch (ev.key) {
+            case 'ArrowRight':
+              ev.preventDefault();
+              tabs[(idx + 1) % tabs.length].focus();
+              break;
+            case 'ArrowLeft':
+              ev.preventDefault();
+              tabs[(idx - 1 + tabs.length) % tabs.length].focus();
+              break;
+            case 'Home':
+              ev.preventDefault();
+              tabs[0].focus();
+              break;
+            case 'End':
+              ev.preventDefault();
+              tabs[tabs.length - 1].focus();
+              break;
+            case 'Enter':
+            case ' ':
+              ev.preventDefault();
+              activate(tab, { focus: true });
+              break;
+          }
+        });
+      });
+    }
+
+    _initPreferencesTabs();
     _initPreferencesCompositionCard();
     loadPreferencesIntoForm();
   });
