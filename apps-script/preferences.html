@@ -278,7 +278,49 @@
         </div>
 
         <div class="pref-tab-panel" id="pref-tab-insertion" role="tabpanel" aria-labelledby="pref-tab-insertion-btn" hidden>
-          <!-- insertion content will move here in next pass -->
+          <details class="section-card section-accordion" id="display-defaults" name="display-defaults">
+            <summary class="section-card-summary"><span>Display Defaults</span></summary>
+            <div class="section-card-body">
+              <div class="compact-field">
+                <label for="output_mode_default">Default Display Mode</label>
+                <select id="output_mode_default" name="output_mode_default">
+                  <option value="both">Original with Translation</option>
+                  <option value="he">Original Only</option>
+                  <option value="en">Translation Only</option>
+                </select>
+                <div class="mini-help">Choose which text layers appear when you insert a source.</div>
+              </div>
+              <div class="compact-field">
+                <label for="bilingual_layout_default">Default Bilingual Layout</label>
+                <select id="bilingual_layout_default" name="bilingual_layout_default">
+                  <option value="he-right">Hebrew Right / English Left</option>
+                  <option value="he-left">Hebrew Left / English Right</option>
+                  <option value="stacked">Stacked (Hebrew above English)</option>
+                </select>
+                <div class="mini-help">Layout for side-by-side bilingual display.</div>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy">
+                  <div class="toggle-title">Show Line Markers</div>
+                  <div class="toggle-help">Adds verse numbers or segment markers when the text supports them.</div>
+                </div>
+                <label class="switch" for="show_line_markers_default">
+                  <input id="show_line_markers_default" type="checkbox" name="show_line_markers_default" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy">
+                  <div class="toggle-title">Include Translation Details</div>
+                  <div class="toggle-help">Adds version and source details below the inserted translation text.</div>
+                </div>
+                <label class="switch" for="include_translation_source_info">
+                  <input id="include_translation_source_info" type="checkbox" name="include_translation_source_info">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </details>
         </div>
 
         <div class="pref-tab-panel" id="pref-tab-experimental" role="tabpanel" aria-labelledby="pref-tab-experimental-btn" hidden>
@@ -501,50 +543,6 @@
                 </div>
               </div>
               <div class="inline-preview" id="sefaria_link_preview"><span class="label">Hyperlink Preview</span><span class="preview-link-sample">Deuteronomy 11:18</span></div>
-            </div>
-          </div>
-        </details>
-
-        <details class="section-card section-accordion" id="display-defaults" name="display-defaults">
-          <summary class="section-card-summary"><span>Display Defaults</span></summary>
-          <div class="section-card-body">
-            <div class="compact-field">
-              <label for="output_mode_default">Default Display Mode</label>
-              <select id="output_mode_default" name="output_mode_default">
-                <option value="both">Original with Translation</option>
-                <option value="he">Original Only</option>
-                <option value="en">Translation Only</option>
-              </select>
-              <div class="mini-help">Choose which text layers appear when you insert a source.</div>
-            </div>
-            <div class="compact-field">
-              <label for="bilingual_layout_default">Default Bilingual Layout</label>
-              <select id="bilingual_layout_default" name="bilingual_layout_default">
-                <option value="he-right">Hebrew Right / English Left</option>
-                <option value="he-left">Hebrew Left / English Right</option>
-                <option value="stacked">Stacked (Hebrew above English)</option>
-              </select>
-              <div class="mini-help">Layout for side-by-side bilingual display.</div>
-            </div>
-            <div class="toggle-row">
-              <div class="toggle-copy">
-                <div class="toggle-title">Show Line Markers</div>
-                <div class="toggle-help">Adds verse numbers or segment markers when the text supports them.</div>
-              </div>
-              <label class="switch" for="show_line_markers_default">
-                <input id="show_line_markers_default" type="checkbox" name="show_line_markers_default" checked>
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="toggle-row">
-              <div class="toggle-copy">
-                <div class="toggle-title">Include Translation Details</div>
-                <div class="toggle-help">Adds version and source details below the inserted translation text.</div>
-              </div>
-              <label class="switch" for="include_translation_source_info">
-                <input id="include_translation_source_info" type="checkbox" name="include_translation_source_info">
-                <span class="slider"></span>
-              </label>
             </div>
           </div>
         </details>
