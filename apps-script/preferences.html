@@ -23,6 +23,24 @@
           <p class="section-note">Open only the sections you need. Saved changes apply to all Google Docs for your account.</p>
         </section>
 
+        <nav class="pref-tab-bar" role="tablist" aria-label="Preferences tabs">
+          <button type="button" class="pref-tab" role="tab" data-pref-tab="fonts" aria-controls="pref-tab-fonts" aria-selected="true">Fonts</button>
+          <button type="button" class="pref-tab" role="tab" data-pref-tab="insertion" aria-controls="pref-tab-insertion" aria-selected="false">Insertion</button>
+          <button type="button" class="pref-tab" role="tab" data-pref-tab="experimental" aria-controls="pref-tab-experimental" aria-selected="false">Experimental Features</button>
+        </nav>
+
+        <div class="pref-tab-panel" id="pref-tab-fonts" role="tabpanel" aria-labelledby="pref-tab-fonts-btn">
+          <!-- fonts content will move here in next pass -->
+        </div>
+
+        <div class="pref-tab-panel" id="pref-tab-insertion" role="tabpanel" aria-labelledby="pref-tab-insertion-btn" hidden>
+          <!-- insertion content will move here in next pass -->
+        </div>
+
+        <div class="pref-tab-panel" id="pref-tab-experimental" role="tabpanel" aria-labelledby="pref-tab-experimental-btn" hidden>
+          <!-- experimental features content will move here in next pass -->
+        </div>
+
         <details class="section-card section-accordion" id="title-links" name="title-links">
           <summary class="section-card-summary"><span>🔗 Titles &amp; Links</span></summary>
           <div class="section-card-body">
