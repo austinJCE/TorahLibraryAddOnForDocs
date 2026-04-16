@@ -38,7 +38,115 @@
         </div>
 
         <div class="pref-tab-panel" id="pref-tab-experimental" role="tabpanel" aria-labelledby="pref-tab-experimental-btn" hidden>
-          <!-- experimental features content will move here in next pass -->
+          <details class="section-card section-accordion" id="features" name="features">
+            <summary class="section-card-summary"><span>Experimental Features</span></summary>
+            <div class="section-card-body">
+              <div class="toggle-row">
+                <div class="toggle-copy">
+                  <div class="toggle-title">Enable Experimental Features</div>
+                  <div class="toggle-help">Turn on to access Surprise Me and AI Lesson Generator features.</div>
+                </div>
+                <label class="switch" for="experimental_features_enabled">
+                  <input id="experimental_features_enabled" type="checkbox" name="experimental_features_enabled">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="experimental-child-toggles">
+              <div class="toggle-row">
+                <div class="toggle-copy">
+                  <div class="toggle-title">🎲 Surprise Me</div>
+                  <div class="toggle-help">Modified from Legacy beta feature <a href="https://en.wikipedia.org/wiki/PowerPoint_karaoke">"Popcorn"</a> by Shlomi Helfgot.</div>
+                </div>
+                <label class="switch" for="surprise_me_enabled">
+                  <input id="surprise_me_enabled" type="checkbox" name="surprise_me_enabled">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy">
+                  <div class="toggle-title">🤖 AI Lesson Generator</div>
+                  <div class="toggle-help">Generate a structured lesson or source-sheet draft directly in Google Docs. Basic mode uses the Merkaz website default route so most users do not need to choose a provider, model, or API key. Advanced mode keeps provider, model, and request-level key controls for power users.</div>
+                </div>
+                <label class="switch" for="experimental_ai_source_sheet_enabled">
+                  <input id="experimental_ai_source_sheet_enabled" type="checkbox" name="experimental_ai_source_sheet_enabled">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              </div> <!-- .experimental-child-toggles -->
+
+              <div class="section-note" style="margin-top:10px;">The AI lesson generator remains available as an experimental workflow, and the three lesson quick actions also appear in the add-on’s <strong>Quick Actions</strong> submenu when Experimental AI is enabled.</div>
+
+              <details class="compact-accordion compact-accordion--nested" open>
+                <summary>🤖 AI Defaults</summary>
+                <div class="compact-inline-pair compact-inline-pair--spaced">
+                  <div class="compact-field">
+                    <label for="ai_provider_default">Preferred Route</label>
+                    <select id="ai_provider_default" name="ai_provider_default">
+                      <option value="default">Default (recommended)</option>
+                      <option value="openai">ChatGPT / OpenAI</option>
+                      <option value="anthropic">Claude / Anthropic</option>
+                      <option value="gemini">Gemini / Google</option>
+                    </select>
+                    <div class="mini-help">This pre-fills the AI modal. In Basic mode the site still decides how to route the request.</div>
+                  </div>
+                  <div class="compact-field">
+                    <label for="ai_key_strategy_default">Advanced Key Source Default</label>
+                    <select id="ai_key_strategy_default" name="ai_key_strategy_default">
+                      <option value="auto">Automatic</option>
+                      <option value="managed">Use site-managed key</option>
+                      <option value="saved">Use my saved key</option>
+                      <option value="manual">Paste a key for this request</option>
+                    </select>
+                    <div class="mini-help">Only applies when you switch to Advanced mode.</div>
+                  </div>
+                </div>
+                <input id="ai_model_default" name="ai_model_default" type="hidden" value="">
+                <div class="compact-inline-pair compact-inline-pair--spaced">
+                  <div class="compact-field compact-field--size">
+                    <label for="ai_duration_default">Default Length</label>
+                    <input id="ai_duration_default" name="ai_duration_default" type="number" min="10" max="120" step="5" value="45">
+                  </div>
+                  <div class="compact-field">
+                    <label for="ai_audience_default">Default Audience</label>
+                    <input id="ai_audience_default" name="ai_audience_default" type="text" placeholder="Adult learners">
+                  </div>
+                </div>
+                <div class="compact-inline-pair compact-inline-pair--spaced">
+                  <div class="compact-field">
+                    <label for="ai_lesson_style_default">Default Style</label>
+                    <input id="ai_lesson_style_default" name="ai_lesson_style_default" type="text" placeholder="Interactive shiur">
+                  </div>
+                  <div class="compact-field">
+                    <label>Permissions note</label>
+                    <div class="mini-help">Google may describe the add-on as able to “run when you are not present” because it can make secure external requests to the Merkaz site. In practice, AI requests are only sent when you choose a menu item or click a button in the add-on.</div>
+                  </div>
+                </div>
+              </details>
+
+              <details class="compact-accordion compact-accordion--nested">
+                <summary>🤖 Saved Keys</summary>
+                <div class="compact-inline-pair compact-inline-pair--spaced">
+                  <div class="compact-field">
+                    <label for="ai_saved_key_provider">Provider</label>
+                    <select id="ai_saved_key_provider">
+                      <option value="openai">ChatGPT / OpenAI</option>
+                      <option value="anthropic">Claude / Anthropic</option>
+                      <option value="gemini">Gemini / Google</option>
+                    </select>
+                  </div>
+                  <div class="compact-field">
+                    <label for="ai_saved_key_mask">Saved Key</label>
+                    <input id="ai_saved_key_mask" type="password" placeholder="No key saved" autocomplete="off">
+                  </div>
+                </div>
+                <div class="save-actions ai-key-actions">
+                  <button type="button" class="submit" id="ai_save_key_button">Save Key</button>
+                  <button type="button" class="submit" id="ai_clear_key_button">Clear Key</button>
+                  <span id="ai_key_status" class="save-note"></span>
+                </div>
+              </details>
+            </div>
+          </details>
         </div>
 
         <details class="section-card section-accordion" id="title-links" name="title-links">
@@ -513,115 +621,6 @@
           </div>
         </details>
 
-        <details class="section-card section-accordion" id="features" name="features">
-          <summary class="section-card-summary"><span>Experimental Features</span></summary>
-          <div class="section-card-body">
-            <div class="toggle-row">
-              <div class="toggle-copy">
-                <div class="toggle-title">Enable Experimental Features</div>
-                <div class="toggle-help">Turn on to access Surprise Me and AI Lesson Generator features.</div>
-              </div>
-              <label class="switch" for="experimental_features_enabled">
-                <input id="experimental_features_enabled" type="checkbox" name="experimental_features_enabled">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="experimental-child-toggles">
-            <div class="toggle-row">
-              <div class="toggle-copy">
-                <div class="toggle-title">🎲 Surprise Me</div>
-                <div class="toggle-help">Modified from Legacy beta feature <a href="https://en.wikipedia.org/wiki/PowerPoint_karaoke">"Popcorn"</a> by Shlomi Helfgot.</div>
-              </div>
-              <label class="switch" for="surprise_me_enabled">
-                <input id="surprise_me_enabled" type="checkbox" name="surprise_me_enabled">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="toggle-row">
-              <div class="toggle-copy">
-                <div class="toggle-title">🤖 AI Lesson Generator</div>
-                <div class="toggle-help">Generate a structured lesson or source-sheet draft directly in Google Docs. Basic mode uses the Merkaz website default route so most users do not need to choose a provider, model, or API key. Advanced mode keeps provider, model, and request-level key controls for power users.</div>
-              </div>
-              <label class="switch" for="experimental_ai_source_sheet_enabled">
-                <input id="experimental_ai_source_sheet_enabled" type="checkbox" name="experimental_ai_source_sheet_enabled">
-                <span class="slider"></span>
-              </label>
-            </div>
-            </div> <!-- .experimental-child-toggles -->
-
-            <div class="section-note" style="margin-top:10px;">The AI lesson generator remains available as an experimental workflow, and the three lesson quick actions also appear in the add-on’s <strong>Quick Actions</strong> submenu when Experimental AI is enabled.</div>
-
-            <details class="compact-accordion compact-accordion--nested" open>
-              <summary>🤖 AI Defaults</summary>
-              <div class="compact-inline-pair compact-inline-pair--spaced">
-                <div class="compact-field">
-                  <label for="ai_provider_default">Preferred Route</label>
-                  <select id="ai_provider_default" name="ai_provider_default">
-                    <option value="default">Default (recommended)</option>
-                    <option value="openai">ChatGPT / OpenAI</option>
-                    <option value="anthropic">Claude / Anthropic</option>
-                    <option value="gemini">Gemini / Google</option>
-                  </select>
-                  <div class="mini-help">This pre-fills the AI modal. In Basic mode the site still decides how to route the request.</div>
-                </div>
-                <div class="compact-field">
-                  <label for="ai_key_strategy_default">Advanced Key Source Default</label>
-                  <select id="ai_key_strategy_default" name="ai_key_strategy_default">
-                    <option value="auto">Automatic</option>
-                    <option value="managed">Use site-managed key</option>
-                    <option value="saved">Use my saved key</option>
-                    <option value="manual">Paste a key for this request</option>
-                  </select>
-                  <div class="mini-help">Only applies when you switch to Advanced mode.</div>
-                </div>
-              </div>
-              <input id="ai_model_default" name="ai_model_default" type="hidden" value="">
-              <div class="compact-inline-pair compact-inline-pair--spaced">
-                <div class="compact-field compact-field--size">
-                  <label for="ai_duration_default">Default Length</label>
-                  <input id="ai_duration_default" name="ai_duration_default" type="number" min="10" max="120" step="5" value="45">
-                </div>
-                <div class="compact-field">
-                  <label for="ai_audience_default">Default Audience</label>
-                  <input id="ai_audience_default" name="ai_audience_default" type="text" placeholder="Adult learners">
-                </div>
-              </div>
-              <div class="compact-inline-pair compact-inline-pair--spaced">
-                <div class="compact-field">
-                  <label for="ai_lesson_style_default">Default Style</label>
-                  <input id="ai_lesson_style_default" name="ai_lesson_style_default" type="text" placeholder="Interactive shiur">
-                </div>
-                <div class="compact-field">
-                  <label>Permissions note</label>
-                  <div class="mini-help">Google may describe the add-on as able to “run when you are not present” because it can make secure external requests to the Merkaz site. In practice, AI requests are only sent when you choose a menu item or click a button in the add-on.</div>
-                </div>
-              </div>
-            </details>
-
-            <details class="compact-accordion compact-accordion--nested">
-              <summary>🤖 Saved Keys</summary>
-              <div class="compact-inline-pair compact-inline-pair--spaced">
-                <div class="compact-field">
-                  <label for="ai_saved_key_provider">Provider</label>
-                  <select id="ai_saved_key_provider">
-                    <option value="openai">ChatGPT / OpenAI</option>
-                    <option value="anthropic">Claude / Anthropic</option>
-                    <option value="gemini">Gemini / Google</option>
-                  </select>
-                </div>
-                <div class="compact-field">
-                  <label for="ai_saved_key_mask">Saved Key</label>
-                  <input id="ai_saved_key_mask" type="password" placeholder="No key saved" autocomplete="off">
-                </div>
-              </div>
-              <div class="save-actions ai-key-actions">
-                <button type="button" class="submit" id="ai_save_key_button">Save Key</button>
-                <button type="button" class="submit" id="ai_clear_key_button">Clear Key</button>
-                <span id="ai_key_status" class="save-note"></span>
-              </div>
-            </details>
-          </div>
-        </details>
       </div>
 
       <section class="save-bar" name="actions">
