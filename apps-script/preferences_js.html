@@ -583,18 +583,6 @@
       });
     });
 
-    if (byId('expand_all_sections')) byId('expand_all_sections').addEventListener('click', function() {
-      document.querySelectorAll('.section-accordion, .compact-accordion').forEach(function(section) {
-        section.open = true;
-      });
-    });
-
-    if (byId('collapse_all_sections')) byId('collapse_all_sections').addEventListener('click', function() {
-      document.querySelectorAll('.section-accordion, .compact-accordion').forEach(function(section) {
-        section.open = false;
-      });
-    });
-
     bindStyleControl('hebrew_font_style', 'hebrew_font_preview');
     bindStyleControl('translation_font_style', 'translation_font_preview');
     bindStyleControl('transliteration_font_style', 'transliteration_preview');
