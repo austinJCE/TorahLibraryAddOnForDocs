@@ -349,14 +349,14 @@ $('#ai-inline-generate').on('click', function () {
 $(document).on('click', '.reset-session-overrides-button', function () {
   if ($(this).prop('disabled')) return;
   resetSessionOverrides(function () {
-    showSidebarToast('Session settings reverted.');
+    showSidebarToast('Reverted to your saved defaults.');
   });
 });
 
 $(document).on('click', '.save-session-defaults-button', function () {
   if ($(this).prop('disabled')) return;
   saveSessionAsDefaults(function () {
-    showSidebarToast('Session settings saved as defaults.');
+    showSidebarToast('Saved these session choices as your new defaults.');
   });
 });
 </script>

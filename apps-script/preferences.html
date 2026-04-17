@@ -20,7 +20,7 @@
               <button type="button" class="small-button" id="collapse_all_sections">Collapse All</button>
             </div>
           </div>
-          <p class="section-note">Saved changes apply to all Google Docs for your account.</p>
+          <p class="section-note">These are your default settings for new insertions. The sidebar is where you pick what to insert right now and override these defaults for a single insertion. Saved changes apply to all Google Docs for your account.</p>
         </section>
 
         <nav class="pref-tab-bar" role="tablist" aria-label="Preferences tabs">
@@ -155,7 +155,7 @@
               </div>
 
               <div class="subsection-card subsection-card--preview">
-                <div class="cc-card" id="composition-card-container" data-cc-features="header,linkedTitle,secondaryPills" aria-label="Insertion Preview">
+                <div class="cc-card" id="composition-card-container" data-cc-features="header,linkedTitle,secondaryPills" aria-label="Default insertion preview">
                   <?!= include('composition_card_markup') ?>
                 </div>
               </div>
@@ -585,12 +585,12 @@
         <div class="save-actions">
           <button type="button" class="submit reset-preferences-button">Reset To Defaults</button>
           <button type="button" class="submit refresh-sidebar-button" aria-label="Refresh Sidebar">🔁 Refresh Sidebar</button>
-          <button type="button" class="blue submit save-preferences-button">Save</button>
-		  <button type="button" class="blue submit save-close-preferences-button">Save and Close</button>
+          <button type="button" class="blue submit save-preferences-button">Save Defaults</button>
+		  <button type="button" class="blue submit save-close-preferences-button">Save Defaults and Close</button>
         </div>
         <div class="save-feedback">
           <span id="results"></span>
-          <span id="sidebar_refresh_note" class="save-note">Refreshes the sidebar and clears sidebar-only session state.</span>
+          <span id="sidebar_refresh_note" class="save-note">Reloads the sidebar from your saved defaults and clears any per-insertion session overrides.</span>
         </div>
       </section>
 
