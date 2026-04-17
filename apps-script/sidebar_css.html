@@ -4290,17 +4290,41 @@
   grid-template-columns: 1fr !important;
 }
 
-/* ===== Display & Layout: side-by-side cards with sensible minimum widths ===== */
-/* The parent section already uses grid; enforce a minimum per-card width so
-   cards stack rather than squeeze content when the sidebar is narrow.         */
+/* ===== Display & Layout: two-column parent, wrapping inner controls ===== */
+/* Parent: two equal columns. Cards sit side by side; inner grids handle their
+   own layout independently so expanded controls are not forced into a narrow strip. */
 .display-layout-section {
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-/* Inner option grids: give each button a floor so they don't collapse to slivers */
-.display-choice-dropdown[open] .mode-card-group,
+/* Cards: floor below which content becomes unusable (grid track sizing still
+   governs actual rendered width, but this guards non-grid contexts). */
+.display-choice-detail {
+  min-width: 120px;
+}
+
+/* Mode segmented control: fixed 3-column, per-cell floor for character legibility */
+.display-choice-dropdown[open] .mode-card-group {
+  grid-template-columns: repeat(3, minmax(30px, 1fr));
+}
+
+/* Layout option group: auto-fill so buttons wrap to the next row instead of
+   being squeezed to icon-clipping widths when each card is half the sidebar */
 .display-choice-dropdown[open] .layout-option-group {
-  grid-template-columns: repeat(3, minmax(34px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+}
+
+/* Layout option buttons: restore a floor wide enough for the 38 px layout icon */
+.layout-option {
+  min-width: 44px;
+}
+
+/* Extremely narrow viewports: stack cards so neither collapses below usable size.
+   This @media must follow the 2-column rule above to override it at tiny widths. */
+@media (max-width: 280px) {
+  .display-layout-section {
+    grid-template-columns: 1fr;
+  }
 }
 
 </style>
