@@ -165,13 +165,13 @@
 
         <section class="more-options-shell text-mode-only" style="display:none;">
           <details class="sidebar-accordion more-options-accordion" open>
-            <summary class="section-label accordion-summary">More Options</summary>
+            <summary class="section-label accordion-summary">🔗 Text &amp; Links</summary>
             <div class="more-options-panel accordion-panel">
               <div class="options-panel more-options-card options-section">
                 <details class="session-settings-disclosure text-mode-only">
-                  <summary class="session-settings-summary">Save or revert defaults</summary>
+                  <summary class="session-settings-summary">⚙️ Defaults</summary>
                   <div class="session-settings-panel">
-                    <button type="button" class="session-settings-action-button reset-session-overrides-button" aria-label="Revert to saved defaults" title="Discard session changes and reload your saved defaults" disabled>↺ Revert to defaults</button>
+                    <button type="button" class="session-settings-action-button reset-session-overrides-button" aria-label="Revert to saved defaults" title="Discard session changes and reload your saved defaults" disabled>↺ Revert</button>
                     <button type="button" class="session-settings-action-button save-session-defaults-button" aria-label="Save current session choices as defaults" title="Make these session choices your new defaults" disabled>💾 Save as defaults</button>
                   </div>
                 </details>
@@ -206,7 +206,7 @@
 
         <section class="preview-section text-mode-only" style="display:none;">
           <details class="sidebar-accordion preview-accordion" open>
-            <summary class="section-label accordion-summary">Preview</summary>
+            <summary class="section-label accordion-summary">🔁 Preview</summary>
             <div class="preview-panel accordion-panel">
               <section class="suggestions">
                 <b>Please enter the title of a text or a source to insert.</b>
@@ -217,13 +217,13 @@
 
         <section class="experimental-section" style="display:none;">
           <details class="sidebar-accordion experimental-accordion" open>
-            <summary class="section-label accordion-summary">Experimental Features</summary>
+            <summary class="section-label accordion-summary">🧪 Experimental</summary>
             <div class="accordion-panel more-options-card">
               <details class="feature-accordion" open>
                 <summary>🤖 AI Shiur</summary>
                 <p class="helper-text">Generate a lesson draft and insert it directly into your document.</p>
                 <div class="experimental-inline-form">
-                  <label class="compact-section-label" for="ai-inline-topic">Topic or reference</label>
+                  <label class="compact-section-label" for="ai-inline-topic">🔍 Topic or reference</label>
                   <input id="ai-inline-topic" type="text" class="experimental-inline-input" placeholder="Berakhot 2a, teshuvah, gratitude…" autocomplete="off">
                   <label class="compact-section-label" for="ai-inline-audience">Audience</label>
                   <select id="ai-inline-audience" class="translation-version-select">
@@ -243,7 +243,7 @@
                   </select>
                 </div>
                 <div class="footer-button-row">
-                  <button type="button" id="ai-inline-generate" class="footer-action-button">Generate &amp; Insert</button>
+                  <button type="button" id="ai-inline-generate" class="footer-action-button">📦 Generate &amp; Insert</button>
                 </div>
                 <p class="helper-text experimental-inline-status" id="ai-inline-status" hidden></p>
                 <div class="footer-button-row experimental-advanced-link">
@@ -254,13 +254,13 @@
                 <summary>🎲 Surprise Me</summary>
                 <p class="helper-text">Insert random matching sources. Leave blank for a random Hebrew seed word.</p>
                 <div class="experimental-inline-form">
-                  <label class="compact-section-label" for="sm-inline-term">Search term</label>
+                  <label class="compact-section-label" for="sm-inline-term">🔍 Search term</label>
                   <input id="sm-inline-term" type="text" class="experimental-inline-input" placeholder="Optional — blank for random" autocomplete="off">
                   <label class="compact-section-label" for="sm-inline-count">How many sources</label>
                   <input id="sm-inline-count" type="number" class="experimental-inline-number" min="1" max="10" value="5">
                 </div>
                 <div class="footer-button-row">
-                  <button type="button" id="sm-inline-launch" class="footer-action-button">Insert Sources</button>
+                  <button type="button" id="sm-inline-launch" class="footer-action-button">📦 Insert</button>
                 </div>
                 <p class="helper-text experimental-inline-status" id="sm-inline-status" hidden></p>
                 <div class="footer-button-row experimental-advanced-link">
@@ -331,13 +331,13 @@
       </section>
       <section class="sidebar-footer-tools footer-tool-row standard-quick-actions" aria-label="Quick actions">
         <button type="button" class="footer-tool-button open-actions-panel" title="Actions" aria-label="Actions">Actions</button>
-        <button type="button" class="footer-tool-button open-preferences-tool" title="Preferences" aria-label="Preferences">Preferences</button>
-        <button type="button" class="footer-tool-button" id="open-session-library" title="Session Library" aria-label="Session Library">Session Library</button>
+        <button type="button" class="footer-tool-button open-preferences-tool" title="Settings" aria-label="Settings">⚙️ Settings</button>
+        <button type="button" class="footer-tool-button" id="open-session-library" title="Session Library" aria-label="Session Library">Library</button>
       </section>
       <div class="footer-button-row experimental-quick-actions" style="display:none;">
         <button type="button" class="footer-action-button open-ai-lesson-tool">🤖 AI Shiur</button>
         <button type="button" class="footer-action-button open-surprise-tool">🎲 Surprise Me</button>
-        <button type="button" class="footer-action-button open-preferences-tool">Prefs</button>
+        <button type="button" class="footer-action-button open-preferences-tool">⚙️ Settings</button>
         <button type="button" class="footer-tool-button" id="open-session-library-experimental" title="Session Library" aria-label="Session Library">Library</button>
       </div>
       <div class="sidebar-footer-tools footer-actions-panel" id="footer-actions-panel" style="display:none;" aria-label="Actions panel">
