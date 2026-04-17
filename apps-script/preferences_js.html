@@ -528,8 +528,6 @@
               renderOverrideGrid();
               renderOverrideList();
               syncExperimentalChildToggles();
-
-              $(".hide").fadeOut(300);
       } catch (error) {
         console.error('Preferences modal apply failed:', error);
         setResultsMessage('Preferences loaded with an error: ' + (error && error.message ? error.message : error));
