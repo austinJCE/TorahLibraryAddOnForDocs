@@ -148,26 +148,9 @@
                 <div class="inline-preview hebrew" id="hebrew_font_preview"><span class="label">Preview</span>וְשַׂמְתֶּם אֶת־דְּבָרַי אֵלֶּה עַל־לְבַבְכֶם</div>
               </div>
 
-              <div class="subsection-card subsection-card--preview">
-                <div class="cc-card" id="composition-card-container" data-cc-features="header,linkedTitle,secondaryPills" aria-label="Default insertion preview">
-                  <?!= include('composition_card_markup') ?>
-                </div>
-              </div>
-
-              <div class="composition-state-inputs" hidden>
-                <input type="hidden" id="nekudot" name="nekudot">
-                <input type="hidden" id="nekudot_filter" name="nekudot_filter">
-                <input type="hidden" id="teamim" name="teamim">
-                <input type="hidden" id="teamim_filter" name="teamim_filter">
-                <input id="include_transliteration_default" type="checkbox" name="include_transliteration_default">
-                <input id="insert_sefaria_link_default" type="checkbox" name="insert_sefaria_link_default">
-                <input id="show_line_markers_default" type="checkbox" name="show_line_markers_default" checked>
-                <input id="include_translation_source_info" type="checkbox" name="include_translation_source_info">
-              </div>
-
               <div class="subsection-card">
                 <div class="subsection-title">Transliteration</div>
-                <p class="subsection-note">Toggle transliteration and choose a scheme from the Insertion Preview above. Use the font controls below to set how it looks.</p>
+                <p class="subsection-note">Toggle transliteration and choose a scheme from the Insertion Preview in the Insertion tab. Use the font controls below to set how it looks.</p>
 
                 <details class="compact-accordion compact-accordion--nested">
                   <summary>Font</summary>
@@ -351,6 +334,28 @@
         </div>
 
         <div class="pref-tab-panel" id="pref-tab-insertion" role="tabpanel" aria-labelledby="pref-tab-insertion-btn" hidden>
+          <details class="section-card section-accordion" id="insertion-preview" name="insertion-preview" open>
+            <summary class="section-card-summary"><span>Insertion Preview</span></summary>
+            <div class="section-card-body">
+              <p class="section-note">Set the defaults applied to new insertions: linked title, source citation, line markers, cantillation, vowels, and transliteration. The sidebar can still override these for a single insertion.</p>
+              <div class="subsection-card subsection-card--preview">
+                <div class="cc-card" id="composition-card-container" data-cc-features="header,linkedTitle,secondaryPills" aria-label="Default insertion preview">
+                  <?!= include('composition_card_markup') ?>
+                </div>
+              </div>
+              <div class="composition-state-inputs" hidden>
+                <input type="hidden" id="nekudot" name="nekudot">
+                <input type="hidden" id="nekudot_filter" name="nekudot_filter">
+                <input type="hidden" id="teamim" name="teamim">
+                <input type="hidden" id="teamim_filter" name="teamim_filter">
+                <input id="include_transliteration_default" type="checkbox" name="include_transliteration_default">
+                <input id="insert_sefaria_link_default" type="checkbox" name="insert_sefaria_link_default">
+                <input id="show_line_markers_default" type="checkbox" name="show_line_markers_default" checked>
+                <input id="include_translation_source_info" type="checkbox" name="include_translation_source_info">
+              </div>
+            </div>
+          </details>
+
           <details class="section-card section-accordion" id="display-defaults" name="display-defaults">
             <summary class="section-card-summary"><span>Display</span></summary>
             <div class="section-card-body">
@@ -451,12 +456,6 @@
             </div>
           </details>
 
-          <details class="section-card section-accordion" id="title-links" name="title-links">
-            <summary class="section-card-summary"><span>🔗 Title Links</span></summary>
-            <div class="section-card-body">
-              <p class="section-note">Toggle the linked source title from the Insertion Preview above. Font, size, and style for the linked title live in the Fonts tab.</p>
-            </div>
-          </details>
         </div>
 
         <div class="pref-tab-panel" id="pref-tab-experimental" role="tabpanel" aria-labelledby="pref-tab-experimental-btn" hidden>
