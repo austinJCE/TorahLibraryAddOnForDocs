@@ -169,15 +169,15 @@
             <div class="more-options-panel accordion-panel">
               <div class="options-panel more-options-card options-section">
                 <details class="session-settings-disclosure text-mode-only">
-                  <summary class="session-settings-summary">Session settings</summary>
+                  <summary class="session-settings-summary">Save or revert defaults</summary>
                   <div class="session-settings-panel">
-                    <button type="button" class="session-settings-action-button reset-session-overrides-button" aria-label="Reset Session Settings" disabled>↺ Revert</button>
-                    <button type="button" class="session-settings-action-button save-session-defaults-button" aria-label="Save Settings as Defaults" disabled>💾 Save as Defaults</button>
+                    <button type="button" class="session-settings-action-button reset-session-overrides-button" aria-label="Revert to saved defaults" title="Discard session changes and reload your saved defaults" disabled>↺ Revert to defaults</button>
+                    <button type="button" class="session-settings-action-button save-session-defaults-button" aria-label="Save current session choices as defaults" title="Make these session choices your new defaults" disabled>💾 Save as defaults</button>
                   </div>
                 </details>
-                <div class="subsection-label">🔗 Text &amp; Links</div>
+                <div class="subsection-label">🔗 Text &amp; Links for this insertion</div>
 
-                <div class="cc-card hebrew-options-row" id="composition-card-container" data-cc-features="linkedTitle,secondaryPills" aria-label="Interactive text preview">
+                <div class="cc-card hebrew-options-row" id="composition-card-container" data-cc-features="linkedTitle,secondaryPills" aria-label="Composition for this insertion">
                   <?!= include('composition_card_markup') ?>
                 </div>
                 </div>

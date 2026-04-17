@@ -45,14 +45,15 @@
     gap: 12px;
     padding: 14px 18px;
     background: #fff;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid #e3dfd8;
+    box-shadow: 0 -2px 8px rgba(31, 59, 104, 0.04);
   }
 
   .save-actions {
 	  display: grid;
 	  grid-template-columns: repeat(2, minmax(0, 1fr));
 	  align-items: stretch;
-	  gap: 8px;
+	  gap: 10px;
 	  order: 2;
 	}
 
@@ -131,6 +132,10 @@
   .section-card-body {
     padding: 0 16px 16px;
     overflow: visible;
+  }
+
+  .section-card-body > :last-child {
+    margin-bottom: 0;
   }
 
   .section-accordion {
@@ -895,7 +900,7 @@
   }
 
   .subsection-title {
-    margin: 0 0 6px;
+    margin: 0 0 8px;
     color: #253858;
     font-size: 15px;
     font-weight: 700;
@@ -996,6 +1001,73 @@
       padding-left: 14px;
       padding-right: 14px;
     }
+  }
+
+  .pref-tab-bar {
+    position: sticky;
+    top: 0;
+    z-index: 25;
+    display: flex;
+    gap: 4px;
+    margin: 0 0 18px;
+    padding: 6px 2px 0;
+    background: #f8f7f5;
+    border-bottom: 1px solid #e3dfd8;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .pref-tab {
+    flex: 0 0 auto;
+    appearance: none;
+    border: 1px solid transparent;
+    border-bottom: none;
+    background: transparent;
+    color: #666;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: 8px 14px 9px;
+    margin-bottom: -1px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .pref-tab:hover {
+    color: #1f3b68;
+    background: #f1ece3;
+  }
+
+  .pref-tab:focus-visible {
+    outline: 2px solid #1f3b68;
+    outline-offset: 2px;
+  }
+
+  .pref-tab[aria-selected="true"] {
+    color: #1f3b68;
+    background: #fff;
+    border-color: #e3dfd8;
+    border-bottom-color: #fff;
+  }
+
+  .pref-tab-panel {
+    padding: 4px 0 0;
+  }
+
+  .pref-tab-panel > .section-card {
+    margin-bottom: 18px;
+  }
+
+  .pref-tab-panel > .section-card:last-child {
+    margin-bottom: 0;
+  }
+
+  .pref-tab-panel[hidden] {
+    display: none;
   }
 
 </style>

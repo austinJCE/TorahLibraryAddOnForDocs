@@ -181,14 +181,17 @@
           var translitCheck = byId('include_transliteration_default');
           var transliterationOn = translitCheck ? translitCheck.checked : false;
           var scheme = byId('transliteration_scheme') ? byId('transliteration_scheme').value : 'simple_english';
+          var linkCheck = byId('insert_sefaria_link_default');
+          var linesCheck = byId('show_line_markers_default');
+          var detailsCheck = byId('include_translation_source_info');
           return {
             vowelsOn: vowelsOn,
             cantillationOn: cantillationOn,
             transliterationOn: transliterationOn,
             scheme: transliterationOn ? (scheme || 'simple_english') : 'none',
-            linkOn: false,
-            linesOn: false,
-            detailsOn: false
+            linkOn: linkCheck ? linkCheck.checked : false,
+            linesOn: linesCheck ? linesCheck.checked : false,
+            detailsOn: detailsCheck ? detailsCheck.checked : false
           };
         },
         onToggle: function (key) {
@@ -201,6 +204,15 @@
           } else if (key === 'translit') {
             var check = byId('include_transliteration_default');
             if (check) check.checked = !check.checked;
+          } else if (key === 'link') {
+            var linkBox = byId('insert_sefaria_link_default');
+            if (linkBox) linkBox.checked = !linkBox.checked;
+          } else if (key === 'lines') {
+            var linesBox = byId('show_line_markers_default');
+            if (linesBox) linesBox.checked = !linesBox.checked;
+          } else if (key === 'details') {
+            var detailsBox = byId('include_translation_source_info');
+            if (detailsBox) detailsBox.checked = !detailsBox.checked;
           }
         },
         onSchemeSelect: function (value) {
@@ -528,8 +540,6 @@
               renderOverrideGrid();
               renderOverrideList();
               syncExperimentalChildToggles();
-
-              $(".hide").fadeOut(300);
       } catch (error) {
         console.error('Preferences modal apply failed:', error);
         setResultsMessage('Preferences loaded with an error: ' + (error && error.message ? error.message : error));
@@ -583,18 +593,6 @@
       });
     });
 
-    if (byId('expand_all_sections')) byId('expand_all_sections').addEventListener('click', function() {
-      document.querySelectorAll('.section-accordion, .compact-accordion').forEach(function(section) {
-        section.open = true;
-      });
-    });
-
-    if (byId('collapse_all_sections')) byId('collapse_all_sections').addEventListener('click', function() {
-      document.querySelectorAll('.section-accordion, .compact-accordion').forEach(function(section) {
-        section.open = false;
-      });
-    });
-
     bindStyleControl('hebrew_font_style', 'hebrew_font_preview');
     bindStyleControl('translation_font_style', 'translation_font_preview');
     bindStyleControl('transliteration_font_style', 'transliteration_preview');
@@ -641,6 +639,8 @@
     byId('transliteration_scheme').addEventListener('change', function(){ syncCustomSelect(byId('transliteration_scheme')); updateTransliterationPreview(); updateCompositionCard(); });
     if (byId('include_transliteration_default')) byId('include_transliteration_default').addEventListener('change', function(){ updateCompositionCard(); });
     if (byId('insert_sefaria_link_default')) byId('insert_sefaria_link_default').addEventListener('change', function(){ updateCompositionCard(); });
+    if (byId('show_line_markers_default')) byId('show_line_markers_default').addEventListener('change', function(){ updateCompositionCard(); });
+    if (byId('include_translation_source_info')) byId('include_translation_source_info').addEventListener('change', function(){ updateCompositionCard(); });
     // insert_citation_default removed — citation feature was dropped.
 
     ['hebrew_font_size','translation_font_size','transliteration_font_size','source_title_font_size','sefaria_link_font_size'].forEach(function(id) {
@@ -747,6 +747,67 @@
       });
       loadSavedAiKeyPreview();
     }
+
+    function _initPreferencesTabs() {
+      const tabs = Array.from(document.querySelectorAll('.pref-tab'));
+      if (!tabs.length) return;
+      const panels = tabs
+        .map(function (t) { return document.getElementById(t.getAttribute('aria-controls')); })
+        .filter(Boolean);
+      if (!panels.length) return;
+
+      function activate(tab, opts) {
+        const focus = opts && opts.focus;
+        const panelId = tab.getAttribute('aria-controls');
+        tabs.forEach(function (t) {
+          const selected = t === tab;
+          t.setAttribute('aria-selected', selected ? 'true' : 'false');
+          t.tabIndex = selected ? 0 : -1;
+        });
+        panels.forEach(function (p) {
+          p.hidden = (p.id !== panelId);
+        });
+        if (focus) tab.focus();
+      }
+
+      const initial = tabs.find(function (t) {
+        return t.getAttribute('aria-selected') === 'true';
+      }) || tabs[0];
+      activate(initial);
+
+      tabs.forEach(function (tab, idx) {
+        tab.addEventListener('click', function () {
+          activate(tab, { focus: true });
+        });
+        tab.addEventListener('keydown', function (ev) {
+          switch (ev.key) {
+            case 'ArrowRight':
+              ev.preventDefault();
+              tabs[(idx + 1) % tabs.length].focus();
+              break;
+            case 'ArrowLeft':
+              ev.preventDefault();
+              tabs[(idx - 1 + tabs.length) % tabs.length].focus();
+              break;
+            case 'Home':
+              ev.preventDefault();
+              tabs[0].focus();
+              break;
+            case 'End':
+              ev.preventDefault();
+              tabs[tabs.length - 1].focus();
+              break;
+            case 'Enter':
+            case ' ':
+              ev.preventDefault();
+              activate(tab, { focus: true });
+              break;
+          }
+        });
+      });
+    }
+
+    _initPreferencesTabs();
     _initPreferencesCompositionCard();
     loadPreferencesIntoForm();
   });
