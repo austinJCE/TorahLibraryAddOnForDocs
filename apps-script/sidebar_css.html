@@ -1056,7 +1056,8 @@
 }
 
 .sidebar-footer .primary-actions {
-  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 6px;
 }
 
 .sidebar-footer .sidebar-footer-tools,
@@ -3165,9 +3166,10 @@
   box-sizing: border-box;
 }
 
-/* Primary row: Add Source | Session Library | Open in Sefaria */
+/* Primary row: Add Source | Open in Sefaria */
 .sidebar-footer .primary-actions {
-  grid-template-columns: minmax(0, 2fr) minmax(56px, 1fr) minmax(56px, 1fr);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 6px;
 }
 
 /* Quick actions row */
@@ -3450,7 +3452,8 @@
 /* ---------- responsive ---------- */
 @media (max-width: 420px) {
   .sidebar-footer .primary-actions {
-    grid-template-columns: minmax(0, 1.8fr) repeat(2, minmax(48px, 1fr));
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 6px;
   }
 
   .sidebar-footer .footer-settings-row,
