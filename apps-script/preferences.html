@@ -414,18 +414,23 @@
           <details class="section-card section-accordion" id="divine-name-mappings" name="divine-name-mappings">
             <summary class="section-card-summary"><span>Divine Name Mappings</span></summary>
             <div class="section-card-body">
-              <div class="toggle-row">
-                <div class="toggle-copy">
-                  <div class="toggle-title">Apply Divine-Name Replacements On Insertion</div>
-                  <div class="toggle-help">Apply the replacement mappings below automatically when new text is inserted.</div>
+              <div class="subsection-card">
+                <div class="subsection-title">Insertion behavior</div>
+                <div class="toggle-row">
+                  <div class="toggle-copy">
+                    <div class="toggle-title">Apply Divine-Name Replacements On Insertion</div>
+                    <div class="toggle-help">Apply the replacement mappings below automatically when new text is inserted.</div>
+                  </div>
+                  <label class="switch" for="apply_sheimot_on_insertion">
+                    <input id="apply_sheimot_on_insertion" type="checkbox" name="apply_sheimot_on_insertion">
+                    <span class="slider"></span>
+                  </label>
                 </div>
-                <label class="switch" for="apply_sheimot_on_insertion">
-                  <input id="apply_sheimot_on_insertion" type="checkbox" name="apply_sheimot_on_insertion">
-                  <span class="slider"></span>
-                </label>
               </div>
 
-              <div class="replacement-grid">
+              <div class="subsection-card">
+                <div class="subsection-title">Replacement rules</div>
+                <div class="replacement-grid">
                 <div class="replacement-row">
                   <label class="switch" for="meforash_replace"><input id="meforash_replace" type="checkbox" name="meforash_replace"><span class="slider"></span></label>
                   <div class="replacement-label">יהוה</div>
@@ -477,7 +482,8 @@
                 </div>
               </div>
 
-              <div class="mini-help">These define the replacement rules themselves. The document-wide transform command remains separate from insertion-time replacement. <span id="sheimot_summary_note">None</span></div>
+                <div class="mini-help">These define the replacement rules themselves. The document-wide transform command remains separate from insertion-time replacement. <span id="sheimot_summary_note">None</span></div>
+              </div>
             </div>
           </details>
 
@@ -487,7 +493,7 @@
               <p class="section-note">These defaults apply when text is inserted from the Texts tab.</p>
 
               <div class="subsection-card">
-                <div class="subsection-title">Default insertion behavior</div>
+                <div class="subsection-title">Insertion behavior</div>
                 <p class="subsection-note">Choose what appears with inserted text by default. These options never insert on their own without the selected text.</p>
 
                 <div class="toggle-row">
