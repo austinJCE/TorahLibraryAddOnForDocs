@@ -155,7 +155,7 @@
               </div>
 
               <div class="subsection-card subsection-card--preview">
-                <div class="cc-card" id="composition-card-container" data-cc-features="header,status" aria-label="Insertion Preview">
+                <div class="cc-card" id="composition-card-container" data-cc-features="header,linkedTitle,secondaryPills" aria-label="Insertion Preview">
                   <?!= include('composition_card_markup') ?>
                 </div>
               </div>
@@ -165,22 +165,15 @@
                 <input type="hidden" id="nekudot_filter" name="nekudot_filter">
                 <input type="hidden" id="teamim" name="teamim">
                 <input type="hidden" id="teamim_filter" name="teamim_filter">
+                <input id="include_transliteration_default" type="checkbox" name="include_transliteration_default">
+                <input id="insert_sefaria_link_default" type="checkbox" name="insert_sefaria_link_default">
+                <input id="show_line_markers_default" type="checkbox" name="show_line_markers_default" checked>
+                <input id="include_translation_source_info" type="checkbox" name="include_translation_source_info">
               </div>
 
               <div class="subsection-card">
                 <div class="subsection-title">Transliteration</div>
-                <p class="subsection-note">Set whether transliteration is included by default and how it should look.</p>
-
-                <div class="toggle-row">
-                  <div class="toggle-copy">
-                    <div class="toggle-title">Include Transliteration By Default</div>
-                    <div class="toggle-help">Start with transliteration enabled whenever Hebrew output is selected.</div>
-                  </div>
-                  <label class="switch" for="include_transliteration_default">
-                    <input id="include_transliteration_default" type="checkbox" name="include_transliteration_default">
-                    <span class="slider"></span>
-                  </label>
-                </div>
+                <p class="subsection-note">Toggle transliteration and choose a scheme from the Insertion Preview above. Use the font controls below to set how it looks.</p>
 
                 <details class="compact-accordion compact-accordion--nested">
                   <summary>Font</summary>
@@ -385,26 +378,6 @@
                 </select>
                 <div class="mini-help">Layout for side-by-side bilingual display.</div>
               </div>
-              <div class="toggle-row">
-                <div class="toggle-copy">
-                  <div class="toggle-title">Show Line Markers</div>
-                  <div class="toggle-help">Adds verse numbers or segment markers when the text supports them.</div>
-                </div>
-                <label class="switch" for="show_line_markers_default">
-                  <input id="show_line_markers_default" type="checkbox" name="show_line_markers_default" checked>
-                  <span class="slider"></span>
-                </label>
-              </div>
-              <div class="toggle-row">
-                <div class="toggle-copy">
-                  <div class="toggle-title">Include Translation Details</div>
-                  <div class="toggle-help">Adds version and source details below the inserted translation text.</div>
-                </div>
-                <label class="switch" for="include_translation_source_info">
-                  <input id="include_translation_source_info" type="checkbox" name="include_translation_source_info">
-                  <span class="slider"></span>
-                </label>
-              </div>
             </div>
           </details>
 
@@ -487,25 +460,7 @@
           <details class="section-card section-accordion" id="title-links" name="title-links">
             <summary class="section-card-summary"><span>🔗 Title Links</span></summary>
             <div class="section-card-body">
-              <p class="section-note">These defaults apply when text is inserted from the Texts tab.</p>
-
-              <div class="subsection-card">
-                <div class="subsection-title">Insertion behavior</div>
-                <p class="subsection-note">Choose what appears with inserted text by default. These options never insert on their own without the selected text.</p>
-
-                <div class="toggle-row">
-                  <div class="toggle-copy">
-                    <div class="toggle-title">Link source title before inserted text</div>
-                    <div class="toggle-help">Shows the source title above the inserted text and links it to Sefaria.</div>
-                  </div>
-                  <label class="switch" for="insert_sefaria_link_default">
-                    <input id="insert_sefaria_link_default" type="checkbox" name="insert_sefaria_link_default">
-                    <span class="slider"></span>
-                  </label>
-                </div>
-
-              </div>
-
+              <p class="section-note">Toggle the linked source title from the Insertion Preview above. Font, size, and style for the linked title live in the Fonts tab.</p>
             </div>
           </details>
         </div>

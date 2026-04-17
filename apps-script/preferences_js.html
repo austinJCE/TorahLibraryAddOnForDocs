@@ -181,14 +181,17 @@
           var translitCheck = byId('include_transliteration_default');
           var transliterationOn = translitCheck ? translitCheck.checked : false;
           var scheme = byId('transliteration_scheme') ? byId('transliteration_scheme').value : 'simple_english';
+          var linkCheck = byId('insert_sefaria_link_default');
+          var linesCheck = byId('show_line_markers_default');
+          var detailsCheck = byId('include_translation_source_info');
           return {
             vowelsOn: vowelsOn,
             cantillationOn: cantillationOn,
             transliterationOn: transliterationOn,
             scheme: transliterationOn ? (scheme || 'simple_english') : 'none',
-            linkOn: false,
-            linesOn: false,
-            detailsOn: false
+            linkOn: linkCheck ? linkCheck.checked : false,
+            linesOn: linesCheck ? linesCheck.checked : false,
+            detailsOn: detailsCheck ? detailsCheck.checked : false
           };
         },
         onToggle: function (key) {
@@ -201,6 +204,15 @@
           } else if (key === 'translit') {
             var check = byId('include_transliteration_default');
             if (check) check.checked = !check.checked;
+          } else if (key === 'link') {
+            var linkBox = byId('insert_sefaria_link_default');
+            if (linkBox) linkBox.checked = !linkBox.checked;
+          } else if (key === 'lines') {
+            var linesBox = byId('show_line_markers_default');
+            if (linesBox) linesBox.checked = !linesBox.checked;
+          } else if (key === 'details') {
+            var detailsBox = byId('include_translation_source_info');
+            if (detailsBox) detailsBox.checked = !detailsBox.checked;
           }
         },
         onSchemeSelect: function (value) {
