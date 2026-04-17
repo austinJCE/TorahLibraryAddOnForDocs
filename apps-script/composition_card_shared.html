@@ -57,7 +57,7 @@ function updateCompositionCard() {
 
   // Linked title
   $('#cc-title-toggle')
-    .text(state.linkOn ? 'Linked Title: On' : 'Linked Title: Off')
+    .text(state.linkOn ? '🔗 Title: On' : '🔗 Title: Off')
     .toggleClass('is-linked is-active', !!state.linkOn)
     .attr('aria-pressed', state.linkOn ? 'true' : 'false');
 
@@ -83,9 +83,9 @@ function updateCompositionCard() {
     .text(state.linesOn ? 'Lines: On' : 'Lines: Off')
     .attr('aria-pressed', state.linesOn ? 'true' : 'false');
 
-  // Details
+  // Source citation
   $('#cc-details-toggle')
-    .text(state.detailsOn ? 'Details: On' : 'Details: Off')
+    .text(state.detailsOn ? '🔗 Sources: On' : '🔗 Sources: Off')
     .attr('aria-pressed', state.detailsOn ? 'true' : 'false');
 
   // Hebrew text visibility
