@@ -91,11 +91,13 @@ function expandShevaApostrophe(str) {
 }
 
 function applyConsonantClusterVoweling(str) {
-  // For dropped-sheva Hebrew transliteration: Psukei → Pesukei, Brakhah → Berakhah
-  // Skips digraphs (sh, ch, kh, tz, ts, ph, th, gh, wh) so Shema/Chanukah are unchanged
+  // For dropped-sheva Hebrew transliteration: Psukei → Pesukei, Dvar → Devar, Tfilin → Tefilin
+  // Skips digraphs (sh, ch, kh, tz, ts, ph, th, gh, wh) so Shema/Chanukah are unchanged.
+  // Skips when second consonant is 'r' or 'l' to avoid expanding standard English clusters:
+  //   Pr (Prayer), Br (Bread), Bl (Blend), Cl (Club), Fl (Float), Gl (Glow), Pl (Play), Tr (Train), etc.
   var s = String(str || '');
   if (/^(sh|ch|kh|tz|ts|ph|th|gh|wh)/i.test(s)) return s;
-  return s.replace(/^([bcdfgjklmnpqrstvwxyzBCDFGJKLMNPQRSTVWXYZ])([bcdfgjklmnpqrstvwxyzBCDFGJKLMNPQRSTVWXYZ])/, '$1e$2');
+  return s.replace(/^([bcdfgjklmnpqrstvwxyzBCDFGJKLMNPQRSTVWXYZ])([bcdfgjkmnpqstvwxyzBCDFGJKMNPQSTVWXYZ])/, '$1e$2');
 }
 
 function isLikelyTitleQuery(input) {
