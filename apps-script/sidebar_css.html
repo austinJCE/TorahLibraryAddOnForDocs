@@ -4318,5 +4318,58 @@
     grid-template-columns: 1fr;
   }
 }
+/* ===== Restore true footer layout after later display:block regression ===== */
+.unified-sidebar {
+  display: flex !important;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar-scroll {
+  display: flex !important;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sidebar-footer {
+  flex: 0 0 auto;
+  margin-top: auto;
+}
+
+/* ===== Sidebar scroll fix: keep outer shell scrolling, disable inner stretch traps ===== */
+.sidebar-scroll {
+  display: block !important;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sidebar-scroll > section {
+  flex: 0 0 auto !important;
+  min-height: auto !important;
+}
+
+.preview-section,
+.preview-section .sidebar-accordion,
+.preview-section .preview-accordion,
+.preview-section .accordion-panel,
+.preview-section .preview-panel,
+.preview-section .suggestions {
+  display: block !important;
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+
+.preview-section .accordion-panel,
+.preview-section .suggestions {
+  overflow: visible !important;
+}
 
 </style>
