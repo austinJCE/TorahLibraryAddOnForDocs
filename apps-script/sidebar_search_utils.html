@@ -108,6 +108,39 @@ function isLikelyTitleQuery(input) {
   return str.split(/\s+/).filter(Boolean).length <= 6;
 }
 
+// Guard for multi-word queries: reject name-API candidates that only share the
+// first token with the query.  Single-word queries pass unconditionally so the
+// existing name-API behaviour (e.g. Psukei expansion) is fully preserved.
+function nameCandidatePassesFullQueryGuard(candidate, queryExpanded) {
+  var tokens = String(queryExpanded || '').trim().split(/\s+/).filter(Boolean);
+  if (tokens.length <= 1) return true;
+
+  function norm(s) {
+    return String(s || '')
+      .replace(/['\u2018\u2019\u02BC\u05F3]/g, '')
+      .replace(/[-\u05BE]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+  }
+
+  var candidateNorm = norm(candidate);
+  var queryNorm = norm(queryExpanded);
+
+  // Allow if candidate starts with the full normalized query
+  if (candidateNorm.indexOf(queryNorm) === 0) return true;
+
+  // Allow if every query token appears in the candidate in left-to-right order
+  var tokenNorms = queryNorm.split(/\s+/).filter(Boolean);
+  var pos = 0;
+  for (var i = 0; i < tokenNorms.length; i++) {
+    var idx = candidateNorm.indexOf(tokenNorms[i], pos);
+    if (idx < 0) return false;
+    pos = idx + tokenNorms[i].length;
+  }
+  return true;
+}
+
 function isLikelyHebrewScriptInput(value) {
   var normalized = String(value || '').trim();
   return /[\u0590-\u05FF]/.test(normalized) && !/[A-Za-z]/.test(normalized);
