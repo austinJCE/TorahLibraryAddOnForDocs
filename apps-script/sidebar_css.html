@@ -2636,8 +2636,8 @@
   .library-results-label { margin-bottom: 0; }
   .search-results-label { display: none; }
   .translation-language-menu {
-    left: 0 !important;
-    right: auto !important;
+    left: auto;
+    right: 0;
     min-width: 220px;
     max-width: 260px;
     transform: none;
@@ -2786,8 +2786,8 @@
 }
 
 .translation-language-menu {
-  left: auto !important;
-  right: 0 !important;
+  left: auto;
+  right: 0;
   transform: none;
   max-width: min(280px, calc(100vw - 32px));
 }
@@ -3473,6 +3473,7 @@
 }
 
 .library-results-toolbar {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
@@ -3489,6 +3490,7 @@
 }
 
 .library-results-toolbar .translation-language-compact {
+  position: static;
   width: auto !important;
   min-width: 0;
   flex: 0 1 auto;
