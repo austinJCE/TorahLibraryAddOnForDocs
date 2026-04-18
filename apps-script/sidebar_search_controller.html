@@ -41,6 +41,8 @@ function runUnifiedQuery() {
   var input = normalizeUnifiedReferenceInput(($('.input').val() || '').trim());
   $('.input').val(input);
   var inputExpanded = expandShevaApostrophe(input);
+  var inputForNameApi = applyConsonantClusterVoweling(inputExpanded);
+  var useNameApi = isLikelyTitleQuery(inputExpanded);
   clearSelectedResult();
   setResultsHint('');
   setResultsLoading(true);
@@ -88,7 +90,13 @@ function runUnifiedQuery() {
   }
 
   var prefixTitles = titles
-    .filter(function (title) { return title && expandShevaApostrophe(title).toUpperCase().indexOf(inputExpanded.toUpperCase()) === 0; })
+    .filter(function (title) {
+      if (!title) return false;
+      var expandedTitle = expandShevaApostrophe(title).toUpperCase();
+      var queryA = inputExpanded.toUpperCase();
+      var queryB = inputForNameApi.toUpperCase();
+      return expandedTitle.indexOf(queryA) === 0 || (queryB !== queryA && expandedTitle.indexOf(queryB) === 0);
+    })
     .slice(0, 6)
     .map(function (title, index) {
       return {
@@ -121,7 +129,7 @@ function runUnifiedQuery() {
 
   var requestId = ++latestQueryRequestId;
   var validationRequestId = ++latestDirectRefValidationRequestId;
-  var pendingAsyncResultGroups = 2;
+  var pendingAsyncResultGroups = useNameApi ? 3 : 2;
   function finishResultGroup() {
     if (requestId !== latestQueryRequestId) return;
     pendingAsyncResultGroups = Math.max(0, pendingAsyncResultGroups - 1);
@@ -181,6 +189,29 @@ function runUnifiedQuery() {
     reprocessAndRenderResults();
     finishResultGroup();
   }).findSearchAdvanced(inputExpanded, searchParameters);
+
+  if (useNameApi) {
+    google.script.run.withSuccessHandler(function(nameCandidates) {
+      if (requestId !== latestQueryRequestId) return;
+      var nameMatches = (Array.isArray(nameCandidates) ? nameCandidates : []).map(function(c, idx) {
+        return {
+          key: 'name-candidate-' + idx + '-' + c,
+          ref: c,
+          label: c,
+          subtitle: 'Title match',
+          typeLabel: 'Library',
+          hasTranslation: true,
+          availableLangs: []
+        };
+      });
+      queryState.rawLibraryMatches = nameMatches.concat(queryState.rawLibraryMatches).slice(0, 10);
+      reprocessAndRenderResults();
+      finishResultGroup();
+    }).withFailureHandler(function() {
+      if (requestId !== latestQueryRequestId) return;
+      finishResultGroup();
+    }).getNameCandidates(inputForNameApi);
+  }
 }
 
 function resolveSelectedResult(selectedRef, inputLabel) {

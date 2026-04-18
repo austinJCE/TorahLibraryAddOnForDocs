@@ -1652,6 +1652,23 @@ function findSearch(input, filters, pageRank) {
   return findSearchAdvanced(input, filters, pageRank, false);
 }
 
+function getNameCandidates(query) {
+  var safeQuery = String(query || '').trim();
+  if (!safeQuery) return [];
+  try {
+    var url = 'https://www.sefaria.org/api/name/' + encodeURIComponent(safeQuery) + '?limit=6';
+    var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    var statusCode = response.getResponseCode ? response.getResponseCode() : 200;
+    if (statusCode >= 400) return [];
+    var data = JSON.parse(response.getContentText() || '{}');
+    var completions = Array.isArray(data.completions) ? data.completions : [];
+    return completions.filter(function(c) { return typeof c === 'string' && c.trim(); }).slice(0, 6);
+  } catch (e) {
+    Logger.log('getNameCandidates failed: ' + e.message);
+    return [];
+  }
+}
+
 function searchVoices(query, options) {
   const safeQuery = String(query || '').trim();
   if (!safeQuery) {

@@ -90,6 +90,22 @@ function expandShevaApostrophe(str) {
   return String(str || '').replace(/([^aeiouAEIOU\s\d])'([^'\s])/g, '$1e$2');
 }
 
+function applyConsonantClusterVoweling(str) {
+  // For dropped-sheva Hebrew transliteration: Psukei → Pesukei, Brakhah → Berakhah
+  // Skips digraphs (sh, ch, kh, tz, ts, ph, th, gh, wh) so Shema/Chanukah are unchanged
+  var s = String(str || '');
+  if (/^(sh|ch|kh|tz|ts|ph|th|gh|wh)/i.test(s)) return s;
+  return s.replace(/^([bcdfgjklmnpqrstvwxyzBCDFGJKLMNPQRSTVWXYZ])([bcdfgjklmnpqrstvwxyzBCDFGJKLMNPQRSTVWXYZ])/, '$1e$2');
+}
+
+function isLikelyTitleQuery(input) {
+  var str = String(input || '').trim();
+  if (!str || str.length < 2 || str.length > 70) return false;
+  if (isLikelyHebrewScriptInput(str)) return false;
+  if (/["""'']{2}/.test(str)) return false;
+  return str.split(/\s+/).filter(Boolean).length <= 6;
+}
+
 function isLikelyHebrewScriptInput(value) {
   var normalized = String(value || '').trim();
   return /[\u0590-\u05FF]/.test(normalized) && !/[A-Za-z]/.test(normalized);
