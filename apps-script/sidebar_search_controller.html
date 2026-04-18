@@ -193,17 +193,19 @@ function runUnifiedQuery() {
   if (useNameApi) {
     google.script.run.withSuccessHandler(function(nameCandidates) {
       if (requestId !== latestQueryRequestId) return;
-      var nameMatches = (Array.isArray(nameCandidates) ? nameCandidates : []).map(function(c, idx) {
-        return {
-          key: 'name-candidate-' + idx + '-' + c,
-          ref: c,
-          label: c,
-          subtitle: 'Title match',
-          typeLabel: 'Library',
-          hasTranslation: true,
-          availableLangs: []
-        };
-      });
+      var nameMatches = (Array.isArray(nameCandidates) ? nameCandidates : [])
+        .filter(function(c) { return nameCandidatePassesFullQueryGuard(c, inputExpanded); })
+        .map(function(c, idx) {
+          return {
+            key: 'name-candidate-' + idx + '-' + c,
+            ref: c,
+            label: c,
+            subtitle: 'Title match',
+            typeLabel: 'Library',
+            hasTranslation: true,
+            availableLangs: []
+          };
+        });
       queryState.rawLibraryMatches = nameMatches.concat(queryState.rawLibraryMatches).slice(0, 10);
       reprocessAndRenderResults();
       finishResultGroup();
