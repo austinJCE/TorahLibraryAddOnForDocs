@@ -40,6 +40,7 @@ function runUnifiedQuery() {
   updateModeDependentSections();
   var input = normalizeUnifiedReferenceInput(($('.input').val() || '').trim());
   $('.input').val(input);
+  var inputExpanded = expandShevaApostrophe(input);
   clearSelectedResult();
   setResultsHint('');
   setResultsLoading(true);
@@ -87,7 +88,7 @@ function runUnifiedQuery() {
   }
 
   var prefixTitles = titles
-    .filter(function (title) { return title && title.toUpperCase().indexOf(input.toUpperCase()) === 0; })
+    .filter(function (title) { return title && expandShevaApostrophe(title).toUpperCase().indexOf(inputExpanded.toUpperCase()) === 0; })
     .slice(0, 6)
     .map(function (title, index) {
       return {
@@ -101,7 +102,7 @@ function runUnifiedQuery() {
       };
     });
 
-  var directLookupInput = normalizeLatinLookupTitleCase(input);
+  var directLookupInput = normalizeLatinLookupTitleCase(inputExpanded);
   var directRefMatch = {
     key: "library-ref-" + directLookupInput,
     ref: directLookupInput,
@@ -179,7 +180,7 @@ function runUnifiedQuery() {
     if (error && error.message) setResultsHint(error.message);
     reprocessAndRenderResults();
     finishResultGroup();
-  }).findSearchAdvanced(input, searchParameters);
+  }).findSearchAdvanced(inputExpanded, searchParameters);
 }
 
 function resolveSelectedResult(selectedRef, inputLabel) {

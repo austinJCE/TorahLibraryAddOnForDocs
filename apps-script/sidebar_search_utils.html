@@ -85,6 +85,11 @@ function normalizeUnifiedReferenceInput(value) {
   return normalized;
 }
 
+function expandShevaApostrophe(str) {
+  // Converts sheva-apostrophe transliteration to vocalized form: P'sukei → Pesukei, D'Zimra → Dezimra
+  return String(str || '').replace(/([^aeiouAEIOU\s\d])'([^'\s])/g, '$1e$2');
+}
+
 function isLikelyHebrewScriptInput(value) {
   var normalized = String(value || '').trim();
   return /[\u0590-\u05FF]/.test(normalized) && !/[A-Za-z]/.test(normalized);
