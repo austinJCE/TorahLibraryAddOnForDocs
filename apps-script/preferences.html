@@ -212,27 +212,6 @@
                   <div class="inline-preview transliteration" id="transliteration_preview"><span class="label">Preview</span>Ve-samtem et devarai eileh al levavchem</div>
                 </details>
 
-                <details class="compact-accordion compact-accordion--nested">
-                  <summary>Mapping</summary>
-                  <div class="mini-help">Choose a Hebrew character, then specify the replacement you want this transliteration engine to use for that character.</div>
-                  <div class="override-grid" id="override_grid"></div>
-                  <div class="override-editor">
-                    <div class="compact-field">
-                      <label>Character</label>
-                      <input id="override_selected_char" type="text" readonly>
-                    </div>
-                    <div class="compact-field">
-                      <label for="override_value">Replacement</label>
-                      <input id="override_value" type="text" placeholder="e.g. v, w, sh">
-                    </div>
-                    <button type="button" class="small-button" id="save_override_btn">Save</button>
-                    <button type="button" class="small-button" id="remove_override_btn">Remove</button>
-                  </div>
-                  <div class="override-list" id="override_list"></div>
-                  <input type="hidden" id="transliteration_overrides" name="transliteration_overrides">
-                  <input type="hidden" id="transliteration_is_biblical_hebrew" name="transliteration_is_biblical_hebrew" value="true">
-                  <input type="hidden" id="transliteration_biblical_dagesh_mode" name="transliteration_biblical_dagesh_mode" value="none">
-                </details>
               </div>
             </div>
           </details>
@@ -452,6 +431,32 @@
               </div>
 
                 <div class="mini-help">These define the replacement rules themselves. The document-wide transform command remains separate from insertion-time replacement. <span id="sheimot_summary_note">None</span></div>
+              </div>
+            </div>
+          </details>
+
+          <details class="section-card section-accordion" id="transliteration-mapping" name="transliteration-mapping">
+            <summary class="section-card-summary"><span>Transliteration Mapping</span></summary>
+            <div class="section-card-body">
+              <div class="subsection-card">
+                <div class="mini-help">Choose a Hebrew character, then specify the replacement you want this transliteration engine to use for that character.</div>
+                <div class="override-grid" id="override_grid"></div>
+                <div class="override-editor">
+                  <div class="compact-field">
+                    <label>Character</label>
+                    <input id="override_selected_char" type="text" readonly>
+                  </div>
+                  <div class="compact-field">
+                    <label for="override_value">Replacement</label>
+                    <input id="override_value" type="text" placeholder="e.g. v, w, sh">
+                  </div>
+                  <button type="button" class="small-button" id="save_override_btn">Save</button>
+                  <button type="button" class="small-button" id="remove_override_btn">Remove</button>
+                </div>
+                <div class="override-list" id="override_list"></div>
+                <input type="hidden" id="transliteration_overrides" name="transliteration_overrides">
+                <input type="hidden" id="transliteration_is_biblical_hebrew" name="transliteration_is_biblical_hebrew" value="true">
+                <input type="hidden" id="transliteration_biblical_dagesh_mode" name="transliteration_biblical_dagesh_mode" value="none">
               </div>
             </div>
           </details>
