@@ -68,8 +68,10 @@ function applyEffectivePreferencesToUI() {
 function saveAccountPreference(payload, onDone) {
   google.script.run.withSuccessHandler(function (updated) {
     accountPreferences = clonePlainObject(updated || accountPreferences);
-    effectivePreferences = isAdvancedSessionMode() ? mergePreferenceLayers(accountPreferences, sessionPreferences) : mergePreferenceLayers(accountPreferences, {});
-    syncSessionOverrideButtons();
+    effectivePreferences = isAdvancedSessionMode()
+      ? mergePreferenceLayers(accountPreferences, sessionPreferences)
+      : mergePreferenceLayers(accountPreferences, {});
+    applyEffectivePreferencesToUI();   // <-- add this
     if (typeof onDone === 'function') onDone(updated);
   }).setAccountPreferences(payload || {});
 }
@@ -82,7 +84,7 @@ function saveSessionPreference(payload, onDone) {
   google.script.run.withSuccessHandler(function (updated) {
     sessionPreferences = clonePlainObject(updated || sessionPreferences);
     effectivePreferences = mergePreferenceLayers(accountPreferences, sessionPreferences);
-    syncSessionOverrideButtons();
+    applyEffectivePreferencesToUI();   // <-- add this
     if (typeof onDone === 'function') onDone(updated);
   }).setSidebarSessionState(sidebarSessionId, payload || {});
 }
