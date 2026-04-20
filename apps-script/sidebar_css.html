@@ -288,11 +288,23 @@
   }
 
   .display-layout-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 10px;
-    align-items: start;
-  }
+	  display: grid;
+	  grid-template-columns: repeat(2, minmax(0, 1fr));
+	  gap: 10px;
+	  align-items: start;
+	}
+
+	.display-layout-section > .display-choice-detail,
+	.display-layout-section > .display-choice-dropdown,
+	.display-layout-section > details {
+	  min-width: 0;
+	}
+
+	.display-layout-section > .display-choice-detail[open],
+	.display-layout-section > .display-choice-dropdown[open],
+	.display-layout-section > details[open] {
+	  grid-column: 1 / -1;
+	}
 
   .display-layout-shell,
   .versions-section,
@@ -2108,7 +2120,7 @@
   min-height: 0;
 }
 
-..preview-section .suggestions {
+.preview-section .suggestions {
   box-sizing: border-box;
   min-height: 180px;
   max-height: 42vh;
@@ -4322,6 +4334,31 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+
+.sidebar-scroll > .versions-section,
+.sidebar-scroll > .preview-section,
+.sidebar-scroll > .display-layout-shell,
+.sidebar-scroll > .results-panel,
+.sidebar-scroll > .recent-results-panel,
+.sidebar-scroll > .session-library-panel {
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.versions-section > details,
+.preview-section > details,
+.versions-section .sidebar-accordion,
+.preview-section .sidebar-accordion {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 </style>
