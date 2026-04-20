@@ -1048,10 +1048,6 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       hebText.setAttributes(noUnderline);
       applyTypographyToParagraph(hebText, typography.hebrewFont, typography.hebrewFontSize, typography.hebrewFontStyle);
 
-      if (transliterationText) {
-        insertTransliterationIntoCell(table.getCell(1, hebrewColumn), transliterationText, typography);
-      }
-
       let sideBySideNextIndex = index + 1;
 
       if (shouldIncludeEnglishAttribution && attributionLines.length > 0) {
@@ -1063,7 +1059,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       appendCitationParagraph(sideBySideNextIndex);
 
       /* the constraints of insertParagraph mean that there will always be an extra line break in table cells to which we dynamically add text. See https://stackoverflow.com/questions/39506414/remove-newline-from-google-doc-table-content.
-      This solution was contributed by an expert in Google Apps Script, @tanaike. Thanks @tanaike! [https://stackoverflow.com/questions/76647915/extra-spaces-when-inserting-text-in-google-docs-tables-rich-text-version?noredirect=1#comment135153775_76647915] */ 
+      This solution was contributed by an expert in Google Apps Script, @tanaike. Thanks @tanaike! [https://stackoverflow.com/questions/76647915/extra-spaces-when-inserting-text-in-google-docs-tables-rich-text-version?noredirect=1#comment135153775_76647915] */
 
       for (let r = 0; r < table.getNumRows(); r++) {
         const row = table.getRow(r);
@@ -1072,6 +1068,11 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
           const n = cell.getNumChildren();
           cell.getChild(n - 1).removeFromParent();
         }
+      }
+
+      // Insert transliteration after the cleanup loop so it isn't removed as a trailing empty paragraph
+      if (transliterationText) {
+        insertTransliterationIntoCell(table.getCell(1, hebrewColumn), transliterationText, typography);
       }
     }
 
