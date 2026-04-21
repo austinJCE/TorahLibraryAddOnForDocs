@@ -205,7 +205,7 @@
   z-index: 900;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   pointer-events: none;
   visibility: hidden;
 }
@@ -228,12 +228,12 @@
 .tray-sheet {
   position: relative;
   background: var(--bg, #fbfbfa);
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 -4px 28px rgba(0,0,0,0.18);
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 4px 28px rgba(0,0,0,0.18);
   display: flex;
   flex-direction: column;
   max-height: 88vh;
-  transform: translateY(100%);
+  transform: translateY(-100%);
   transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
   overflow: hidden;
 }
