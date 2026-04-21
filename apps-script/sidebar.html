@@ -261,7 +261,7 @@
         <section class="voices-insert-options voices-options-section" style="display:none;" aria-label="Voices insert options">
           <div class="voices-insert-controls">
             <div class="compact-section-label" id="voices-insert-mode-label">What to insert</div>
-            <div class="insert-mode-selector" role="radiogroup" aria-labelledby="voices-insert-mode-label">
+            <div class="insert-mode-selector" id="voices-insert-mode" role="radiogroup" aria-labelledby="voices-insert-mode-label">
               <button type="button" class="insert-mode-btn is-active" data-value="reference" role="radio" aria-checked="true">Citation</button>
               <button type="button" class="insert-mode-btn" data-value="contents" role="radio" aria-checked="false">Text</button>
               <button type="button" class="insert-mode-btn" data-value="both" role="radio" aria-checked="false">Citation + text</button>
@@ -375,12 +375,23 @@
           </details>
         </section>
 
-        <section class="preview-section" style="display:none;">
+        <section class="preview-section text-mode-only" style="display:none;">
           <details class="sidebar-accordion preview-accordion" open>
             <summary class="section-label accordion-summary">🔁 Preview</summary>
             <div class="preview-panel accordion-panel">
               <section class="suggestions" style="text-align:center;">
                 <b>Enter a text or source to preview.</b>
+              </section>
+            </div>
+          </details>
+        </section>
+
+        <section class="voices-preview-section voices-only" style="display:none;">
+          <details class="sidebar-accordion preview-accordion" open>
+            <summary class="section-label accordion-summary">🔁 Preview</summary>
+            <div class="preview-panel accordion-panel">
+              <section class="voices-suggestions suggestions" style="text-align:center;" aria-live="polite">
+                <b>Select a sheet to preview.</b>
               </section>
             </div>
           </details>
