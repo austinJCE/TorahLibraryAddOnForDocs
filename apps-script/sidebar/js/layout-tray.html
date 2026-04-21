@@ -1,0 +1,266 @@
+<script>
+// ── Layout Tray: open/close, sync, version list ────────────────────────────
+
+var _versionListExpanded = {};
+
+function openLayoutTray() {
+  syncTrayFromCurrentState();
+  $('#layout-tray').addClass('is-open');
+  $('#layout-tray-close').focus();
+}
+
+function closeLayoutTray() {
+  $('#layout-tray').removeClass('is-open');
+  $('#open-layout-settings').focus();
+}
+
+function syncTrayDisplayBtns() {
+  var outputMode = $('.output-mode-selection').val() || 'both';
+  $('.tray-display-btn').each(function () {
+    var isSelected = $(this).data('mode') === outputMode;
+    $(this).attr('aria-checked', isSelected ? 'true' : 'false');
+  });
+}
+
+function syncTrayLayoutBtns() {
+  var layout = $('.bilingual-layout-selection').val() || 'he-right';
+  $('.tray-layout-btn').each(function () {
+    var isSelected = $(this).data('layout') === layout;
+    $(this).attr('aria-checked', isSelected ? 'true' : 'false');
+  });
+}
+
+function syncTrayPillsFromPreferences() {
+  var keyToCheckbox = {
+    'vowels':       '.wants-vowels',
+    'cantillation': '.wants-cantillation',
+    'lines':        '.wants-pesukim',
+    'link':         '.insert-sefaria-link',
+    'details':      '.include-translation-source-info',
+    'translit':     '.include-transliteration'
+  };
+  $('.tray-pill[data-composition-key]').each(function () {
+    var key = $(this).data('composition-key');
+    var selector = keyToCheckbox[key];
+    if (selector) {
+      $(this).attr('aria-pressed', $(selector).prop('checked') ? 'true' : 'false');
+    }
+  });
+}
+
+function syncTrayFromCurrentState() {
+  syncTrayDisplayBtns();
+  syncTrayLayoutBtns();
+  syncTrayPillsFromPreferences();
+  syncVersionLists();
+  var canOpen = !!(appMode === 'texts' && hasResolvedReference && data && data.ref);
+  $('#tray-open-on-sefaria').prop('disabled', !canOpen);
+  $('.tray-sefaria-section').toggle(canOpen);
+}
+
+// ── Version list helpers ───────────────────────────────────────────────────
+
+function _parseVersionOptionLabel(label) {
+  var m = String(label || '').match(/^([A-Z]{2,3})\s+–\s+(.+)$/);
+  if (m) return { lang: m[1], title: m[2] };
+  return { lang: '', title: label };
+}
+
+function renderVersionList(listSelector, $options, selectedVal, showLangTag) {
+  var $list = $(listSelector);
+  if (!$list.length) return;
+  var MAX = 5;
+  var expanded = !!_versionListExpanded[listSelector];
+
+  var items = [];
+  $options.each(function () {
+    items.push({ value: $(this).val(), label: $(this).attr('title') || $(this).text() });
+  });
+
+  var visible = expanded ? items : items.slice(0, MAX);
+  var hiddenCount = items.length - MAX;
+
+  var html = visible.map(function (item) {
+    var parsed = _parseVersionOptionLabel(item.label);
+    var title = parsed.title || item.label;
+    var lang  = parsed.lang;
+    var isSelected = item.value === selectedVal;
+    return '<li class="version-radio-item' + (isSelected ? ' is-selected' : '') + '"' +
+      ' data-version="' + escapeHTML(item.value) + '"' +
+      ' data-list="' + escapeHTML(listSelector) + '"' +
+      ' title="' + escapeHTML(item.label) + '"' +
+      ' role="radio" aria-checked="' + (isSelected ? 'true' : 'false') + '"' +
+      ' tabindex="0">' +
+      '<span class="version-radio-dot" aria-hidden="true"></span>' +
+      '<span class="version-radio-label">' + escapeHTML(title) + '</span>' +
+      (showLangTag && lang ? '<span class="version-radio-lang">' + escapeHTML(lang) + '</span>' : '') +
+      '</li>';
+  }).join('');
+
+  if (!expanded && hiddenCount > 0) {
+    html += '<li><button type="button" class="version-show-more" data-list-selector="' +
+      escapeHTML(listSelector) + '">Show ' + hiddenCount + ' more</button></li>';
+  } else if (expanded && hiddenCount > 0) {
+    html += '<li><button type="button" class="version-show-more" data-list-selector="' +
+      escapeHTML(listSelector) + '">Show fewer</button></li>';
+  }
+
+  $list.html(html);
+}
+
+function syncVersionLists() {
+  if (appMode !== 'texts' || !selectedResultKey) {
+    $('.versions-area').hide();
+    return;
+  }
+  var outputMode = $('.output-mode-selection').val() || 'both';
+
+  // Translation versions
+  var $enGroup = $('.version-area-en');
+  var $enSelect = $('#translation-version-selection');
+  if (!$enSelect.length) $enSelect = $('.translation-version-select').not('.he-version-selection').first();
+  var $enOptions = $enSelect.find('option:not(:disabled)');
+  var enSelected = $enSelect.val() || '';
+
+  if (outputMode !== 'he' && $enOptions.length > 1) {
+    $enGroup.show();
+    renderVersionList('.en-version-list', $enOptions, enSelected, true);
+  } else {
+    $enGroup.hide();
+  }
+
+  // Hebrew/original versions
+  var $heGroup = $('.version-area-he');
+  var $heSelect = $('#he-version-selection');
+  if (!$heSelect.length) $heSelect = $('.he-version-selection').first();
+  var $heOptions = $heSelect.find('option:not(:disabled)');
+  var heSelected = $heSelect.val() || '';
+
+  if (outputMode !== 'en' && $heOptions.length > 1) {
+    $heGroup.show();
+    renderVersionList('.he-version-list', $heOptions, heSelected, false);
+  } else {
+    $heGroup.hide();
+  }
+
+  var hasVersions = ($enGroup.is(':visible') || $heGroup.is(':visible'));
+  $('.versions-area').toggle(hasVersions);
+}
+
+// ── Version list item click ────────────────────────────────────────────────
+
+$(document).on('click keydown', '.version-radio-item', function (event) {
+  if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  var version = $(this).data('version');
+  var listSelector = $(this).data('list');
+  if (!version) return;
+
+  // Update hidden select and trigger change
+  if (listSelector === '.en-version-list') {
+    $('#translation-version-selection').val(version).trigger('change.translationVersion');
+  } else if (listSelector === '.he-version-list') {
+    $('#he-version-selection').val(version).trigger('change.heVersion');
+  }
+  // Re-render version list to reflect new selection
+  setTimeout(syncVersionLists, 50);
+});
+
+// ── Show more / fewer ─────────────────────────────────────────────────────
+
+$(document).on('click', '.version-show-more', function (event) {
+  event.preventDefault();
+  var sel = $(this).data('list-selector');
+  if (!sel) return;
+  _versionListExpanded[sel] = !_versionListExpanded[sel];
+  syncVersionLists();
+});
+
+// ── Tray display btn (output mode) ────────────────────────────────────────
+
+$(document).on('click', '.tray-display-btn', function () {
+  var mode = $(this).data('mode');
+  if (!mode) return;
+  $('.output-mode-selection').val(mode).trigger('change');
+  // syncTrayDisplayBtns() called via the .output-mode-selection change handler
+  // which calls syncDisplayModeCards(), which now also updates tray btns
+});
+
+// ── Tray layout btn (bilingual layout) ────────────────────────────────────
+
+$(document).on('click', '.tray-layout-btn', function () {
+  var layout = $(this).data('layout');
+  if (!layout) return;
+  $('.bilingual-layout-selection').val(layout);
+  syncLayoutCards();
+  saveSidebarPreference({ bilingual_layout_default: layout });
+  if (hasResolvedReference && data && data.ref) {
+    updateSuggestion(data, selectedResultSummary ? selectedResultSummary.label : data.ref);
+  }
+  syncTrayLayoutBtns();
+});
+
+// ── Tray composition pill clicks ──────────────────────────────────────────
+
+$(document).on('click', '.tray-pill[data-composition-key]', function () {
+  var key = $(this).data('composition-key');
+  if (!key || typeof _sidebarCompositionOnToggle !== 'function') return;
+  _sidebarCompositionOnToggle(key);
+  // Sync pill state from checkbox after toggle
+  setTimeout(syncTrayPillsFromPreferences, 0);
+});
+
+// ── Open tray ─────────────────────────────────────────────────────────────
+
+$('#open-layout-settings').on('click', function () {
+  openLayoutTray();
+});
+
+// ── Close tray: button, backdrop, Escape ──────────────────────────────────
+
+$('#layout-tray-close').on('click', function () {
+  closeLayoutTray();
+});
+
+$('#layout-tray-backdrop').on('click', function () {
+  closeLayoutTray();
+});
+
+$(document).on('keydown', function (event) {
+  if (event.key === 'Escape' && $('#layout-tray').hasClass('is-open')) {
+    event.stopPropagation();
+    closeLayoutTray();
+  }
+});
+
+// ── Source card "Change" button ───────────────────────────────────────────
+
+$('#source-card-change').on('click', function () {
+  resultsCollapsed = false;
+  updateResultsVisibility();
+  updateModeDependentSections();
+});
+
+// ── Source card "Open on Sefaria" button ─────────────────────────────────
+
+$('#source-card-sefaria').on('click', function () {
+  var url = typeof buildSefariaOpenUrl === 'function' ? buildSefariaOpenUrl() : null;
+  if (url) window.open(url, '_blank', 'noopener');
+});
+
+// ── Tray "Open on Sefaria" button ─────────────────────────────────────────
+
+$('#tray-open-on-sefaria').on('click', function () {
+  var url = typeof buildSefariaOpenUrl === 'function' ? buildSefariaOpenUrl() : null;
+  if (url) window.open(url, '_blank', 'noopener');
+});
+
+// ── Update source card + tray Sefaria btn when reference state changes ────
+
+function updateSourceCardSefariaState() {
+  var canOpen = !!(appMode === 'texts' && hasResolvedReference && data && data.ref);
+  $('#source-card-sefaria').prop('disabled', !canOpen);
+  $('#tray-open-on-sefaria').prop('disabled', !canOpen);
+  $('.tray-sefaria-section').toggle(canOpen);
+}
+</script>
