@@ -42,7 +42,8 @@
 
 .sidebar-footer .primary-actions,
 .sidebar-footer .sidebar-footer-tools,
-.sidebar-footer .session-override-buttons {
+.sidebar-footer .session-override-buttons,
+.sidebar-footer .experimental-quick-actions {
   display: grid;
   align-items: stretch;
   gap: 0;
@@ -62,6 +63,10 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.sidebar-footer .experimental-quick-actions {
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+}
+
 .sidebar-footer .session-override-buttons {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -69,7 +74,8 @@
 /* Divider lines between sibling buttons within a row */
 .sidebar-footer .primary-actions > * + *,
 .sidebar-footer .sidebar-footer-tools > * + *,
-.sidebar-footer .session-override-buttons > * + * {
+.sidebar-footer .session-override-buttons > * + *,
+.sidebar-footer .experimental-quick-actions > * + * {
   border-left: 1px solid var(--footer-divider);
 }
 
@@ -85,6 +91,7 @@
 .sidebar-footer .secondary-action-button,
 .sidebar-footer .tertiary-action-button,
 .sidebar-footer .footer-tool-button,
+.sidebar-footer .footer-action-button,
 .sidebar-footer .session-library-primary-button,
 .sidebar-footer #insert-source,
 .sidebar-footer #open-on-sefaria,
@@ -117,6 +124,10 @@
   vertical-align: middle;
 }
 
+.sidebar-footer .footer-action-button {
+  font-size: 13px;
+}
+
 /* ---- Active state: brand-blue fill ---- */
 .sidebar-footer #insert-source.is-active,
 .sidebar-footer #open-on-sefaria.is-active,
@@ -134,6 +145,7 @@
 .sidebar-footer .secondary-action-button:hover:not(:disabled):not(.is-active),
 .sidebar-footer .tertiary-action-button:hover:not(:disabled),
 .sidebar-footer .footer-tool-button:hover:not(:disabled),
+.sidebar-footer .footer-action-button:hover:not(:disabled),
 .sidebar-footer .session-library-primary-button:hover:not(:disabled):not(.is-active),
 .sidebar-footer #insert-source:hover:not(:disabled):not(.is-active),
 .sidebar-footer #open-on-sefaria:hover:not(:disabled):not(.is-active),
@@ -161,6 +173,7 @@
 .sidebar-footer .secondary-action-button:focus-visible,
 .sidebar-footer .tertiary-action-button:focus-visible,
 .sidebar-footer .footer-tool-button:focus-visible,
+.sidebar-footer .footer-action-button:focus-visible,
 .sidebar-footer .session-library-primary-button:focus-visible,
 .sidebar-footer #insert-source:focus-visible,
 .sidebar-footer #open-on-sefaria:focus-visible,
@@ -174,6 +187,7 @@
 .sidebar-footer .secondary-action-button:disabled,
 .sidebar-footer .tertiary-action-button:disabled,
 .sidebar-footer .footer-tool-button:disabled,
+.sidebar-footer .footer-action-button:disabled,
 .sidebar-footer .session-library-primary-button:disabled,
 .sidebar-footer #insert-source:disabled,
 .sidebar-footer #open-on-sefaria:disabled,
