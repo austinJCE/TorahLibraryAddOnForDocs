@@ -885,7 +885,7 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
     }
 
     if (!bodyLevelElement || bodyLevelElement.getParent() !== doc) {
-      throw new Error("Could not insert at this selection. This add-on currently supports replacing selected body text only.");
+      throw new Error("Your selection is inside a table, header, or footer, which isn't supported. Click to place your cursor in the main body of the document, then try again.");
     }
 
     let insertionIndex = doc.getChildIndex(bodyLevelElement) + 1;
