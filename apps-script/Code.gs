@@ -275,6 +275,13 @@ function openHelpModal() {
   DocumentApp.getUi().showModalDialog(html, 'Help & Support');
 }
 
+function openFeedbackModal() {
+  const html = HtmlService.createHtmlOutputFromFile('feedback-modal')
+      .setWidth(760)
+      .setHeight(860);
+  DocumentApp.getUi().showModalDialog(html, 'Feedback');
+}
+
 function releaseNotesPopup() {
   var html = HtmlService.createHtmlOutputFromFile('release-notes')
     .setWidth(700)
