@@ -267,7 +267,19 @@ function aboutPopup() {
 }
 
 function gematriyaCountPopup() {
-  const stats = getGematriyaStats_();
+  let stats;
+  try {
+    stats = getGematriyaStats_();
+  } catch (error) {
+    stats = {
+      hasSelection: false,
+      totalValue: 0,
+      wordCount: 0,
+      letterCount: 0,
+      words: []
+    };
+    Logger.log('Error in gematriyaCountPopup: ' + error.message);
+  }
   const template = HtmlService.createTemplateFromFile('gematriya-count');
   template.statsJson = JSON.stringify(stats);
   const html = template.evaluate().setWidth(480).setHeight(420);
