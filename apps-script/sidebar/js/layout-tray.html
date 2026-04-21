@@ -420,25 +420,35 @@ function renderRecentSources() {
   var inserted = Array.isArray(sessionLibrary.inserted) ? sessionLibrary.inserted : [];
   var seen = {};
   var items = [];
-  pinned.concat(inserted).forEach(function (item) {
+  pinned.forEach(function (item) {
     if (!item || !item.ref || seen[item.ref]) return;
     seen[item.ref] = true;
-    items.push(item);
+    items.push({ data: item, listName: 'pinned' });
+  });
+  inserted.forEach(function (item) {
+    if (!item || !item.ref || seen[item.ref]) return;
+    seen[item.ref] = true;
+    items.push({ data: item, listName: 'inserted' });
   });
   items = items.slice(0, 3);
 
   if (!items.length) { $section.hide(); return; }
 
-  var html = items.map(function (item) {
+  var html = items.map(function (entry) {
+    var item     = entry.data;
+    var listName = entry.listName;
     var label    = item.label || item.ref || '';
     var category = item.category || '';
     var icon     = _RECENT_ICONS[category] || _RECENT_ICONS._default;
     return '<li class="recent-source-item" role="button" tabindex="0"' +
-      ' data-ref="'   + escapeHTML(item.ref || '') + '"' +
-      ' data-label="' + escapeHTML(label) + '">' +
+      ' data-ref="'    + escapeHTML(item.ref || '') + '"' +
+      ' data-list="'   + escapeHTML(listName) + '"' +
+      ' data-label="'  + escapeHTML(label) + '">' +
       '<span class="recent-source-icon" aria-hidden="true">' + icon + '</span>' +
       '<span class="recent-source-label">' + escapeHTML(label) + '</span>' +
       (category ? '<span class="recent-source-category">' + escapeHTML(category) + '</span>' : '') +
+      '<button type="button" class="recent-source-remove-btn" aria-label="Remove ' + escapeHTML(label) + '"' +
+      ' data-ref="' + escapeHTML(item.ref || '') + '" data-list="' + escapeHTML(listName) + '">&#x2715;</button>' +
       '</li>';
   }).join('');
 
@@ -446,8 +456,22 @@ function renderRecentSources() {
   $section.show();
 }
 
+$(document).on('click', '.recent-sources-clear-btn', function (event) {
+  event.stopPropagation();
+  clearRecentItems();
+  renderRecentSources();
+});
+
+$(document).on('click', '.recent-source-remove-btn', function (event) {
+  event.preventDefault();
+  event.stopPropagation();
+  removeSessionEntry($(this).attr('data-list'), $(this).attr('data-ref'));
+  renderRecentSources();
+});
+
 $(document).on('click keydown', '.recent-source-item', function (event) {
   if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+  if ($(event.target).closest('.recent-source-remove-btn').length) return;
   event.preventDefault();
   var ref   = $(this).attr('data-ref');
   var label = $(this).attr('data-label') || ref;
