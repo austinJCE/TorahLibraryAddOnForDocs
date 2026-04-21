@@ -174,6 +174,7 @@ function onOpen(e) {
   addOnMenu
       .addItem('Texts', 'textsHTML')
       .addItem('Voices', 'voicesHTML')
+      .addItem('Lexicon', 'lexiconHTML')
       .addSubMenu(quickActionsMenu);
 
   if (DEV_FLAGS.AI_LESSON && experimentalAiEnabled) {
@@ -219,6 +220,10 @@ function textsHTML() {
 
 function voicesHTML() {
   openSharedSidebar_('voices');
+}
+
+function lexiconHTML() {
+  openSharedSidebar_('lexicon');
 }
 
 function getSidebarBootstrapData(mode, sessionId) {
@@ -2112,13 +2117,17 @@ function normalizeSheetInsertOptions(sheetPayload, frontendOptions) {
     includeContents = false;
   }
 
+  const rawScheme = opts.transliterationScheme || sheetPayload.transliterationScheme || null;
+  const transliterationScheme = (rawScheme && rawScheme !== 'none') ? rawScheme : null;
+
   return {
     insertMode: insertMode,
     includeReference: includeReference,
     includeContents: includeContents,
     showMediaLabel: getBooleanOption_(sheetPayload.showMediaLabel, true),
     preserveSheetSpacing: getBooleanOption_(sheetPayload.preserveSheetSpacing, true),
-    debugUnknownNodes: getBooleanOption_(sheetPayload.debugUnknownNodes, false)
+    debugUnknownNodes: getBooleanOption_(sheetPayload.debugUnknownNodes, false),
+    transliterationScheme: transliterationScheme
   };
 }
 
@@ -2318,6 +2327,21 @@ function renderSheetSource_(body, index, source, ordinal, typography, normalized
         fontSize: typography.hebrewFontSize || typography.translationFontSize,
         fontStyle: typography.hebrewFontStyle || typography.translationFontStyle
       });
+      if (normalizedOptions.transliterationScheme) {
+        const translitText = transliterateHebrewHtmlPreservingBasicBreaks(hebrewText, normalizedOptions.transliterationScheme, {
+          keepNiqqud: true,
+          isBiblicalHebrew: false
+        });
+        if (translitText) {
+          index = appendMultilineParagraphs_(body, index, translitText, {
+            rtl: false,
+            indent: shouldIndent ? 24 : 0,
+            fontFamily: typography.transliterationFont,
+            fontSize: typography.transliterationFontSize,
+            fontStyle: typography.transliterationFontStyle
+          });
+        }
+      }
     }
 
     const englishText = extractSheetText_(source.text, 'en', normalizedOptions);
