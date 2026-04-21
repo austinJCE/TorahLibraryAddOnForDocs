@@ -405,15 +405,19 @@
 /* ── Footer Layout Settings button ──────────────────────────────── */
 #open-layout-settings { font-size: 11px; white-space: nowrap; }
 
-/* ── Hide legacy accordion sections (kept in DOM for JS bindings) ── */
+/* ── Hide NEW redesign elements to restore old version selector ── */
+.source-card,
+.versions-area,
+#layout-tray { display: none !important; }
+
+/* Hide new footer button */
+#open-layout-settings { display: none !important; }
+
+/* Show old accordion sections */
 .display-layout-shell,
 .more-options-shell,
 .versions-section,
-.preview-section { display: none !important; }
-
-/* Hide old selected-result-summary and toggle (replaced by source card) */
-.selected-result-summary,
-.results-toggle-button { display: none !important; }
+.preview-section { display: block !important; }
 
 /* ── Denser result rows ──────────────────────────────────────────── */
 .result-item { padding: 7px 10px !important; }
