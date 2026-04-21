@@ -75,18 +75,13 @@ function isSurpriseEnabled() {
 
 function syncExperimentalAvailability() {
   var hasExperimental = hasExperimentalFeaturesEnabled();
+  var aiEnabled = isExperimentalAiEnabled();
+  var surpriseEnabled = isSurpriseEnabled();
   $('.experimental-menu-button').toggle(hasExperimental);
-  $('.experimental-section details').each(function() { $(this).show(); });
-  $('.experimental-quick-actions .open-ai-lesson-tool').show();
-  $('.experimental-quick-actions .open-surprise-tool').show();
-  if (!isExperimentalAiEnabled()) {
-    $('.open-ai-lesson-tool').closest('details').hide();
-    $('.experimental-quick-actions .open-ai-lesson-tool').hide();
-  }
-  if (!isSurpriseEnabled()) {
-    $('.open-surprise-tool').closest('details').hide();
-    $('.experimental-quick-actions .open-surprise-tool').hide();
-  }
+  $('#ai-inline-generate').closest('.feature-accordion').toggle(aiEnabled);
+  $('#sm-inline-launch').closest('.feature-accordion').toggle(surpriseEnabled);
+  $('#footer-actions-panel .open-ai-lesson-tool').toggle(aiEnabled);
+  $('#footer-actions-panel .open-surprise-tool').toggle(surpriseEnabled);
   if (!hasExperimental && appMode === 'experimental') {
     appMode = 'texts';
   }
@@ -94,8 +89,7 @@ function syncExperimentalAvailability() {
 
 function updateQuickActionsForMode() {
   var experimentalMode = appMode === 'experimental';
-  $('.standard-quick-actions').toggle(!experimentalMode);
-  $('.experimental-quick-actions').toggle(experimentalMode);
+  $('#footer-actions-panel .open-linker-tool').toggle(!experimentalMode);
   if (experimentalMode) { $('#footer-actions-panel').hide(); }
 }
 

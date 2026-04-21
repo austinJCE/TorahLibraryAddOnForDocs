@@ -82,14 +82,7 @@ $(document).on('click', function (event) {
 
 function updateDisplayChoiceSummary() {
   var outputMode = $('.output-mode-selection').val();
-  var iconMap = {
-    en: '<span class="mode-card-content"><span class="mode-card-symbol latin">A</span></span>',
-    both: '<span class="mode-card-content both"><span class="mode-card-symbol latin">A</span><span class="mode-card-plus">+</span><span class="mode-card-symbol">&#x05D0;</span></span>',
-    he: '<span class="mode-card-content"><span class="mode-card-symbol">&#x05D0;</span></span>'
-  };
-  $('#display-choice-summary-text')
-    .attr('data-mode', outputMode)
-    .html(iconMap[outputMode] || iconMap.both);
+  $('#display-choice-summary-text').attr('data-mode', outputMode || 'both');
 }
 
 function updateLayoutChoiceSummary() {
