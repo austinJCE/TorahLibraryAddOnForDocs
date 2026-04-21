@@ -692,4 +692,143 @@ $(document).on('click', '#sl-copy-refs', function () {
   if ($(this).prop('disabled')) return;
   copySessionLibraryRefs();
 });
+
+// ============================================================
+// HEBREW KEYBOARD TRAY
+// ============================================================
+
+(function () {
+  // Track cursor position when search input loses focus so character
+  // buttons can insert at the correct position after re-focusing.
+  var savedSelStart = 0;
+  var savedSelEnd   = 0;
+
+  function getInput() {
+    return document.querySelector('.search-field-wrapper .input') ||
+           document.querySelector('.input');
+  }
+
+  // Save cursor position on every blur of the search input.
+  $(document).on('blur', '.input', function () {
+    savedSelStart = this.selectionStart || 0;
+    savedSelEnd   = this.selectionEnd   || 0;
+  });
+
+  function openHebrewTray() {
+    $('#hebrew-keyboard-tray').removeAttr('hidden');
+    $('#hebrew-keyboard-trigger')
+      .attr('aria-expanded', 'true')
+      .attr('aria-label', 'Close Hebrew keyboard')
+      .addClass('is-open');
+  }
+
+  function closeHebrewTray() {
+    $('#hebrew-keyboard-tray').attr('hidden', true);
+    $('#hebrew-keyboard-trigger')
+      .attr('aria-expanded', 'false')
+      .attr('aria-label', 'Open Hebrew keyboard')
+      .removeClass('is-open');
+  }
+
+  function isHebrewTrayOpen() {
+    return !$('#hebrew-keyboard-tray').is('[hidden]');
+  }
+
+  // Insert a character at the saved/current cursor position.
+  function insertAtCursor(char) {
+    var input = getInput();
+    if (!input) return;
+
+    input.focus();
+
+    var start = (typeof input.selectionStart === 'number') ? input.selectionStart : savedSelStart;
+    var end   = (typeof input.selectionEnd   === 'number') ? input.selectionEnd   : savedSelEnd;
+    var val   = input.value;
+
+    input.value = val.slice(0, start) + char + val.slice(end);
+
+    var newPos = start + char.length;
+    input.setSelectionRange(newPos, newPos);
+    savedSelStart = newPos;
+    savedSelEnd   = newPos;
+
+    // Notify jQuery/debounced-search listeners.
+    $(input).trigger('input');
+  }
+
+  // Delete one character before the cursor (or delete the selection).
+  function deleteAtCursor() {
+    var input = getInput();
+    if (!input) return;
+
+    input.focus();
+
+    var start = (typeof input.selectionStart === 'number') ? input.selectionStart : savedSelStart;
+    var end   = (typeof input.selectionEnd   === 'number') ? input.selectionEnd   : savedSelEnd;
+    var val   = input.value;
+
+    if (start !== end) {
+      input.value = val.slice(0, start) + val.slice(end);
+      input.setSelectionRange(start, start);
+      savedSelStart = start;
+      savedSelEnd   = start;
+    } else if (start > 0) {
+      input.value = val.slice(0, start - 1) + val.slice(start);
+      input.setSelectionRange(start - 1, start - 1);
+      savedSelStart = start - 1;
+      savedSelEnd   = start - 1;
+    }
+
+    $(input).trigger('input');
+  }
+
+  // Toggle tray on ⌨︎ trigger click.
+  $(document).on('click', '#hebrew-keyboard-trigger', function (event) {
+    event.stopPropagation();
+    if (isHebrewTrayOpen()) {
+      closeHebrewTray();
+    } else {
+      openHebrewTray();
+    }
+  });
+
+  // Insert character when a .heb-key[data-char] button is clicked.
+  $(document).on('click', '#hebrew-keyboard-tray .heb-key[data-char]', function (event) {
+    event.preventDefault();
+    insertAtCursor($(this).attr('data-char'));
+  });
+
+  // ⌫ delete button.
+  $(document).on('click', '#heb-delete', function (event) {
+    event.preventDefault();
+    deleteAtCursor();
+  });
+
+  // Done button — close tray, return focus to search input.
+  $(document).on('click', '#heb-done', function (event) {
+    event.preventDefault();
+    closeHebrewTray();
+    var input = getInput();
+    if (input) input.focus();
+  });
+
+  // Click-away dismissal — close when clicking outside the tray and search field.
+  $(document).on('click', function (event) {
+    if (!isHebrewTrayOpen()) return;
+    if (!$(event.target).closest('#hebrew-keyboard-tray, #hebrew-keyboard-trigger, .search-field-wrapper').length) {
+      closeHebrewTray();
+    }
+  });
+
+  // Escape key — close the tray when it is open.
+  // The session-library Escape handler (above) uses stopPropagation, not
+  // stopImmediatePropagation, so this handler still runs if both are open.
+  $(document).on('keydown', function (event) {
+    if (event.key === 'Escape' && isHebrewTrayOpen()) {
+      closeHebrewTray();
+      var input = getInput();
+      if (input) input.focus();
+    }
+  });
+}());
 </script>
