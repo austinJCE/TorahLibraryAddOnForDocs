@@ -9,6 +9,28 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
+function decodeHTMLEntities(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&ndash;/g, '–')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ldquo;/g, '"')
+    .replace(/&rdquo;/g, '"')
+    .replace(/&lsquo;/g, ''')
+    .replace(/&rsquo;/g, ''')
+    .replace(/&#(\d+);/g, function(match, dec) {
+      return String.fromCharCode(parseInt(dec, 10));
+    })
+    .replace(/&#x([a-fA-F0-9]+);/g, function(match, hex) {
+      return String.fromCharCode(parseInt(hex, 16));
+    });
+}
 
 const SETTINGS = [
   "apply_sheimot_on_insertion",
@@ -1208,6 +1230,7 @@ function insertRichTextFromHTML(element, htmlString) {
   let inserterFn = (textModification) => {
     //grab all words in the buffer and join
     let snippet = buf.join("");
+    snippet = decodeHTMLEntities(snippet);
 
     //index of snippet needs to be zero-indexed. This is how we keep track of which words/phrases/sentences to bold/italicize
     let snippetLength = snippet.length;
@@ -1301,6 +1324,7 @@ function insertRichTextFromHTML(element, htmlString) {
   // add in the last words, if the text snippet does not end with a tag
   let snippet = buf.join("");
   if ( snippet != "" ) {
+    snippet = decodeHTMLEntities(snippet);
     element.insertText(textLength, snippet);
     let snippetIndex = snippet.length - 1;
     element.setBold(textLength, textLength+snippetIndex, false); 
