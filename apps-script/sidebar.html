@@ -47,7 +47,25 @@
           </div>
         </section>
 
-        <div class="hebrew-keyboard-tray" id="hebrew-keyboard-tray" role="region" aria-label="Hebrew keyboard" hidden>
+        <div id="search-history-dropdown" class="search-history-dropdown" role="listbox" aria-label="Recent searches" hidden></div>
+
+        <div class="hebrew-keyboard-tray" id="hebrew-keyboard-tray" role="region" aria-label="Hebrew keyboard">
+          <div class="heb-tray-header">
+            <span class="heb-tray-label" aria-hidden="true">Hebrew</span>
+            <button type="button" class="heb-nikud-toggle" id="heb-nikud-toggle" aria-pressed="false" aria-label="Toggle vowel marks">Vowels</button>
+          </div>
+          <div class="heb-key-row heb-key-row--nikud" id="heb-nikud-row" hidden>
+            <button type="button" class="heb-key heb-key--nikud" data-char="ַ" aria-label="Patah">אַ</button>
+            <button type="button" class="heb-key heb-key--nikud" data-char="ָ" aria-label="Kamatz">אָ</button>
+            <button type="button" class="heb-key heb-key--nikud" data-char="ֶ" aria-label="Segol">אֶ</button>
+            <button type="button" class="heb-key heb-key--nikud" data-char="ֵ" aria-label="Tzere">אֵ</button>
+            <button type="button" class="heb-key heb-key--nikud" data-char="ִ" aria-label="Hiriq">אִ</button>
+            <button type="button" class="heb-key heb-key--nikud" data-char="ֹ" aria-label="Holam">אֹ</button>
+            <button type="button" class="heb-key heb-key--nikud" data-char="ּ" aria-label="Dagesh">אּ</button>
+            <button type="button" class="heb-key heb-key--nikud" data-char="ְ" aria-label="Sheva">אְ</button>
+            <button type="button" class="heb-key heb-key--nikud" data-char="ֻ" aria-label="Qubuts">אֻ</button>
+            <button type="button" class="heb-key heb-key--nikud" data-char="ֲ" aria-label="Chataf Patah">אֲ</button>
+          </div>
           <div class="heb-key-row">
             <button type="button" class="heb-key" data-char="א" aria-label="Alef">א</button>
             <button type="button" class="heb-key" data-char="ב" aria-label="Bet">ב</button>
