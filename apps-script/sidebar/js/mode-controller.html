@@ -158,6 +158,7 @@ function updateModeDependentSections() {
   // New redesign sections
   $('.source-card').toggle(hasSelectedTextResult);
   if (typeof syncVersionLists === 'function') syncVersionLists();
+  if (typeof renderRecentSources === 'function') renderRecentSources();
   $('.inline-session-settings').toggle(hasSelectedTextResult);
   // Show Voices insert-mode selector only when a source sheet has been selected.
   $('.voices-insert-options').toggle(hasSelectedVoiceResult);

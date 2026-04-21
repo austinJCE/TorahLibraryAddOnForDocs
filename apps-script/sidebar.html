@@ -44,6 +44,12 @@
           <div class="helper-text">Search dictionaries and lexicons for a Hebrew or Aramaic word.</div>
         </section>
 
+        <!-- 9.4: Recent sources — shown in texts mode before any search is typed -->
+        <section class="recent-sources-section text-mode-only" style="display:none;" aria-label="Recent sources">
+          <div class="recent-sources-label">Recent</div>
+          <ul class="recent-sources-list"></ul>
+        </section>
+
         <section class="results-panel" style="display:none;">
   <div class="results-header"></div>
 
@@ -160,6 +166,19 @@
               </button>
               <button type="button" class="source-card-change-btn" id="source-card-change">Change</button>
             </div>
+          </div>
+          <!-- 9.2: Quick-select version badge -->
+          <div class="source-card-version-row" style="display:none;">
+            <button type="button" class="source-card-version-badge" id="source-card-version-badge"
+              aria-haspopup="listbox" aria-expanded="false" title="Switch translation version">
+              <span class="source-card-version-lang"></span>
+              <span class="source-card-version-title">No translation</span>
+              <span class="source-card-version-arrow" aria-hidden="true">&#x25BE;</span>
+            </button>
+          </div>
+          <div class="source-card-version-popover" id="source-card-version-popover" role="listbox"
+            aria-label="Translation version" style="display:none;">
+            <ul class="source-card-version-list"></ul>
           </div>
         </section>
 
@@ -499,7 +518,7 @@
 
       <footer class="sidebar-footer">
       <section class="primary-actions" aria-label="Primary actions">
-        <button class="submit primary-action-button" id="insert-source" disabled>Add Source</button>
+        <button class="submit primary-action-button" id="insert-source" disabled title="Add Source (Ctrl+Enter)">Add Source</button>
         <button class="submit secondary-action-button" id="open-layout-settings" title="Layout Settings" aria-label="Layout Settings">&#x1F4F0; Layout</button>
       </section>
       <section class="sidebar-footer-tools footer-tool-row standard-quick-actions" aria-label="Quick actions">
@@ -534,7 +553,11 @@
 
             <!-- Preview (moved from main scroll area) -->
             <div class="tray-section tray-preview-section">
-              <div class="tray-section-label">Preview</div>
+              <div class="tray-preview-header">
+                <div class="tray-section-label">Preview</div>
+                <button type="button" class="tray-copy-btn" id="tray-copy-preview"
+                  title="Copy preview text" aria-label="Copy preview text">&#x1F4CB;</button>
+              </div>
               <section class="suggestions" aria-live="polite" style="text-align:center;">
                 <b>Select a source to preview it.</b>
               </section>

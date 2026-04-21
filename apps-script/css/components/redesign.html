@@ -419,4 +419,170 @@
 .result-item { padding: 7px 10px !important; }
 .result-title { font-size: 12px; }
 .result-meta, .result-snippet, .result-subtitle { font-size: 11px; }
+
+/* =====================================================================
+   9.2 — Version badge on source card
+   ===================================================================== */
+.source-card { position: relative; }
+
+.source-card-version-row {
+  padding: 5px 0 0;
+  margin-top: 5px;
+  border-top: 1px solid rgba(24, 52, 93, 0.15);
+}
+
+.source-card-version-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  background: none;
+  border: none;
+  padding: 2px 0;
+  cursor: pointer;
+  color: var(--selected, #18345d);
+  width: 100%;
+  text-align: left;
+  min-width: 0;
+}
+.source-card-version-badge:hover .source-card-version-title {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.source-card-version-lang {
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--selected, #18345d);
+  color: #fff;
+  padding: 1px 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+.source-card-version-title {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-card-version-arrow {
+  font-size: 10px;
+  color: var(--muted, #666);
+  flex-shrink: 0;
+}
+
+/* Version popover */
+.source-card-version-popover {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: #fff;
+  border: 1px solid var(--border, #d9d8d3);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+  z-index: 200;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px;
+  margin-top: 2px;
+}
+
+.source-card-version-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* =====================================================================
+   9.3 — Tray preview copy button
+   ===================================================================== */
+.tray-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tray-copy-btn {
+  font-size: 14px;
+  line-height: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 5px;
+  color: var(--muted, #666);
+  transition: background 0.1s, color 0.1s;
+}
+.tray-copy-btn:hover { background: var(--card, #f3f1ed); }
+.tray-copy-btn.tray-copy-success { color: #2c8a3d; }
+
+/* =====================================================================
+   9.4 — Recent Sources in State A
+   ===================================================================== */
+.recent-sources-section { margin-bottom: 8px; }
+
+.recent-sources-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted, #666);
+  margin-bottom: 4px;
+}
+
+.recent-sources-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.recent-source-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #d9d8d3);
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.1s, border-color 0.1s;
+  user-select: none;
+}
+.recent-source-item:hover {
+  background: var(--card, #f3f1ed);
+  border-color: #b0bec9;
+}
+
+.recent-source-icon { font-size: 12px; flex-shrink: 0; }
+
+.recent-source-label {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--sefaria-blue, #18345d);
+  font-weight: 500;
+}
+
+.recent-source-category {
+  font-size: 10px;
+  color: var(--muted, #666);
+  background: var(--card, #f3f1ed);
+  border-radius: 3px;
+  padding: 1px 4px;
+  flex-shrink: 0;
+}
 </style>
