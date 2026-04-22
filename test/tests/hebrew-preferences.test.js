@@ -82,6 +82,55 @@ test('applies Hebrew divine-name replacements after display normalization', () =
   assert.equal(output.heRef, 'יי א׳');
 });
 
+test('unified applyDivineNameReplacements handles both languages in one pass', () => {
+  const props = {
+    apply_sheimot_on_insertion: 'true',
+    meforash_replace: 'true',
+    meforash_replacement: 'יי',
+    god_replace: 'true',
+    god_replacement: 'G-d',
+  };
+  const ctx = loadAppsScriptFiles(['apps-script/Code.gs'], props);
+  const input = {
+    he: 'יְהֹוָה',
+    heRef: 'יְהֹוָה א׳',
+    text: 'Blessed is God in His glory',
+  };
+  const output = ctx.applyDivineNameReplacements(input, ctx.PropertiesService.getUserProperties());
+  assert.equal(output.he, 'יי');
+  assert.equal(output.heRef, 'יי א׳');
+  assert.equal(output.text, 'Blessed is G-d in His glory');
+  // Input was not mutated (clone contract).
+  assert.equal(input.he, 'יְהֹוָה');
+});
+
+test('applyEnglishDivineNamePreference wrapper still mutates in place', () => {
+  const props = {
+    apply_sheimot_on_insertion: 'true',
+    god_replace: 'true',
+    god_replacement: 'G-d',
+  };
+  const ctx = loadAppsScriptFiles(['apps-script/Code.gs'], props);
+  const input = { text: 'God said: let there be light' };
+  ctx.applyEnglishDivineNamePreference(input, ctx.PropertiesService.getUserProperties());
+  assert.equal(input.text, 'G-d said: let there be light');
+});
+
+test('divine-name replacements are gated by apply_sheimot_on_insertion', () => {
+  const props = {
+    apply_sheimot_on_insertion: 'false',
+    meforash_replace: 'true',
+    meforash_replacement: 'יי',
+    god_replace: 'true',
+    god_replacement: 'G-d',
+  };
+  const ctx = loadAppsScriptFiles(['apps-script/Code.gs'], props);
+  const input = { he: 'יְהֹוָה', text: 'God' };
+  const output = ctx.applyDivineNameReplacements(input, ctx.PropertiesService.getUserProperties());
+  assert.equal(output.he, 'יְהֹוָה');
+  assert.equal(output.text, 'God');
+});
+
 test('transliteration honors explicit override maps during insertion path', () => {
   const ctx = loadAppsScriptFiles(['apps-script/transliteration.gs'], {});
   const text = 'חַג';

@@ -603,74 +603,88 @@ function applyHebrewDisplayPreferences(data, userProperties) {
   return clone;
 }
 
-function applyHebrewDivineNamePreferences(data, userProperties) {
-  if (!data || typeof data !== 'object') {
-    return data;
+/**
+ * Config-driven union of the Hebrew and English divine-name replacement passes.
+ * One gate (`apply_sheimot_on_insertion`) covers both. Each rule names the
+ * preference that enables it, the preference (or literal) that holds the
+ * substitute, the regex pattern, and the data fields it should sweep over.
+ * Returns a cloned `data` with all enabled replacements applied. Callers that
+ * only want one language can pass `{ hebrew: true, english: false }` (or vice
+ * versa) in `options`; default is both.
+ */
+function applyDivineNameReplacements(data, userProperties, options) {
+  if (!data || typeof data !== 'object') return data;
+  if (userProperties.getProperty("apply_sheimot_on_insertion") != "true") return data;
+
+  const includeHebrew = !options || options.hebrew !== false;
+  const includeEnglish = !options || options.english !== false;
+
+  const allRules = [];
+  if (includeHebrew) {
+    allRules.push({ enabledBy: "meforash_replace", pattern: /י[֑-ׇ]*ה[֑-ׇ]*ו[֑-ׇ]*ה[֑-ׇ]*/g, replacementKey: "meforash_replacement", requireReplacement: true, fields: ["he", "heRef"] });
+    allRules.push({ enabledBy: "yaw_replace",      pattern: /י[֑-ׇ]*ה[֑-ׇ]*/g,                    replacementKey: "yaw_replacement",      requireReplacement: false, fields: ["he", "heRef"] });
+    allRules.push({ enabledBy: "elodim_replace",   pattern: /א[֑-ׇ]*ל[֑-ׇ]*ו[֑-ׇ]*ה[֑-ׇ]*י[֑-ׇ]*ם[֑-ׇ]*/g, replacementKey: "elodim_replacement",   requireReplacement: false, fields: ["he", "heRef"] });
+  }
+  if (includeEnglish) {
+    allRules.push({ enabledBy: "god_replace", pattern: /\bGod\b/g, replacementKey: "god_replacement", defaultReplacement: "G-d", requireReplacement: false, fields: ["text"] });
   }
 
-  if (userProperties.getProperty("apply_sheimot_on_insertion") != "true") {
-    return data;
+  const activeRules = [];
+  for (const rule of allRules) {
+    if (userProperties.getProperty(rule.enabledBy) != "true") continue;
+    const replacement = userProperties.getProperty(rule.replacementKey);
+    if (rule.requireReplacement && !replacement) continue;
+    activeRules.push({
+      pattern: rule.pattern,
+      replacement: replacement || rule.defaultReplacement || "",
+      fields: rule.fields,
+    });
   }
+  if (!activeRules.length) return data;
 
-  const meforashReplacement = userProperties.getProperty("meforash_replacement");
-  const replacements = [];
-
-  if (userProperties.getProperty("meforash_replace") == "true" && meforashReplacement) {
-    replacements.push({ pattern: /י[֑-ׇ]*ה[֑-ׇ]*ו[֑-ׇ]*ה[֑-ׇ]*/g, replacement: meforashReplacement });
-  }
-  if (userProperties.getProperty("yaw_replace") == "true") {
-    replacements.push({ pattern: /י[֑-ׇ]*ה[֑-ׇ]*/g, replacement: userProperties.getProperty("yaw_replacement") || '' });
-  }
-  if (userProperties.getProperty("elodim_replace") == "true") {
-    replacements.push({ pattern: /א[֑-ׇ]*ל[֑-ׇ]*ו[֑-ׇ]*ה[֑-ׇ]*י[֑-ׇ]*ם[֑-ׇ]*/g, replacement: userProperties.getProperty("elodim_replacement") || '' });
-  }
-
-  if (!replacements.length) {
-    return data;
-  }
-
-  const applyReplacements = function(node) {
-    if (Array.isArray(node)) {
-      return node.map(function(value) { return applyReplacements(value); });
-    }
+  const sweep = (node, rules) => {
+    if (Array.isArray(node)) return node.map((value) => sweep(value, rules));
     if (typeof node === 'string') {
-      return replacements.reduce(function(current, rule) {
-        return current.replace(rule.pattern, rule.replacement);
-      }, node);
+      return rules.reduce((current, rule) => current.replace(rule.pattern, rule.replacement), node);
     }
     return node;
   };
 
-  const clone = JSON.parse(JSON.stringify(data));
-  ['he', 'heRef'].forEach(function(field) {
-    if (Object.prototype.hasOwnProperty.call(clone, field)) {
-      clone[field] = applyReplacements(clone[field]);
+  const rulesByField = {};
+  for (const rule of activeRules) {
+    for (const field of rule.fields) {
+      (rulesByField[field] = rulesByField[field] || []).push(rule);
     }
-  });
+  }
+
+  const clone = JSON.parse(JSON.stringify(data));
+  for (const field of Object.keys(rulesByField)) {
+    if (Object.prototype.hasOwnProperty.call(clone, field)) {
+      clone[field] = sweep(clone[field], rulesByField[field]);
+    }
+  }
   return clone;
 }
 
+/**
+ * Legacy Hebrew-only wrapper. Retained for the Node unit tests; new server
+ * code should call `applyDivineNameReplacements` directly.
+ */
+function applyHebrewDivineNamePreferences(data, userProperties) {
+  return applyDivineNameReplacements(data, userProperties, { hebrew: true, english: false });
+}
+
+/**
+ * Legacy English-only wrapper. Mutates `data.text` in place to preserve the
+ * pre-refactor call-site contract (`apply...(data, userProperties)` with no
+ * return-value usage).
+ */
 function applyEnglishDivineNamePreference(data, userProperties) {
-  if (!data || userProperties.getProperty("god_replace") != "true") {
-    return;
+  if (!data) return;
+  const replaced = applyDivineNameReplacements(data, userProperties, { hebrew: false, english: true });
+  if (replaced !== data && Object.prototype.hasOwnProperty.call(replaced, 'text')) {
+    data.text = replaced.text;
   }
-
-  if (userProperties.getProperty("apply_sheimot_on_insertion") != "true") {
-    return;
-  }
-
-  const replacement = userProperties.getProperty("god_replacement") || "G-d";
-  const replaceInNode = (node) => {
-    if (Array.isArray(node)) {
-      return node.map((value) => replaceInNode(value));
-    }
-    if (typeof node === 'string') {
-      return node.replace(/\bGod\b/g, replacement);
-    }
-    return node;
-  };
-
-  data.text = replaceInNode(data.text);
 }
 
 function getTypographySettings() {
