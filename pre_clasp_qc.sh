@@ -306,7 +306,56 @@ if not found_orphan:
 PY
 )
 
-blue "-- 9) Optional: clasp status --"
+blue "-- 9) innerHTML writes must have an adjacent justification comment --"
+while IFS= read -r line; do
+  case "$line" in
+    FAIL:*) note_fail "${line#FAIL: }" ;;
+    WARN:*) note_warn "${line#WARN: }" ;;
+    OK:*)   note_ok   "${line#OK: }" ;;
+  esac
+done < <(python3 - <<'PY'
+# Any `.innerHTML =` write in a shipped .html file must have a comment on the
+# line immediately above it, or anywhere in the preceding 5 lines, explaining
+# why textContent + document.createElement is not appropriate. This catches
+# the common "quick fix that introduces XSS" anti-pattern before clasp push.
+import os, re
+from pathlib import Path
+
+INNER_HTML_ASSIGN = re.compile(r'\.\s*innerHTML\s*=')
+COMMENT_LINE = re.compile(r'^\s*(//|/\*|\*)')  # JS single-line, block-start, or continuation
+
+unannotated = []
+for dirpath, _dirs, files in os.walk("."):
+    if "node_modules" in dirpath.split(os.sep):
+        continue
+    for name in files:
+        if not name.endswith(".html"):
+            continue
+        path = os.path.join(dirpath, name)
+        try:
+            text = Path(path).read_text(encoding="utf-8")
+        except Exception:
+            continue
+        lines = text.split("\n")
+        for i, ln in enumerate(lines):
+            if not INNER_HTML_ASSIGN.search(ln):
+                continue
+            # Walk the preceding 5 lines looking for a comment.
+            lo = max(0, i - 5)
+            found_comment = any(COMMENT_LINE.match(lines[j]) for j in range(lo, i))
+            if not found_comment:
+                unannotated.append(f"{path}:{i+1}: {ln.strip()}")
+
+if unannotated:
+    print("FAIL: Unannotated `.innerHTML =` writes — add a justification comment or switch to textContent:")
+    for u in unannotated:
+        print("  - " + u)
+else:
+    print("OK: Every .innerHTML assignment has an adjacent justification comment.")
+PY
+)
+
+blue "-- 10) Optional: clasp status --"
 if command -v clasp >/dev/null 2>&1; then
   if clasp status >/dev/null 2>&1; then
     note_ok "clasp status succeeded."

@@ -111,6 +111,9 @@
       const scheme = byId('transliteration_scheme');
       const preview = byId('transliteration_preview');
       if (!scheme || !preview) return;
+      // Both operands are local constants: the <span> literal is static, and
+      // transliterationExamples is a hand-authored const lookup at the top of
+      // this file. No user input is interpolated.
       preview.innerHTML = '<span class="label">Preview</span>' + (transliterationExamples[scheme.value] || transliterationExamples.simple_english);
       updateStandardPreview('transliteration_font', 'transliteration_preview', 'transliteration_font_style');
     }
@@ -314,6 +317,7 @@
     function renderOverrideGrid() {
       const grid = byId('override_grid');
       if (!grid) return;
+      // Clear: constant empty string; equivalent to replaceChildren().
       grid.innerHTML = '';
       overrideChars.forEach(function(ch) {
         const btn = document.createElement('button');
@@ -345,9 +349,12 @@
       if (!list) return;
       const keys = Object.keys(transliterationOverrides).sort();
       if (!keys.length) {
+        // Constant literal string.
         list.innerHTML = '<div class="mini-help">No transliteration overrides saved.</div>';
         return;
       }
+      // Every user-sourced value is passed through `escapeHtml`. If you
+      // change this builder, keep every interpolation escaped.
       list.innerHTML = keys.map(function(k) {
         return '<div class="override-item"><span><strong>' + escapeHtml(k) + '</strong> → ' + escapeHtml(transliterationOverrides[k]) + '</span></div>';
       }).join('');
@@ -374,6 +381,7 @@
       button.className = 'custom-select-button';
       button.setAttribute('aria-haspopup', 'listbox');
       button.setAttribute('aria-expanded', 'false');
+      // Constant literal; two empty <span>s for the select widget's scaffolding.
       button.innerHTML = '<span class="custom-select-value"></span><span class="custom-select-caret">▾</span>';
 
       const menu = document.createElement('div');

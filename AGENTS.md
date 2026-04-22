@@ -45,12 +45,22 @@ fixed more than once.
    server-side (i.e. not in the add-on), bound to a real account.
    See `docs/ai-lesson/DESIGN.md` for the longer argument.
 5. **Never write `.innerHTML` without a one-line comment explaining
-   why `textContent` won't do.** The pre-clasp QC check enforces a
-   justification comment adjacent to every `.innerHTML` write. See
-   Stage 5 of the cleanup plan for the audit policy.
+   why `textContent` won't do.** Every current `.innerHTML` assignment
+   in `apps-script/**/*.html` has a justification comment on the line
+   above; `pre_clasp_qc.sh` check 9 flags any new unannotated write.
+   If you're adding one, either (a) refactor to `textContent` +
+   `document.createElement`, or (b) add the justification comment
+   next to the assignment explaining the static/escaped provenance
+   of every interpolated value.
 6. **Never add OAuth scopes without a PR-level justification** in
    the commit message. Scopes appear on the Marketplace consent screen
    and cannot be silently removed once users have approved them.
+7. **Never pass `UserProperties` values, credentials, API keys, or
+   raw user document text to `Logger.log`.** Existing call sites only
+   log `error.message`, function names, and reference strings the
+   user already entered — keep it that way. If you need to diagnose
+   a bug, add a structured payload with known-safe fields, not a
+   blanket dump.
 7. **Never break an entry in `docs/rpc-surface.json`.** Every
    server-side function reachable from `google.script.run` is listed
    there with its arity. Renaming, removing, or changing arity without
