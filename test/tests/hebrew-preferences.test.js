@@ -69,6 +69,7 @@ test('normalizes legacy teamim filter values and keeps Tanakh text intact when a
 
 test('applies Hebrew divine-name replacements after display normalization', () => {
   const props = {
+    apply_sheimot_on_insertion: 'true',
     meforash_replace: 'true',
     meforash_replacement: 'יי',
     yaw_replace: 'false',
