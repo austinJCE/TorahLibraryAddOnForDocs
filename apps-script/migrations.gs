@@ -21,7 +21,7 @@ public entry point; it is safe to call from any event handler.
 */
 
 var PREFS_SCHEMA_KEY_ = 'prefs_schema_version';
-var PREFS_SCHEMA_CURRENT_ = '2';
+var PREFS_SCHEMA_CURRENT_ = '3';
 
 function runUserPreferenceMigrationsIfNeeded_() {
   var userProperties = PropertiesService.getUserProperties();
@@ -32,6 +32,10 @@ function runUserPreferenceMigrationsIfNeeded_() {
 
   if (!current) {
     migrateToV2_(userProperties);
+  }
+  // v2 -> v3: AI feature was detached; remove any stored AI state.
+  if (current !== '3') {
+    migrateToV3_(userProperties);
   }
 
   userProperties.setProperty(PREFS_SCHEMA_KEY_, PREFS_SCHEMA_CURRENT_);
@@ -50,6 +54,37 @@ function runUserPreferenceMigrationsIfNeeded_() {
 function migrateToV2_(userProperties) {
   if (userProperties.getProperty('apply_sheimot_on_insertion') == null) {
     userProperties.setProperty('apply_sheimot_on_insertion', 'true');
+  }
+  return true;
+}
+
+/**
+ * V3: the AI lesson feature was detached from the shipped add-on (see
+ * docs/ai-lesson/DESIGN.md). Remove every AI-related key — both the
+ * saved-API-key storage that never should have existed and the per-user
+ * defaults that no longer have any consumers. This keeps the
+ * UserProperties shape aligned with the shipped code and also makes the
+ * user safer: stale plaintext keys disappear from PropertiesService on
+ * first open after the upgrade.
+ */
+function migrateToV3_(userProperties) {
+  var aiKeys = [
+    'experimental_ai_source_sheet_enabled',
+    'ai_provider_default',
+    'ai_model_default',
+    'ai_key_strategy_default',
+    'ai_audience_default',
+    'ai_lesson_style_default',
+    'ai_duration_default',
+    'ai_user_key_openai',
+    'ai_user_key_anthropic',
+    'ai_user_key_gemini',
+    'ai_managed_last_used_at_openai',
+    'ai_managed_last_used_at_anthropic',
+    'ai_managed_last_used_at_gemini'
+  ];
+  for (var i = 0; i < aiKeys.length; i++) {
+    try { userProperties.deleteProperty(aiKeys[i]); } catch (_e) { /* ignore */ }
   }
   return true;
 }

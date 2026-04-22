@@ -128,6 +128,10 @@ Behavior summary:
 4. If no source is found, it still emits a version-title-only block when possible.
 5. If no usable translation version title is available, no translation-details block is inserted.
 
+## AI lesson generator (deferred)
+
+An AI-assisted lesson / shiur drafting feature was developed on the rewrite branch and **is not shipped in v1**. The design — including both the Merkaz-gateway route and a future Sefaria-hosted gateway recommendation — is preserved in [`docs/ai-lesson/DESIGN.md`](./docs/ai-lesson/DESIGN.md). The source files are preserved, not shipped, under [`reference/ai-lesson/`](./reference/ai-lesson/). If you are picking this up (including upstream Sefaria.org engineers), start with the design doc: it documents the trade-offs that kept the feature out of v1 and the checklist that any revival should work through.
+
 ## Menu actions
 
 The add-on menu includes:

@@ -31,16 +31,6 @@
     "<?!= include('shared/ui/state'); ?>",
     "<?!= include('preferences/js'); ?>"
   ],
-  "ai_lesson.html": [
-    "<?!= include('shared/ui/head'); ?>",
-    "<?!= include('ai-lesson/css'); ?>",
-    "<?!= include('shared/ui/core-shared'); ?>",
-    "<?!= include('shared/ui/api'); ?>",
-    "<?!= include('shared/ui/dom'); ?>",
-    "<?!= include('shared/ui/feedback'); ?>",
-    "<?!= include('shared/ui/state'); ?>",
-    "<?!= include('ai-lesson/js'); ?>"
-  ],
   "surprise-me.html": [
     "<?!= include('shared/ui/head'); ?>",
     "<?!= include('surprise-me/css'); ?>",

@@ -20,6 +20,10 @@ function makeUserPropertiesMock(initial = {}) {
       store[name] = String(value);
       return this;
     },
+    deleteProperty(name) {
+      delete store[name];
+      return this;
+    },
   };
 }
 
@@ -36,11 +40,11 @@ function loadMigrations(initialProps = {}) {
   return { context, userProperties };
 }
 
-test('fresh install on v2 does not rewrite anything', () => {
+test('fresh install at current schema version does not rewrite anything', () => {
   // A new user installs the add-on; onInstall has already populated defaults,
   // and the schema version is already up to date. No migration work.
   const { context, userProperties } = loadMigrations({
-    prefs_schema_version: '2',
+    prefs_schema_version: '3',
     apply_sheimot_on_insertion: 'true',
   });
   const rewrote = context.runUserPreferenceMigrationsIfNeeded_();
@@ -60,7 +64,7 @@ test('upgrading user without apply_sheimot_on_insertion gets it set to "true"', 
   const rewrote = context.runUserPreferenceMigrationsIfNeeded_();
   assert.equal(rewrote, true);
   assert.equal(userProperties.getProperty('apply_sheimot_on_insertion'), 'true');
-  assert.equal(userProperties.getProperty('prefs_schema_version'), '2');
+  assert.equal(userProperties.getProperty('prefs_schema_version'), '3');
 });
 
 test('migration is idempotent — second call does nothing', () => {
@@ -79,5 +83,30 @@ test('user who explicitly set apply_sheimot_on_insertion to "false" before migra
   });
   context.runUserPreferenceMigrationsIfNeeded_();
   assert.equal(userProperties.getProperty('apply_sheimot_on_insertion'), 'false');
-  assert.equal(userProperties.getProperty('prefs_schema_version'), '2');
+  assert.equal(userProperties.getProperty('prefs_schema_version'), '3');
+});
+
+test('v3 migration scrubs stored AI state', () => {
+  const { context, userProperties } = loadMigrations({
+    prefs_schema_version: '2',
+    apply_sheimot_on_insertion: 'true',
+    ai_user_key_openai: 'sk-secret-123',
+    ai_user_key_anthropic: 'sk-ant-456',
+    ai_provider_default: 'openai',
+    ai_audience_default: 'Adult learners',
+    ai_managed_last_used_at_openai: '1700000000000',
+    hebrew_font: 'Noto Sans Hebrew',
+  });
+  const rewrote = context.runUserPreferenceMigrationsIfNeeded_();
+  assert.equal(rewrote, true);
+  assert.equal(userProperties.getProperty('prefs_schema_version'), '3');
+  // Every AI key is gone.
+  assert.equal(userProperties.getProperty('ai_user_key_openai'), null);
+  assert.equal(userProperties.getProperty('ai_user_key_anthropic'), null);
+  assert.equal(userProperties.getProperty('ai_provider_default'), null);
+  assert.equal(userProperties.getProperty('ai_audience_default'), null);
+  assert.equal(userProperties.getProperty('ai_managed_last_used_at_openai'), null);
+  // Unrelated preferences survive.
+  assert.equal(userProperties.getProperty('hebrew_font'), 'Noto Sans Hebrew');
+  assert.equal(userProperties.getProperty('apply_sheimot_on_insertion'), 'true');
 });
