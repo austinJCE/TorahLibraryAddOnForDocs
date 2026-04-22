@@ -4,6 +4,14 @@ A Google Docs add-on that brings Sefaria-powered source finding, previewing, ins
 
 > This is not an official Sefaria project.
 
+## Contributing (human or AI)
+
+Before editing anything beyond a typo, read **[`AGENTS.md`](./AGENTS.md)** (also duplicated as `CLAUDE.md`). It covers: what this codebase actually is, the non-negotiable rules, the anti-pattern catalog, and where the canonical documents live. Companion docs:
+
+- [`docs/architecture.md`](./docs/architecture.md) — server/client boundary, storage layers, RPC surface, include graph.
+- [`docs/regression-log.md`](./docs/regression-log.md) — every bug that has regressed silently, with the pinning test now holding it down.
+- [`docs/rpc-surface.json`](./docs/rpc-surface.json) — the frozen list of server functions reachable from the client.
+
 ## Project overview
 
 This repository contains the Google Apps Script code and add-on UI templates used to:

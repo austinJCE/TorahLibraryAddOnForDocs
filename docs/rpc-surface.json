@@ -1,0 +1,47 @@
+{
+  "_description": "Frozen list of every server-side Apps Script function reachable from the client via `google.script.run`. Renaming, removing, or changing the arity of any of these silently breaks the sidebar or a dialog. The `rpc-surface.test.js` contract test enforces this in both directions: every listed function must still exist at the listed arity, and every `google.script.run.X` call in the client must resolve to a listed function. Update this file in the same commit that legitimately changes the surface, and add a row to `docs/regression-log.md`.",
+  "_knownBrokenCalls": [
+    {
+      "name": "refreshSidebarAfterPreferences",
+      "calledFrom": "apps-script/preferences/js.html:791",
+      "note": "Clicking the 'Refresh Sidebar' button in preferences calls a server function that does not exist. The click silently no-ops. Restoring this is a Stage 2 item; leaving the name on _knownBrokenCalls keeps the contract test passing until then."
+    }
+  ],
+  "functions": [
+    { "name": "buildAndInstallMenu", "arity": 0, "definedIn": "apps-script/Code.gs" },
+    { "name": "checkSessionLibraryAction", "arity": 0, "definedIn": "apps-script/Code.gs" },
+    { "name": "clearSavedAiKey", "arity": 1, "definedIn": "apps-script/Code.gs" },
+    { "name": "clearSidebarSessionState", "arity": 1, "definedIn": "apps-script/Code.gs" },
+    { "name": "findReference", "arity": 3, "definedIn": "apps-script/Code.gs" },
+    { "name": "findSearchAdvanced", "arity": 4, "definedIn": "apps-script/Code.gs" },
+    { "name": "generateAiLessonDraft", "arity": 1, "definedIn": "apps-script/AiLessonGateway.gs" },
+    { "name": "getAiLessonBootstrapData", "arity": 0, "definedIn": "apps-script/AiLessonGateway.gs" },
+    { "name": "getDefaultPreferences", "arity": 0, "definedIn": "apps-script/Code.gs" },
+    { "name": "getNameCandidates", "arity": 1, "definedIn": "apps-script/Code.gs" },
+    { "name": "getPreferences", "arity": 0, "definedIn": "apps-script/Code.gs" },
+    { "name": "getSavedAiKeyPreview", "arity": 1, "definedIn": "apps-script/Code.gs" },
+    { "name": "getSidebarBootstrapData", "arity": 2, "definedIn": "apps-script/Code.gs" },
+    { "name": "insertLexiconEntry", "arity": 1, "definedIn": "apps-script/Code.gs" },
+    { "name": "insertReference", "arity": 9, "definedIn": "apps-script/Code.gs" },
+    { "name": "insertSheet", "arity": 2, "definedIn": "apps-script/Code.gs" },
+    { "name": "insertSurpriseMe", "arity": 1, "definedIn": "apps-script/surprise-me-feature.gs" },
+    { "name": "linkerHTML", "arity": 0, "definedIn": "apps-script/Code.gs" },
+    { "name": "openAiLessonGenerator", "arity": 0, "definedIn": "apps-script/Code.gs" },
+    { "name": "openFeedbackModal", "arity": 0, "definedIn": "apps-script/Code.gs" },
+    { "name": "openHelpModal", "arity": 0, "definedIn": "apps-script/Code.gs" },
+    { "name": "preferencesPopup", "arity": 0, "definedIn": "apps-script/Code.gs" },
+    { "name": "previewTransliterationWithOverrides", "arity": 2, "definedIn": "apps-script/transliteration.gs" },
+    { "name": "returnTitles", "arity": 0, "definedIn": "apps-script/Code.gs" },
+    { "name": "saveAiKeyFromPreferences", "arity": 2, "definedIn": "apps-script/Code.gs" },
+    { "name": "saveSessionLibraryAction", "arity": 1, "definedIn": "apps-script/Code.gs" },
+    { "name": "saveSidebarSessionAsAccountDefaults", "arity": 1, "definedIn": "apps-script/Code.gs" },
+    { "name": "searchLexicon", "arity": 1, "definedIn": "apps-script/Code.gs" },
+    { "name": "searchVoices", "arity": 2, "definedIn": "apps-script/Code.gs" },
+    { "name": "sessionLibraryPopup", "arity": 1, "definedIn": "apps-script/Code.gs" },
+    { "name": "setAccountPreferences", "arity": 1, "definedIn": "apps-script/Code.gs" },
+    { "name": "setPreferences", "arity": 1, "definedIn": "apps-script/Code.gs" },
+    { "name": "setSidebarSessionState", "arity": 2, "definedIn": "apps-script/Code.gs" },
+    { "name": "surpriseMeHTML", "arity": 0, "definedIn": "apps-script/surprise-me-feature.gs" },
+    { "name": "transformDivineNames", "arity": 0, "definedIn": "apps-script/Code.gs" }
+  ]
+}
