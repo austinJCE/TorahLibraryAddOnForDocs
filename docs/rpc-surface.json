@@ -1,12 +1,6 @@
 {
   "_description": "Frozen list of every server-side Apps Script function reachable from the client via `google.script.run`. Renaming, removing, or changing the arity of any of these silently breaks the sidebar or a dialog. The `rpc-surface.test.js` contract test enforces this in both directions: every listed function must still exist at the listed arity, and every `google.script.run.X` call in the client must resolve to a listed function. Update this file in the same commit that legitimately changes the surface, and add a row to `docs/regression-log.md`.",
-  "_knownBrokenCalls": [
-    {
-      "name": "refreshSidebarAfterPreferences",
-      "calledFrom": "apps-script/preferences/js.html:791",
-      "note": "Clicking the 'Refresh Sidebar' button in preferences calls a server function that does not exist. The click silently no-ops. Restoring this is a Stage 2 item; leaving the name on _knownBrokenCalls keeps the contract test passing until then."
-    }
-  ],
+  "_knownBrokenCalls": [],
   "functions": [
     { "name": "buildAndInstallMenu", "arity": 0, "definedIn": "apps-script/Code.gs" },
     { "name": "checkSessionLibraryAction", "arity": 0, "definedIn": "apps-script/Code.gs" },
@@ -31,6 +25,7 @@
     { "name": "openHelpModal", "arity": 0, "definedIn": "apps-script/Code.gs" },
     { "name": "preferencesPopup", "arity": 0, "definedIn": "apps-script/Code.gs" },
     { "name": "previewTransliterationWithOverrides", "arity": 2, "definedIn": "apps-script/transliteration.gs" },
+    { "name": "refreshSidebarAfterPreferences", "arity": 0, "definedIn": "apps-script/Code.gs" },
     { "name": "returnTitles", "arity": 0, "definedIn": "apps-script/Code.gs" },
     { "name": "saveAiKeyFromPreferences", "arity": 2, "definedIn": "apps-script/Code.gs" },
     { "name": "saveSessionLibraryAction", "arity": 1, "definedIn": "apps-script/Code.gs" },

@@ -148,8 +148,6 @@ function onInstall() {
   DocumentApp.getUi().showModalDialog(html, 'Release Notes');
 }
 
-let extendedGemaraPreference = false;
-
 function buildAndInstallMenu() {
   const ui = DocumentApp.getUi();
   const addOnMenu = ui.createAddonMenu();
@@ -194,6 +192,7 @@ function onOpen(e) {
   // Per Google Workspace add-on guidance, avoid reading PropertiesService while
   // the add-on is still in AuthMode.NONE so the menu always renders.
   if (!e || e.authMode !== ScriptApp.AuthMode.NONE) {
+    runUserPreferenceMigrationsIfNeeded_();
     buildAndInstallMenu();
   } else {
     // During AuthMode.NONE, create a minimal menu without reading preferences
@@ -237,11 +236,25 @@ function openSharedSidebar_(mode) {
     .setTitle('Sefaria')
     .setWidth(300);
   DocumentApp.getUi().showSidebar(output);
-  extendedGemaraPreference = PropertiesService.getUserProperties().getProperty("extended_gemara");
 }
 
 function textsHTML() {
   openSharedSidebar_('texts');
+}
+
+/**
+ * Re-open the main sidebar after a preference change from the preferences
+ * dialog. Reopening (rather than trying to mutate the live sidebar) gives
+ * the caller a guaranteed-fresh session: the new sidebar's bootstrap gets
+ * a fresh `sessionId`, so any `CacheService`-stored "sidebar-only" session
+ * overrides from the previous session become unreachable (they time out on
+ * their own TTL). Called from the "Refresh Sidebar" button in
+ * apps-script/preferences/js.html. See docs/regression-log.md for the
+ * silent-no-op bug this replaces.
+ */
+function refreshSidebarAfterPreferences() {
+  openSharedSidebar_();
+  return true;
 }
 
 function voicesHTML() {
@@ -253,6 +266,7 @@ function lexiconHTML() {
 }
 
 function getSidebarBootstrapData(mode, sessionId) {
+  runUserPreferenceMigrationsIfNeeded_();
   const accountPreferences = getAccountPreferences();
   const resolvedMode = (mode === 'voices' || mode === 'experimental' || mode === 'texts' || mode === 'lexicon') ? mode : getSearchMode_();
   const resolvedSessionId = sessionId || generateSidebarSessionId_();
@@ -765,24 +779,21 @@ function formatDataForPesukim(data, pesukim) {
   let heTextWrapper = "", enTextWrapper = "", fromVerse = (data["sections"][1]) ? data["sections"][1] : 1;
   
   function addHebrewVerse(text, wrapper, pesukim, number) {
-    let editedText = text;
-    if(pesukim) {
-        editedText = "("+gematriya(number, {punctuate: false})+") "+text+"\n";
-    } else {
-        editedText = text + "\n";
+    // When line markers are on, each verse gets a numbered header and its own
+    // line (newline separator). When line markers are off, verses run together
+    // as prose with a single space between them — matching the original
+    // non-pesukim behavior before the rewrite appended `\n` unconditionally.
+    // See docs/regression-log.md.
+    if (pesukim) {
+      return wrapper + "(" + gematriya(number, { punctuate: false }) + ") " + text + "\n";
     }
-    wrapper+=editedText;
-    return wrapper;
+    return wrapper + (wrapper ? " " : "") + text;
   }
   function addEnglishVerse(text, wrapper, pesukim, number) {
-    let editedText = text;
-      if(pesukim) {
-        editedText = "("+number+") "+text+"\n";
-      } else {
-        editedText = text + "\n";
-      };
-      wrapper+=editedText;
-      return wrapper;
+    if (pesukim) {
+      return wrapper + "(" + number + ") " + text + "\n";
+    }
+    return wrapper + (wrapper ? " " : "") + text;
   }
 
   if(data.isSpanning) {
@@ -1240,6 +1251,14 @@ violates encapsulation principles because Google Apps Script for some reason doe
 function insertRichTextFromHTML(element, htmlString) {
   // Technical debt: text preprocessing concerns (e.g. translation cleanup) still live in the HTML parser path.
   // Long-term, preprocessing should be separated from tag-to-rich-text rendering.
+
+  // Read the extended-Gemara preference fresh on each call. Previously this
+  // came from a module-scope global that was only set when the sidebar
+  // opened, so Quick-Actions menu paths (which never open the sidebar) saw
+  // a stale `false` and never stripped Steinsaltz-style <strong>/<i> markup.
+  // See docs/regression-log.md.
+  const extendedGemaraPreference =
+    PropertiesService.getUserProperties().getProperty("extended_gemara") === "true";
 
   element = element.editAsText();
   let buf = [];
