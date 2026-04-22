@@ -94,7 +94,7 @@ Persistent user preferences include:
 - Hebrew font and font size defaults,
 - Translation font and font size defaults,
 - optional English divine-name replacement,
-- preference-gated legacy features such as Popcorn.
+- preference-gated experimental features such as Surprise Me.
 
 ### Structural-node handling
 
@@ -136,12 +136,13 @@ An AI-assisted lesson / shiur drafting feature was developed on the rewrite bran
 
 The add-on menu includes:
 
-- **Find & Insert Source**
-- **Transform Divine Names**
-- **Link Texts with Sefaria**
+- **Texts** — unified Find & Insert sidebar (default).
+- **Voices** — commentary/voices search with insert controls.
+- **Lexicon** — reverse-lookup dictionary.
+- **Quick Actions** submenu — Transform Divine Names, Link Texts with Sefaria, Gematriya Count.
 - **Preferences**
-- **Support**
-- **Popcorn** (legacy/original-developer feature, preference-gated)
+- **Help & Support**
+- **Surprise Me** — preference-gated experimental feature (random-reference discovery).
 
 ## Demo and walkthrough
 
@@ -156,19 +157,23 @@ The add-on menu includes:
 
 ### Apps Script implementation
 
-All Google Apps Script source files now live under `apps-script/`:
+All Google Apps Script source files live under `apps-script/` (clasp rootDir):
 
-- `apps-script/Code.gs` - Main Apps Script server logic (menu setup, Sefaria API calls, insertion, linking, preferences, divine-name transforms, typography application).
-- `apps-script/appsscript.json` - Apps Script project manifest.
-- `apps-script/attribution.js` - Pure helper module for translation/source attribution logic.
-- `apps-script/consts.gs` - Constants and supporting data.
-- `apps-script/main.html` - Unified Find & Insert sidebar UI.
-- `apps-script/preferences.html` - Preferences dialog UI.
-- `apps-script/release-notes.html` - Release notes modal.
-- `apps-script/support-and-features.html` - Support/feature request modal.
-- `apps-script/popcorn.html` - Legacy/original-developer Popcorn feature UI.
-- `apps-script/search.html` - Legacy search UI retained only as historical/reference material if still present.
-- `apps-script/package.json` - Local package metadata for lightweight test tooling.
+- `apps-script/Code.gs` — main server logic: menu, Sefaria API, insertion, linking, preferences, divine-name transforms, typography.
+- `apps-script/appsscript.json` — Apps Script project manifest.
+- `apps-script/attribution.gs` — dual-mode (Apps Script + Node test) helper for translation/source attribution.
+- `apps-script/config.gs` — `DEV_FLAGS` object.
+- `apps-script/gematriya.gs` — gematriya numerals.
+- `apps-script/migrations.gs` — schema-versioned `UserProperties` migrations keyed by `prefs_schema_version`.
+- `apps-script/surprise-me-feature.gs` — "surprise me" random-reference feature.
+- `apps-script/transliteration.gs` — Hebrew→Latin transliteration engine with biblical-dagesh mode.
+- `apps-script/ui_core.gs` — shared UI-side helpers.
+- `apps-script/sidebar.html` — main sidebar entry template (composes `sidebar/js/*.html` partials).
+- `apps-script/preferences.html` + `apps-script/preferences/` — preferences dialog entry template and its CSS/JS partials.
+- `apps-script/surprise-me.html` + `apps-script/surprise-me/` — surprise-me dialog.
+- `apps-script/help-modal.html`, `feedback-modal.html`, `session-library-modal.html`, `gematriya-count.html`, `release-notes.html` — standalone modal dialogs.
+- `apps-script/css/` — tokens and component styles composed via `include()`.
+- `apps-script/shared/` — ui-head, composition-card, and core shared partials pulled into every entry template.
 
 ### Documentation
 
