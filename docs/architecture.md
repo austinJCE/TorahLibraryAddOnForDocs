@@ -160,3 +160,27 @@ covers, update the guardrail in the same commit. If a guardrail is
 in the way, ask whether the change is really correct before disabling
 the guardrail. These exist because the same bugs have landed more
 than once.
+
+## Follow-up: full Code.gs domain split
+
+The cleanup plan called for splitting `Code.gs` into per-domain files
+under `apps-script/server/*.gs` (menu / preferences / sefaria-fetch /
+text-processing / insertion / search / sheets). After Stage 4 removes
+the ~700-line AI block, `Code.gs` will be roughly 2,700 lines and the
+pressure to split drops significantly. The preferences-domain
+functions are scattered across multiple disjoint blocks (see git-blame
+or the list starting near `function onInstall` on line 98 and the
+cluster from `function getDefaultPreferences` around line 1424
+onward), so a clean split requires real surgery.
+
+This split is deferred to a later pass. It is purely a structural
+refactor — no behavior change — so the guardrails above will catch any
+misstep when it does happen. When picking it up:
+
+1. Move one domain at a time, each in its own commit.
+2. Start with the most self-contained: `text-processing.gs` (divine
+   names, Hebrew display, formatDataForPesukim, formatting helpers).
+3. Verify `npm test` and `bash pre_clasp_qc.sh apps-script` after each
+   domain move; never batch two together.
+4. Watch for hidden dependencies on execution order of top-level
+   declarations (only `SETTINGS` in this file, at line 35).
