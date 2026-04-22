@@ -929,7 +929,37 @@ function buildLinkedTitleText(baseTitle, data, singleLanguage) {
   return `${safeTitle} (${modeLabel} • ${versionLabel})`;
 }
 
-function insertReference(data, singleLanguage = undefined, pasukPreference = true, preferredTitle = null, includeTranslationSourceInfo = false, bilingualLayout = "he-right", insertSefariaLink = false, includeTransliteration = false, insertCitationOnly = false) {
+/**
+ * Insert a resolved Sefaria source into the active Google Doc.
+ *
+ * Signature is an options bag so callers don't have to remember the order of
+ * nine positional booleans. The internal body still uses the same local
+ * variable names that the pre-refactor positional signature used, which is
+ * why the destructure is so explicit — it keeps the 350-line body stable
+ * while fixing the ergonomics at the call site.
+ *
+ * @param {Object} data          Resolved Sefaria payload (required).
+ * @param {Object} [opts]        Per-call display/layout overrides.
+ * @param {string} [opts.singleLanguage]                "he" | "en" | undefined (bilingual).
+ * @param {boolean|string} [opts.pasukPreference=true]  Include line markers.
+ * @param {string|null} [opts.preferredTitle]           Override the title shown (e.g. "Bereishit").
+ * @param {boolean} [opts.includeTranslationSourceInfo] Append translation attribution.
+ * @param {string} [opts.bilingualLayout="he-right"]    Bilingual layout mode.
+ * @param {boolean} [opts.insertSefariaLink]            Hyperlink the title to sefaria.org.
+ * @param {boolean} [opts.includeTransliteration]       Include transliteration of the Hebrew.
+ * @param {boolean} [opts.insertCitationOnly]           Insert just the citation title, no body.
+ */
+function insertReference(data, opts) {
+  const options = opts || {};
+  const singleLanguage = options.singleLanguage;
+  const pasukPreference = options.pasukPreference !== undefined ? options.pasukPreference : true;
+  const preferredTitle = options.preferredTitle !== undefined ? options.preferredTitle : null;
+  const includeTranslationSourceInfo = options.includeTranslationSourceInfo === true;
+  const bilingualLayout = options.bilingualLayout || "he-right";
+  const insertSefariaLink = options.insertSefariaLink === true;
+  const includeTransliteration = options.includeTransliteration === true;
+  const insertCitationOnly = options.insertCitationOnly === true;
+
   if (!data || !data.ref) {
     throw new Error("Unable to insert source: no resolved reference.");
   }

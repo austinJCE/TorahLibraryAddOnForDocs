@@ -16,7 +16,7 @@
     { "name": "getSavedAiKeyPreview", "arity": 1, "definedIn": "apps-script/Code.gs" },
     { "name": "getSidebarBootstrapData", "arity": 2, "definedIn": "apps-script/Code.gs" },
     { "name": "insertLexiconEntry", "arity": 1, "definedIn": "apps-script/Code.gs" },
-    { "name": "insertReference", "arity": 9, "definedIn": "apps-script/Code.gs" },
+    { "name": "insertReference", "arity": 2, "definedIn": "apps-script/Code.gs" },
     { "name": "insertSheet", "arity": 2, "definedIn": "apps-script/Code.gs" },
     { "name": "insertSurpriseMe", "arity": 1, "definedIn": "apps-script/surprise-me-feature.gs" },
     { "name": "linkerHTML", "arity": 0, "definedIn": "apps-script/Code.gs" },
