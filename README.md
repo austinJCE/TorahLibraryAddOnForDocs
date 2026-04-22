@@ -120,16 +120,6 @@ Behavior summary:
 4. If no source is found, it still emits a version-title-only block when possible.
 5. If no usable translation version title is available, no translation-details block is inserted.
 
-## Canonical knowledge-contract consumers
-
-This repository now includes schema-focused contract adapters for multiple consumer types:
-
-- display-oriented consumer baseline: Living Library tooltip (`TooltipPayload`) (documented externally),
-- editorial-oriented consumer baseline: Commentary Builder glossary hints (`GlossaryTerm`) (documented externally),
-- workflow/editorial-governance consumer: Review Schema alignment helpers for `ReviewStatus` and `ProvenanceRecord` (this repo pass).
-
-See [`docs/review-schema-alignment.md`](./docs/review-schema-alignment.md) and [`apps-script/review-schema-contract.js`](./apps-script/review-schema-contract.js) for the low-risk schema/adaptor implementation.
-
 ## Menu actions
 
 The add-on menu includes:
@@ -174,8 +164,10 @@ All Google Apps Script source files now live under `apps-script/`:
 - `docs/google-docs-walkthrough.md` - End-user walkthrough for the current unified workflow.
 
 ### Tests
-- `tests/attribution.test.js` - Lightweight local unit tests for attribution formatting/fallback behavior.
-- `tests/review-schema-contract.test.js` - Lightweight local unit tests for Review Schema contract normalization and adapters.
+- `test/tests/attribution.test.js` - Lightweight local unit tests for attribution formatting/fallback behavior.
+- `test/tests/hebrew-preferences.test.js` - Hebrew display preference and divine-name replacement tests (runs `applyHebrewDisplayPreferences` / `applyHebrewDivineNamePreferences` against the real `Code.gs` via `vm`).
+- `test/ui/*.test.js` - Lightweight template / contract / snapshot tests for the sidebar and dialog entry points.
+- Run everything with `npm test` from the repo root.
 
 ## Development workflow
 

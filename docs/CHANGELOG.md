@@ -33,10 +33,6 @@ All notable changes in this fork are documented here.
 - Document-wide **Link Texts with Sefaria** menu action.
 - Preference-gated Popcorn availability.
 - Local lightweight attribution tests.
-- Review Schema canonical contract alignment helpers for workflow governance:
-  - `ReviewStatus` canonical state normalization with legacy adapters.
-  - `ProvenanceRecord` normalization from legacy source metadata fields.
-  - Transitional workflow metadata normalization for TextAnchor / Work / Person / glossary references.
 
 ### Changed
 - Refactored the main insertion/search UX into a single unified sidebar.

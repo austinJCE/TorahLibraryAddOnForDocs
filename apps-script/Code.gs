@@ -479,7 +479,6 @@ function resolveReferenceWithFallbacks(reference, versions) {
 function findReference(reference, versions=undefined, skipNormalization=false) {
   // Technical debt: this resolver still fails hard on incomplete/partial refs (e.g. "Shemo" before "Shemot").
   // We should return structured "incomplete reference" states instead of relying on exception flow.
-  //reference = "Shemot 12:1"; /* this is a test harness */
   let safeReference = String(reference || '').trim();
   if (!safeReference) {
     return;
@@ -734,11 +733,6 @@ function insertTransliterationIntoCell(cell, transliterationText, typography) {
   paragraph.setAttributes({});
   applyTypographyToParagraph(paragraph, typography.transliterationFont, typography.transliterationFontSize, typography.transliterationFontStyle);
 }
-
-function testRef() {
-  findReference("Shemot 12:2", {"en": "The Holy Scriptures: A New Translation (JPS 1917)", "he": "Yehoyesh's Yiddish Tanakh Translation [yi]"})
-}
-
 
 function normalizeTransliterationLineMarkersToGematria(text, startingVerse) {
   if (!text) {
@@ -1001,10 +995,6 @@ function insertReference(data, singleLanguage = undefined, pasukPreference = tru
       }
     }
   }
-  /* ---- test harness --- 
-  let index = doc.getNumChildren()-1;
-  */
-
   let headerStyle = {};
         headerStyle[DocumentApp.Attribute.BOLD] = true;
         headerStyle[DocumentApp.Attribute.UNDERLINE] = true;
