@@ -134,6 +134,11 @@ entries that never co-exist).
 
 - `docs/rpc-surface.json` + `test/ui/rpc-surface.test.js` — server
   side of the client/server contract.
+- `test/ui/contracts/sidebar-bootstrap.schema.json` +
+  `test/ui/sidebar-bootstrap-shape.test.js` — shape contract for the
+  object `getSidebarBootstrapData` returns. The sidebar also validates
+  the shape at load time and logs a structured `console.warn` on
+  mismatch (`apps-script/sidebar/js/bootstrap.html`).
 - `test/ui/contracts/selector-contracts.json` +
   `test/ui/selector-contracts.test.js` — the DOM ids and classes the
   server RPC depends on.
