@@ -19,7 +19,7 @@ function loadContext() {
   };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync('apps-script/gematriya.gs', 'utf8'), context, { filename: 'gematriya.gs' });
-  vm.runInContext(fs.readFileSync('apps-script/Code.gs', 'utf8'), context, { filename: 'Code.gs' });
+  vm.runInContext(fs.readFileSync('apps-script/server/text-processing.gs', 'utf8'), context, { filename: 'text-processing.gs' });
   return context;
 }
 

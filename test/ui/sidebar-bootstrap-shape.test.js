@@ -10,13 +10,13 @@ const ROOT = path.resolve(__dirname, '..', '..');
 // returns an object literal whose keys match the contract. A reshape of the
 // return value catches here (and before) the inevitable silent-sidebar-break.
 test('getSidebarBootstrapData source returns the contract-shaped object literal', () => {
-  const src = fs.readFileSync(path.join(ROOT, 'apps-script/Code.gs'), 'utf8');
+  const src = fs.readFileSync(path.join(ROOT, 'apps-script/server/menu.gs'), 'utf8');
   const schema = JSON.parse(
     fs.readFileSync(path.join(ROOT, 'test/ui/contracts/sidebar-bootstrap.schema.json'), 'utf8')
   );
 
   const fnStart = src.indexOf('function getSidebarBootstrapData(');
-  assert.ok(fnStart >= 0, 'getSidebarBootstrapData must exist in Code.gs');
+  assert.ok(fnStart >= 0, 'getSidebarBootstrapData must exist in apps-script/server/menu.gs');
   // Extract the function body up to its matching closing brace.
   const braceOpen = src.indexOf('{', fnStart);
   let depth = 0;
@@ -76,7 +76,8 @@ test('getSidebarBootstrapData returns an object with every contract key at the d
   };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'apps-script/migrations.gs'), 'utf8'), context, { filename: 'migrations.gs' });
-  vm.runInContext(fs.readFileSync(path.join(ROOT, 'apps-script/Code.gs'), 'utf8'), context, { filename: 'Code.gs' });
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'apps-script/server/preferences.gs'), 'utf8'), context, { filename: 'preferences.gs' });
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'apps-script/server/menu.gs'), 'utf8'), context, { filename: 'menu.gs' });
 
   const bootstrap = context.getSidebarBootstrapData('texts', null);
   for (const key of schema.required) {

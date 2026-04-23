@@ -69,9 +69,9 @@ test('insertRichTextFromHTML reads extended_gemara at call time, not module init
   // Use a string-search probe: the function sets a local const from
   // PropertiesService.getUserProperties().getProperty("extended_gemara").
   // If that read gets moved back to module scope, this assertion catches it.
-  const src = fs.readFileSync('apps-script/Code.gs', 'utf8');
+  const src = fs.readFileSync('apps-script/server/insertion.gs', 'utf8');
   const fnStart = src.indexOf('function insertRichTextFromHTML(');
-  assert.ok(fnStart >= 0, 'insertRichTextFromHTML must exist in Code.gs');
+  assert.ok(fnStart >= 0, 'insertRichTextFromHTML must exist in apps-script/server/insertion.gs');
   const fnBody = src.slice(fnStart, fnStart + 4000);
   assert.match(
     fnBody,
@@ -81,7 +81,7 @@ test('insertRichTextFromHTML reads extended_gemara at call time, not module init
 });
 
 test('the dead module-scope `extendedGemaraPreference` global is gone', () => {
-  const src = fs.readFileSync('apps-script/Code.gs', 'utf8');
+  const src = fs.readFileSync('apps-script/server/insertion.gs', 'utf8');
   // The previous pattern was `let extendedGemaraPreference = false;` at top
   // level, plus a set inside openSharedSidebar_. Both must be gone.
   assert.equal(
