@@ -21,7 +21,7 @@ jobs:
 
       - name: Authenticate with Google
         run: |
-          echo "${{ secrets.CLASP_TOKEN }}" > ~/.clasprc.json
+          echo "${{ secrets.CLASP_TOKEN }}" | base64 -d > ~/.clasprc.json
           chmod 600 ~/.clasprc.json
 
       - name: Push to Apps Script
