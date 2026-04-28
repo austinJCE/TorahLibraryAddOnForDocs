@@ -17,29 +17,22 @@ jobs:
           node-version: '18'
 
       - name: Install clasp
-        run: npm install -g @google/clasp
+        run: |
+          npm install -g @google/clasp
+          echo "--- clasp version ---"
+          clasp --version
+          echo "--- clasp auth source location ---"
+          find /usr/local/lib/node_modules/@google/clasp -type f -name "*.js" | xargs grep -l "clasprc\|\.clasprc\|credPath\|tokenPath" 2>/dev/null | head -5
 
       - name: Authenticate with Google
         run: |
           echo "${{ secrets.CLASP_TOKEN }}" | base64 -d > ~/.clasprc.json
           chmod 600 ~/.clasprc.json
-          echo "--- Inspecting credentials structure ---"
-          python3 <<'PY'
-          import json
-          d = json.load(open(__import__('os').path.expanduser('~/.clasprc.json')))
-          def walk(o, depth=0):
-              pad = '  ' * depth
-              if isinstance(o, dict):
-                  for k, v in o.items():
-                      if isinstance(v, dict):
-                          print(f'{pad}{k}:')
-                          walk(v, depth + 1)
-                      elif isinstance(v, list):
-                          print(f'{pad}{k}: list[{len(v)}]')
-                      else:
-                          print(f'{pad}{k}: {type(v).__name__}')
-          walk(d)
-          PY
+          echo "--- clasp credential path search ---"
+          find /usr/local/lib/node_modules/@google/clasp -type f -name "*.js" | xargs grep -h "clasprc\|homedir.*json\|credPath" 2>/dev/null | grep -v "^//" | head -20
+
+      - name: Test authentication
+        run: clasp whoami
 
       - name: Push to Apps Script
         run: clasp push -f
