@@ -17,12 +17,14 @@ jobs:
           node-version: '18'
 
       - name: Install clasp
-        run: npm install -g @google/clasp
+        run: npm install -g @google/clasp@2.4.2
 
       - name: Authenticate with Google
         run: |
           echo "${{ secrets.CLASP_TOKEN }}" | base64 -d > ~/.clasprc.json
           chmod 600 ~/.clasprc.json
+          echo "--- Validating credentials file ---"
+          python3 -c "import json,sys; d=json.load(open('$HOME/.clasprc.json')); print('Keys:', list(d.keys())); print('Token keys:', list(d.get('token',{}).keys()))"
 
       - name: Push to Apps Script
         run: clasp push -f
