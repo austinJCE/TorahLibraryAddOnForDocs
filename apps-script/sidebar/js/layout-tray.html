@@ -2,7 +2,6 @@
 // ── Layout Tray: open/close, sync ─────────────────────────────────────────
 
 function openLayoutTray() {
-  syncTrayFromCurrentState();
   $('#layout-tray').addClass('is-open');
   $('#layout-tray-close').focus();
 }
@@ -11,12 +10,6 @@ function closeLayoutTray() {
   $('#layout-tray').removeClass('is-open');
   $('#open-layout-settings').focus();
 }
-
-// function syncTrayFromCurrentState() {
-//  var canOpen = !!(appMode === 'texts' && hasResolvedReference && data && data.ref);
-//  $('#tray-open-on-sefaria').prop('disabled', !canOpen);
-//  $('.tray-sefaria-section').toggle(canOpen);
-//}
 
 // ── Open tray ─────────────────────────────────────────────────────────────
 
