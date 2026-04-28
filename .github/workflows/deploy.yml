@@ -3,7 +3,7 @@ name: Deploy to Apps Script
 on:
   push:
     branches:
-      - main
+      - master
       - claude/appscript-github-sync-EOqjD
 
 jobs:
@@ -20,7 +20,9 @@ jobs:
         run: npm install -g @google/clasp
 
       - name: Authenticate with Google
-        run: echo "${{ secrets.CLASP_TOKEN }}" > ~/.clasprc.json \ chmod 600 ~/.clasprc.json
+        run: |
+          echo "${{ secrets.CLASP_TOKEN }}" > ~/.clasprc.json
+          chmod 600 ~/.clasprc.json
 
       - name: Push to Apps Script
         run: clasp push -f
