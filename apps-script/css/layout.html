@@ -1086,6 +1086,78 @@
   outline-offset: 2px;
 }
 
+/* ── Voices insert-mode graphical card group ──────────────────────── */
+.voices-mode-card-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  background: #f4f3f1;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.voices-mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 4px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  font: inherit;
+  transition: background 0.12s;
+}
+
+.voices-mode-card:hover:not([aria-checked="true"]) {
+  background: rgba(0,0,0,0.05);
+}
+
+.voices-mode-card[aria-checked="true"] {
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
+.voices-mode-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 20px;
+}
+
+.voices-mode-icon svg {
+  width: 100%;
+  height: 100%;
+  opacity: 0.5;
+  transition: opacity 0.12s;
+}
+
+.voices-mode-card[aria-checked="true"] .voices-mode-icon svg {
+  opacity: 1;
+}
+
+.voices-mode-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #8a9aaa;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.voices-mode-card[aria-checked="true"] .voices-mode-label {
+  color: var(--selected, #18345d);
+}
+
+.voices-mode-card:focus-visible {
+  outline: 2px solid var(--selected);
+  outline-offset: 2px;
+}
+
 /* =============================================================
    VOICES OPTIONS SECTION (flat, no accordion)
    ============================================================= */

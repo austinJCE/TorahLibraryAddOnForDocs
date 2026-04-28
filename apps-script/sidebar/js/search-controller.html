@@ -457,12 +457,37 @@ $(document).on('click', '.insert-mode-btn', function () {
   $('.voices-insertion-summary').text('Will insert: ' + (VOICE_MODE_SUMMARY_LABELS[mode] || 'Citation only'));
 });
 
-// Transliteration: persist selection to account preferences.
-$(document).on('change', '#voices-translit-select', function () {
+// Transliteration dropdown: open/close trigger.
+$(document).on('click', '#voices-translit-trigger', function (e) {
+  e.stopPropagation();
+  var $menu = $('#voices-translit-menu');
+  var opening = $menu.hasClass('hidden');
+  $menu.toggleClass('hidden', !opening);
+  $(this).attr('aria-expanded', opening ? 'true' : 'false');
+});
+
+// Transliteration dropdown: option selected — persist to preferences.
+$(document).on('click', '.voices-translit-option', function () {
   if (appMode !== 'voices') return;
+  var value = $(this).attr('data-value');
+  var label = $(this).text();
+  $('#voices-translit-menu').find('.cc-translit-option').removeClass('is-selected');
+  $(this).addClass('is-selected');
+  $('#voices-translit-trigger')
+    .text(label + ' ▾')
+    .toggleClass('is-none', value === 'none')
+    .attr('aria-expanded', 'false');
+  $('#voices-translit-menu').addClass('hidden');
   if (typeof saveAccountPreference === 'function') {
-    saveAccountPreference({ voices_translit_default: $(this).val() });
+    saveAccountPreference({ voices_translit_default: value });
   }
+});
+
+// Dismiss voices translit menu when clicking outside the wrap.
+$(document).on('click.voicesTranslitDismiss', function (e) {
+  if ($(e.target).closest('#voices-translit-trigger, #voices-translit-menu').length) return;
+  $('#voices-translit-menu').addClass('hidden');
+  $('#voices-translit-trigger').attr('aria-expanded', 'false');
 });
 
 // Excerpt expand/collapse toggle.
