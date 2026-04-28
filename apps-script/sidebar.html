@@ -261,24 +261,24 @@
         <section class="voices-insert-options voices-options-section" style="display:none;" aria-label="Voices insert options">
           <div class="voices-insert-controls">
             <div class="compact-section-label" id="voices-insert-mode-label">What to insert</div>
-            <div class="voices-mode-card-group" id="voices-insert-mode" role="radiogroup" aria-labelledby="voices-insert-mode-label">
-              <button type="button" class="voices-mode-card insert-mode-btn is-active" data-value="reference" role="radio" aria-checked="true" title="Citation only">
-                <span class="voices-mode-icon">
+            <div class="icon-mode-card-group" id="voices-insert-mode" role="radiogroup" aria-labelledby="voices-insert-mode-label">
+              <button type="button" class="icon-mode-card insert-mode-btn is-active" data-value="reference" role="radio" aria-checked="true" title="Citation only">
+                <span class="icon-mode-card-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 12" fill="none" aria-hidden="true"><path d="M 0,6 C 7.3,1 12.7,1 20,6 C 27.3,11 32.7,11 40,6" stroke="#777" stroke-width="2.5" stroke-linecap="round"/></svg>
                 </span>
-                <span class="voices-mode-label">Citation</span>
+                <span class="icon-mode-card-label">Citation</span>
               </button>
-              <button type="button" class="voices-mode-card insert-mode-btn" data-value="contents" role="radio" aria-checked="false" title="Text only">
-                <span class="voices-mode-icon">
+              <button type="button" class="icon-mode-card insert-mode-btn" data-value="contents" role="radio" aria-checked="false" title="Text only">
+                <span class="icon-mode-card-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 12" fill="none" aria-hidden="true"><path d="M 0,6 C 7.3,1 12.7,1 20,6 C 27.3,11 32.7,11 40,6" stroke="#3174bc" stroke-width="2.5" stroke-linecap="round"/></svg>
                 </span>
-                <span class="voices-mode-label">Text</span>
+                <span class="icon-mode-card-label">Text</span>
               </button>
-              <button type="button" class="voices-mode-card insert-mode-btn" data-value="both" role="radio" aria-checked="false" title="Citation + text">
-                <span class="voices-mode-icon">
+              <button type="button" class="icon-mode-card insert-mode-btn" data-value="both" role="radio" aria-checked="false" title="Citation + text">
+                <span class="icon-mode-card-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill="none" aria-hidden="true"><path d="M 0,6 C 7.3,1 12.7,1 20,6 C 27.3,11 32.7,11 40,6" stroke="#3174bc" stroke-width="2.5" stroke-linecap="round"/><path d="M 0,14 C 7.3,9 12.7,9 20,14 C 27.3,19 32.7,19 40,14" stroke="#777" stroke-width="2.5" stroke-linecap="round"/></svg>
                 </span>
-                <span class="voices-mode-label">Both</span>
+                <span class="icon-mode-card-label">Both</span>
               </button>
             </div>
             <div class="compact-section-label" id="voices-translit-label" style="margin-top:8px;">Transliteration</div>
@@ -306,10 +306,25 @@
         <!-- Lexicon insert options: appears when a lexicon entry is selected. -->
         <section class="lexicon-insert-options" style="display:none;" aria-label="Lexicon insert options">
           <p class="lexicon-section-label" id="lexicon-format-label">What to insert</p>
-          <div class="insert-mode-selector lexicon-format-row" role="radiogroup" aria-labelledby="lexicon-format-label" id="lexicon-format-group">
-            <button type="button" class="insert-mode-btn lexicon-format-btn is-active" data-value="entry" role="radio" aria-checked="true">Full entry</button>
-            <button type="button" class="insert-mode-btn lexicon-format-btn" data-value="headword" role="radio" aria-checked="false">Headword &amp; source</button>
-            <button type="button" class="insert-mode-btn lexicon-format-btn" data-value="definition" role="radio" aria-checked="false">Definition only</button>
+          <div class="icon-mode-card-group" role="radiogroup" aria-labelledby="lexicon-format-label" id="lexicon-format-group">
+            <button type="button" class="icon-mode-card lexicon-format-btn is-active" data-value="entry" role="radio" aria-checked="true" title="Full entry">
+              <span class="icon-mode-card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 24" fill="none" aria-hidden="true"><rect x="0" y="2" width="26" height="3" rx="1.5" fill="#3174bc"/><rect x="0" y="10" width="36" height="2" rx="1" fill="#777"/><rect x="0" y="15" width="28" height="2" rx="1" fill="#777"/><rect x="0" y="20" width="18" height="2" rx="1" fill="#aaa"/></svg>
+              </span>
+              <span class="icon-mode-card-label">Full entry</span>
+            </button>
+            <button type="button" class="icon-mode-card lexicon-format-btn" data-value="headword" role="radio" aria-checked="false" title="Headword &amp; source">
+              <span class="icon-mode-card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 24" fill="none" aria-hidden="true"><rect x="0" y="5" width="24" height="3" rx="1.5" fill="#3174bc"/><rect x="0" y="15" width="20" height="2" rx="1" fill="#aaa"/></svg>
+              </span>
+              <span class="icon-mode-card-label">Word + ref</span>
+            </button>
+            <button type="button" class="icon-mode-card lexicon-format-btn" data-value="definition" role="radio" aria-checked="false" title="Definition only">
+              <span class="icon-mode-card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 24" fill="none" aria-hidden="true"><rect x="0" y="4" width="36" height="2" rx="1" fill="#777"/><rect x="0" y="11" width="28" height="2" rx="1" fill="#777"/><rect x="0" y="18" width="20" height="2" rx="1" fill="#777"/></svg>
+              </span>
+              <span class="icon-mode-card-label">Definition</span>
+            </button>
           </div>
           <!-- No-preview caveat shown when selected entry has no definition text -->
           <p class="lexicon-no-preview-note" id="lexicon-no-preview-note" style="display:none;">Preview unavailable for this entry — definition text could not be loaded.</p>

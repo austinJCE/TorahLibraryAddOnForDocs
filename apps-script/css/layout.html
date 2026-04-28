@@ -1086,8 +1086,8 @@
   outline-offset: 2px;
 }
 
-/* ── Voices insert-mode graphical card group ──────────────────────── */
-.voices-mode-card-group {
+/* ── Graphical icon-card group (Voices + Lexicon insert-mode selectors) ── */
+.icon-mode-card-group {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
@@ -1097,7 +1097,7 @@
   border-radius: 12px;
 }
 
-.voices-mode-card {
+.icon-mode-card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1112,35 +1112,35 @@
   transition: background 0.12s;
 }
 
-.voices-mode-card:hover:not([aria-checked="true"]) {
+.icon-mode-card:hover:not([aria-checked="true"]) {
   background: rgba(0,0,0,0.05);
 }
 
-.voices-mode-card[aria-checked="true"] {
+.icon-mode-card[aria-checked="true"] {
   background: #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.12);
 }
 
-.voices-mode-icon {
+.icon-mode-card-icon {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 40px;
-  height: 20px;
+  height: 24px;
 }
 
-.voices-mode-icon svg {
+.icon-mode-card-icon svg {
   width: 100%;
   height: 100%;
   opacity: 0.5;
   transition: opacity 0.12s;
 }
 
-.voices-mode-card[aria-checked="true"] .voices-mode-icon svg {
+.icon-mode-card[aria-checked="true"] .icon-mode-card-icon svg {
   opacity: 1;
 }
 
-.voices-mode-label {
+.icon-mode-card-label {
   font-size: 10px;
   font-weight: 700;
   color: #8a9aaa;
@@ -1149,11 +1149,11 @@
   line-height: 1;
 }
 
-.voices-mode-card[aria-checked="true"] .voices-mode-label {
+.icon-mode-card[aria-checked="true"] .icon-mode-card-label {
   color: var(--selected, #18345d);
 }
 
-.voices-mode-card:focus-visible {
+.icon-mode-card:focus-visible {
   outline: 2px solid var(--selected);
   outline-offset: 2px;
 }
