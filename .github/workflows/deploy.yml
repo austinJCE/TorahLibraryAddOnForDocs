@@ -30,9 +30,6 @@ jobs:
           chmod 600 ~/.clasprc.json
           echo "--- clasp credential path search ---"
           find /usr/local/lib/node_modules/@google/clasp -type f -name "*.js" | xargs grep -h "clasprc\|homedir.*json\|credPath" 2>/dev/null | grep -v "^//" | head -20
-
-      - name: Test authentication
-        run: clasp login --status
-
+      
       - name: Push to Apps Script
         run: clasp push -f
