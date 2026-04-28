@@ -1089,7 +1089,7 @@
 /* ── Graphical icon-card group (Voices + Lexicon insert-mode selectors) ── */
 .icon-mode-card-group {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
   background: #f4f3f1;
@@ -1102,6 +1102,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-width: 0;
   gap: 5px;
   padding: 8px 4px;
   cursor: pointer;
@@ -1126,7 +1127,9 @@
   align-items: center;
   justify-content: center;
   width: 40px;
+  max-width: 100%;
   height: 24px;
+  overflow: hidden;
 }
 
 .icon-mode-card-icon svg {

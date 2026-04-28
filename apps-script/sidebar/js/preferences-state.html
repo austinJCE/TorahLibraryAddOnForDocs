@@ -146,7 +146,7 @@ function mergePreferenceDefaults(preferences) {
 
   // Apply Voices workflow defaults
   var voicesInsertMode = preferences.voices_insert_mode_default || 'reference';
-  $('.voices-insert-controls .insert-mode-btn').each(function() {
+  $('#voices-insert-mode .icon-mode-card').each(function() {
     var active = $(this).data('value') === voicesInsertMode;
     $(this).toggleClass('is-active', active).attr('aria-checked', active ? 'true' : 'false');
   });
