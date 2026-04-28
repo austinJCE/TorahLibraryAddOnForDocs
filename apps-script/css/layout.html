@@ -703,6 +703,12 @@
 .primary-action-button[disabled],
 .secondary-action-button[disabled] {
   opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Layout button is visible in all modes but non-interactive outside texts mode */
+#open-layout-settings[disabled] {
+  pointer-events: none;
 }
 
 /* Outside footer: primary hover darkens the brand blue */

@@ -114,6 +114,13 @@ function setSidebarMode(mode, skipPreferenceSave) {
 
   if (appMode !== 'texts' && typeof closeLayoutTray === 'function') closeLayoutTray();
 
+  var layoutBtn = document.getElementById('open-layout-settings');
+  if (layoutBtn) {
+    var layoutAvailable = appMode === 'texts';
+    layoutBtn.disabled = !layoutAvailable;
+    layoutBtn.title = layoutAvailable ? 'Layout Settings' : 'Layout Settings (available in Texts mode)';
+  }
+
   $('.reference-row .search-submit, .reference-row .history-submit').show();
   $('.advanced-version-details').toggle(appMode === 'texts' && $('.output-mode-selection').val() !== 'en');
   var placeholders = { texts: 'Search texts…', voices: 'Search voices…', lexicon: 'Search dictionary…' };
